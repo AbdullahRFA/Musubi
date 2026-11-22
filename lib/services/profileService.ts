@@ -107,7 +107,7 @@ export function usePublicProfile(id: string) {
   return useMemo(() => {
     const user = users.find((item) => item.id === id);
     if (!user) return null;
-    if (viewer && hiddenFrom(useAppStore.getState(), viewer.id, user.id)) return null;
+    if (viewer && hiddenFrom(blocks, viewer.id, user.id)) return null;
     const received = reviews.filter((review) => review.revieweeId === user.id);
     const phoneShared = Boolean(
       viewer &&

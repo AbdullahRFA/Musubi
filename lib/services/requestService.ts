@@ -25,7 +25,7 @@ export function useMyRequests() {
       if (!userId) return false;
       if (request.requesterId !== userId && request.ownerId !== userId) return false;
       const otherId = request.requesterId === userId ? request.ownerId : request.requesterId;
-      return !hiddenFrom(useAppStore.getState(), userId, otherId);
+      return !hiddenFrom(blocks, userId, otherId);
     });
     return {
       incoming: visible
