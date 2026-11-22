@@ -2,6 +2,13 @@
 
 > **"Connecting the wisdom of the past with the energy of today."**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-success?style=for-the-badge&logo=vercel)](https://hackathon-alpha-snowy.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+
+**Live Application**: [https://hackathon-alpha-snowy.vercel.app](https://hackathon-alpha-snowy.vercel.app)
+
 Tsunagu Generations is a community platform bridging older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.
 
 ---
