@@ -1,0 +1,239 @@
+/**
+ * Domain types for Tsunagu Generations.
+ * Field names are camelCase in the app. supabase/schema.sql uses snake_case.
+ * Phase 2 services should map between the two without changing these shapes
+ * where a UI-facing type is noted.
+ */
+
+export type UserGroup = "og" | "yg";
+export type ContactMethod = "chat" | "phone";
+export type AgeGroup = "18-29" | "30-49" | "50-64" | "65+";
+export type ExchangeMethod = "knowledge" | "service" | "payment";
+export type PostType = "offer" | "request";
+export type PostStatus = "open" | "in_progress" | "completed" | "closed";
+export type RequestStatus = "pending" | "accepted" | "rejected" | "cancelled" | "completed";
+export type TransactionStatus = "pending" | "successful" | "failed";
+export type ReportTarget = "post" | "user";
+
+export type Category =
+  | "Daily Assistance"
+  | "Technology Help"
+  | "Companionship"
+  | "Home Assistance"
+  | "Learning";
+
+/** profiles */
+export interface Profile {
+  id: string;
+  email: string;
+  fullName: string;
+  avatarUrl: string | null;
+  ageGroup: AgeGroup | null;
+  location: string;
+  lat: number | null;
+  lng: number | null;
+  bio: string;
+  interests: string[];
+  skills: string[];
+  servicesOffered: string[];
+  servicesNeeded: string[];
+  availability: string;
+  contactMethod: ContactMethod;
+  phone: string | null;
+  userGroup: UserGroup;
+  createdAt: string;
+}
+
+/** Public profile. Email is never included. Phone is included only when allowed. */
+export interface PublicProfile extends Omit<Profile, "email" | "phone"> {
+  phone: string | null;
+  phoneShared: boolean;
+  averageRating: number | null;
+  reviewCount: number;
+  completedCount: number;
+}
+
+/** skills */
+export interface Skill {
+  id: string;
+  userId: string;
+  name: string;
+}
+
+/** needs */
+export interface Need {
+  id: string;
+  userId: string;
+  name: string;
+}
+
+/** posts */
+export interface Post {
+  id: string;
+  authorId: string;
+  title: string;
+  description: string;
+  category: Category;
+  skill: string;
+  location: string;
+  lat: number | null;
+  lng: number | null;
+  availability: string;
+  postType: PostType;
+  exchangeMethod: ExchangeMethod;
+  amount: number | null;
+  status: PostStatus;
+  templateId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** requirement_templates — also declared in lib/templates.ts for Phase 1 */
+export interface RequirementTemplate {
+  id: string;
+  category: Category;
+  title: string;
+  description: string;
+  suggestedExchange: ExchangeMethod;
+  skill: string;
+}
+
+/** service_requests */
+export interface ServiceRequest {
+  id: string;
+  postId: string | null;
+  requesterId: string;
+  ownerId: string;
+  message: string;
+  status: RequestStatus;
+  direct: boolean;
+  requesterDone: boolean;
+  ownerDone: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** conversations */
+export interface Conversation {
+  id: string;
+  requestId: string;
+  participantIds: [string, string];
+  createdAt: string;
+}
+
+/** messages */
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+  canned?: boolean;
+}
+
+/** notifications */
+export type NotificationType =
+  | "request_new"
+  | "request_accepted"
+  | "request_rejected"
+  | "message"
+  | "activity"
+  | "completed"
+  | "review"
+  | "payment";
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  href: string;
+  read: boolean;
+  createdAt: string;
+}
+
+/** transactions */
+export interface Transaction {
+  id: string;
+  requestId: string;
+  postId: string | null;
+  payerId: string;
+  payeeId: string;
+  amount: number;
+  status: TransactionStatus;
+  createdAt: string;
+}
+
+/** reviews */
+export interface Review {
+  id: string;
+  activityId: string;
+  reviewerId: string;
+  revieweeId: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
+/** activities */
+export interface Activity {
+  id: string;
+  requestId: string;
+  postId: string | null;
+  participantIds: [string, string];
+  title: string;
+  category: string;
+  completedAt: string;
+}
+
+/** reports */
+export interface Report {
+  id: string;
+  reporterId: string;
+  targetType: ReportTarget;
+  targetId: string;
+  reason: string;
+  createdAt: string;
+}
+
+/** blocks — supports the block action; not a public profile field */
+export interface Block {
+  id: string;
+  blockerId: string;
+  blockedId: string;
+  createdAt: string;
+}
+
+export interface SearchFilters {
+  category: string;
+  location: string;
+  skill: string;
+  exchangeMethod: string;
+  availability: string;
+  userGroup: string;
+}
+
+export interface SearchResult {
+  posts: Post[];
+  people: Profile[];
+  /** True when no post matched, so people are the primary result. */
+  preferPeople: boolean;
+}
+
+export interface AppState {
+  users: Profile[];
+  posts: Post[];
+  requests: ServiceRequest[];
+  conversations: Conversation[];
+  messages: Message[];
+  notifications: Notification[];
+  transactions: Transaction[];
+  reviews: Review[];
+  activities: Activity[];
+  reports: Report[];
+  blocks: Block[];
+  /** conversationId -> user ids who confirmed the safety tips */
+  safetyAck: Record<string, string[]>;
+  sessionUserId: string | null;
+}
