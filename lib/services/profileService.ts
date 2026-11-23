@@ -241,11 +241,24 @@ export function useUserStats(userId: string) {
 export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
   const me = requireUser();
 
-  if (patch.email) {
+  // Only check email if user is trying to change to a different email address
+  if (patch.email && patch.email.trim().toLowerCase() !== me.email.toLowerCase()) {
     const email = patch.email.trim().toLowerCase();
-    const taken = useAppStore.getState().users.some((user) => user.email === email && user.id !== me.id);
-    if (taken) throw new ServiceError("That email is already used by another member.");
+    const supabase = createClient();
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .neq("id", me.id)
+      .maybeSingle();
+
+    if (existing) {
+      throw new ServiceError("That email is already used by another member.");
+    }
     patch = { ...patch, email };
+  } else {
+    // Keep verified authenticated email
+    delete patch.email;
   }
 
   // Automatic Generation Detection (OG vs YG) from age
