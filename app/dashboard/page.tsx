@@ -1,19 +1,9 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
+/**
+ * The v2 architecture integrates all dashboard actions into the homepage.
+ * A server-side redirect avoids rendering a "Redirecting..." flash.
+ */
 export default function DashboardPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // The v2 architecture integrates all dashboard actions directly into the Homepage (/)
-    router.replace("/");
-  }, [router]);
-
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center p-8 text-center text-muted-foreground">
-      Redirecting to homepage...
-    </div>
-  );
+  redirect("/");
 }
