@@ -38,16 +38,30 @@ function ActivityContent() {
 
   const session = useSession();
   const allPosts = usePosts();
-  const { incoming, outgoing } = useMyRequests();
+  const { incoming, outgoing, inProgress } = useMyRequests();
   const myActivities = useMyActivities();
   const transactions = useTransactions();
   const allUsers = useUsers();
   const conversations = useAppStore((state) => state.conversations);
 
-  const myPosts = allPosts.filter((p) => p.authorId === session?.id);
-  const inProgressRequests = [...incoming, ...outgoing].filter((r) => r.status === "accepted");
+  // "my post - only currently requested posts"
+  const myPosts = allPosts.filter((p) => p.authorId === session?.id && p.status === "open");
 
   const getUser = (id: string) => allUsers.find((u) => u.id === id);
+
+  const handleConfirmDone = async (requestId: string) => {
+    if (!confirm("Confirm marking this exchange as completed?")) return;
+    try {
+      const res = await confirmCompletion(requestId);
+      if (res.completed && res.activityId) {
+        window.location.href = `/feedback/${res.activityId}`;
+      } else {
+        alert("You marked this activity completed! Waiting for the other person to confirm.");
+      }
+    } catch (err: any) {
+      alert(err?.message || "Failed to update completion.");
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -55,7 +69,7 @@ function ActivityContent() {
       <div className="border-b-2 border-border pb-6 space-y-1">
         <h1 className="text-3xl font-extrabold text-foreground">My Activity Hub</h1>
         <p className="text-base text-muted-foreground">
-          Track your posts, incoming & outgoing requests, in-progress exchanges, and review history.
+          Track your currently open posts, pending requests, active in-progress exchanges, and completed history.
         </p>
       </div>
 
@@ -64,7 +78,7 @@ function ActivityContent() {
         {[
           { id: "posts", label: "My Posts", count: myPosts.length, icon: Compass },
           { id: "requests", label: "My Requests", count: incoming.length + outgoing.length, icon: Inbox },
-          { id: "inprogress", label: "In Progress", count: inProgressRequests.length, icon: Clock },
+          { id: "inprogress", label: "In Progress", count: inProgress.length, icon: Clock },
           { id: "completed", label: "Completed", count: myActivities.length, icon: CheckCircle2 },
           { id: "transactions", label: "Transactions", count: transactions.length, icon: Coins },
         ].map((tab) => {
@@ -162,24 +176,30 @@ function ActivityContent() {
       {/* 3. IN PROGRESS TAB */}
       {activeTab === "inprogress" && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-foreground">Current Active Exchanges</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-foreground">Active In-Progress Exchanges</h2>
+            <span className="text-xs text-muted-foreground">
+              Accepted requests · Completed when both parties confirm
+            </span>
+          </div>
 
-          {inProgressRequests.length === 0 ? (
+          {inProgress.length === 0 ? (
             <div className="rounded-lg border-2 border-dashed border-border bg-card p-12 text-center">
               <p className="text-base text-muted-foreground">No exchanges in progress right now.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {inProgressRequests.map((req) => {
+              {inProgress.map((req) => {
                 const other = getUser(req.requesterId === session?.id ? req.ownerId : req.requesterId);
                 const conversation = conversations.find((c) => c.requestId === req.id);
                 const chatHref = conversation ? `/chat/${conversation.id}` : "/chat";
+                const post = allPosts.find((p) => p.id === req.postId);
                 const isRequester = req.requesterId === session?.id;
                 const myDone = isRequester ? req.requesterDone : req.ownerDone;
                 const otherDone = isRequester ? req.ownerDone : req.requesterDone;
 
                 return (
-                  <Card key={req.id} className="p-5 border-2 border-secondary bg-secondary/5 space-y-3">
+                  <Card key={req.id} className="p-5 border-2 border-primary/40 bg-card space-y-3 shadow-xs">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
@@ -196,19 +216,46 @@ function ActivityContent() {
                               Partner marked completed!
                             </span>
                           )}
+                          {!myDone && !otherDone && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#E7EEE4] text-[#315B4B]">
+                              In Progress
+                            </span>
+                          )}
                         </div>
+                        {post && (
+                          <p className="text-xs sm:text-sm text-primary font-medium">
+                            📌 Post: {post.title}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          Status: Active · Connected since {formatWhen(req.updatedAt)}
+                          Connected since {formatWhen(req.updatedAt)}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Link href={chatHref}>
-                          <Button size="sm" variant="default" className="gap-1.5 font-bold">
+                          <Button size="sm" variant="default" className="gap-1.5 font-bold bg-[#315B4B] hover:bg-[#254639] text-white">
                             <MessageSquare className="h-4 w-4" />
                             <span>Open Chat</span>
                           </Button>
                         </Link>
+
+                        {myDone ? (
+                          <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-md flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-amber-700" />
+                            <span>Waiting for partner to confirm</span>
+                          </span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleConfirmDone(req.id)}
+                            className="gap-1.5 font-bold text-foreground hover:border-emerald-600 border-2"
+                          >
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                            <span>Mark Completed</span>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>

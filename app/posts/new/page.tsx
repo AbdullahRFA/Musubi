@@ -36,13 +36,12 @@ export default function CreatePostPage() {
       skill: "",
       location: session?.location || PLACES[0].name,
       availability: session?.availability || AVAILABILITY[0],
-      postType: "offer",
+      postType: "request",
       exchangeMethod: "free",
       amount: null,
     },
   });
 
-  const postType = watch("postType");
   const exchangeMethod = watch("exchangeMethod");
   const selectedAmount = watch("amount");
 
@@ -52,6 +51,7 @@ export default function CreatePostPage() {
     try {
       const created = await createPost({
         ...values,
+        postType: "request",
         templateId: null,
       });
       router.push(`/posts/${created.id}`);
@@ -71,9 +71,9 @@ export default function CreatePostPage() {
               <PlusCircle className="h-6 w-6" />
               <span>Standard Post Creation</span>
             </div>
-            <CardTitle className="text-3xl font-extrabold">Create a Community Post</CardTitle>
+            <CardTitle className="text-3xl font-extrabold">Create a Community Request</CardTitle>
             <CardDescription className="text-base">
-              Share a skill or request a service from neighbors across generations.
+              Request assistance, practical guidance, or companionship from neighbors across generations.
             </CardDescription>
           </CardHeader>
 
@@ -85,35 +85,6 @@ export default function CreatePostPage() {
                   <span>{error}</span>
                 </div>
               )}
-
-              {/* Post Type: Offer or Request */}
-              <div className="space-y-2">
-                <label className="text-base font-bold text-foreground">Are you offering or requesting?</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setValue("postType", "offer")}
-                    className={`p-4 rounded-lg border-2 text-left font-bold transition-all ${
-                      postType === "offer"
-                        ? "border-secondary bg-secondary/10 text-secondary"
-                        : "border-border bg-background hover:bg-muted text-foreground"
-                    }`}
-                  >
-                    I am offering help / teaching a skill
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setValue("postType", "request")}
-                    className={`p-4 rounded-lg border-2 text-left font-bold transition-all ${
-                      postType === "request"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-background hover:bg-muted text-foreground"
-                    }`}
-                  >
-                    I am requesting help / want to learn
-                  </button>
-                </div>
-              </div>
 
               {/* Category */}
               <div className="space-y-1.5">

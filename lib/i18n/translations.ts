@@ -194,12 +194,12 @@ export const translations = {
     // Posts Directory Page
     postsPage: {
       title: "Community Posts",
-      subtitle: "Explore skill offers, requests for assistance, and companionship in our neighborhood",
+      subtitle: "Explore requests for assistance, skill learning, and companionship in our neighborhood",
       quickPost: "Quick Post",
       standardPost: "Standard Post",
       guestBannerTitle: "Browsing Community Exchanges as a Guest",
       guestBannerDesc:
-        "You can explore all skills, offers, and requests. Sign in or register when you are ready to respond to a neighbor or create your own post.",
+        "You can explore all community requests. Sign in or register when you are ready to respond to a neighbor or create your own post.",
       searchPlaceholder: "Filter by keyword, skill, title, or place...",
       typeLabel: "Type of Post",
       allTypes: "All",
@@ -408,12 +408,12 @@ export const translations = {
     // Posts Directory Page
     postsPage: {
       title: "コミュニティ投稿一覧",
-      subtitle: "近所のスキル提供、日常のお手伝いのお願い、心温まる交流の募集を検索できます",
+      subtitle: "日常のお手伝いのお願い、スキル習得、心温まる交流の募集を検索できます",
       quickPost: "クイック投稿",
       standardPost: "通常投稿",
       guestBannerTitle: "ゲストとして閲覧中",
       guestBannerDesc:
-        "すべての募集を自由にご覧いただけます。投稿者へメッセージを送るには、ログインまたは新規登録してください。",
+        "すべての依頼募集を自由にご覧いただけます。投稿者へメッセージを送るには、ログインまたは新規登録してください。",
       searchPlaceholder: "キーワード、スキル、地域名で検索...",
       typeLabel: "投稿タイプ",
       allTypes: "すべて",

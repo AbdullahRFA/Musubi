@@ -131,11 +131,17 @@ export function useMyRequests() {
     });
     return {
       incoming: visible
-        .filter((request) => request.ownerId === userId)
+        .filter((request) => request.ownerId === userId && request.status === "pending")
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
       outgoing: visible
-        .filter((request) => request.requesterId === userId)
+        .filter((request) => request.requesterId === userId && request.status === "pending")
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      inProgress: visible
+        .filter((request) => request.status === "accepted")
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+      completed: visible
+        .filter((request) => request.status === "completed")
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
     };
   }, [blocks, requests, userId]);
 }

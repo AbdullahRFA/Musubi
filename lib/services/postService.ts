@@ -25,7 +25,7 @@ export function rowToPost(row: any): Post {
     lat: row.lat !== null && row.lat !== undefined ? Number(row.lat) : null,
     lng: row.lng !== null && row.lng !== undefined ? Number(row.lng) : null,
     availability: row.availability,
-    postType: row.post_type,
+    postType: row.post_type || "request",
     exchangeMethod: row.exchange_method,
     amount: row.amount !== null && row.amount !== undefined ? Number(row.amount) : null,
     status: row.status,
@@ -120,7 +120,7 @@ export function usePosts(): Post[] {
   return useMemo(
     () =>
       posts
-        .filter((post) => post.status !== "closed")
+        .filter((post) => post.status === "open")
         .filter((post) => !hiddenFrom(blocks, viewerId, post.authorId))
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [blocks, posts, viewerId],
@@ -168,7 +168,7 @@ export function useMyPosts(): Post[] {
   return useMemo(
     () =>
       posts
-        .filter((post) => post.authorId === viewerId)
+        .filter((post) => post.authorId === viewerId && post.status === "open")
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [posts, viewerId],
   );

@@ -115,14 +115,8 @@ export default function PostDetailPage() {
             <CardHeader className="space-y-3 pb-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
-                      post.postType === "offer"
-                        ? "bg-secondary text-secondary-foreground"
-                        : "bg-primary text-primary-foreground"
-                    }`}
-                  >
-                    {post.postType === "offer" ? "Offering Help" : "Requesting Help"}
+                  <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-800 border border-blue-200">
+                    Requesting Help
                   </span>
                   <Badge variant="outline" className="font-semibold text-xs">
                     {post.category}
@@ -163,7 +157,7 @@ export default function PostDetailPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/40 border border-border">
                 <div className="space-y-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Required / Offered Skill
+                    Requested Skill / Service
                   </span>
                   <div className="font-bold text-foreground text-base">{post.skill}</div>
                 </div>

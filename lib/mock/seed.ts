@@ -178,29 +178,29 @@ function post(input: Post): Post {
 }
 
 const posts: Post[] = [
-  // 1. Prompt Sample 1: OFFER - Traditional Origami Lessons
+  // 1. REQUEST: Traditional Origami Lessons
   post({
     id: "p1",
     authorId: "u1",
-    title: "Traditional Origami Lessons",
+    title: "Looking for Traditional Origami Lessons",
     description:
-      "I teach classic origami from peace cranes to decorative seasonal flowers. We sit at a quiet table in Peace Park Community Center and fold paper step-by-step. All ages and beginner levels welcome!",
+      "I am looking for a neighbor who can teach classic Japanese origami, from peace cranes to decorative seasonal crafts. Happy to meet at Peace Park Community Center on weekday afternoons!",
     category: "Arts & Crafts",
     skill: "Origami",
     location: "Peace Park, Nagasaki",
     lat: 32.7767,
     lng: 129.8633,
     availability: "Weekday afternoons",
-    postType: "offer",
+    postType: "request",
     exchangeMethod: "free",
     amount: null,
-    status: "open",
-    templateId: "tpl-craft-offer",
+    status: "in_progress",
+    templateId: "tpl-craft-request-2",
     createdAt: at(12, 10),
     updatedAt: at(12, 10),
   }),
 
-  // 2. Prompt Sample 2: REQUEST - Looking for Smartphone Assistance
+  // 2. REQUEST: Looking for Smartphone Assistance
   post({
     id: "p2",
     authorId: "u2",
@@ -217,34 +217,34 @@ const posts: Post[] = [
     exchangeMethod: "free",
     amount: null,
     status: "open",
-    templateId: "tpl-tech-request",
+    templateId: "tpl-tech-request-1",
     createdAt: at(13, 9),
     updatedAt: at(13, 9),
   }),
 
-  // 3. Prompt Sample 3: OFFER - Traditional Japanese Cooking Lessons
+  // 3. REQUEST: Want to Learn Traditional Japanese Cooking
   post({
     id: "p3",
     authorId: "u3",
-    title: "Traditional Japanese Cooking Lessons",
+    title: "Want to Learn Traditional Japanese Home Cooking",
     description:
-      "Learn authentic home-style Nagasaki dishes: clear dashi soup, braised seasonal vegetables, and rolled tamagoyaki. I'd love to exchange recipes for a helping hand with garden weeding or light chores!",
+      "Looking for an experienced neighbor to teach me authentic home-style Nagasaki dishes: clear dashi soup, braised seasonal vegetables, and rolled tamagoyaki. Happy to offer a helping hand with garden weeding or light chores in exchange!",
     category: "Cooking",
     skill: "Japanese Cooking",
     location: "Urakami, Nagasaki",
     lat: 32.7725,
     lng: 129.8665,
     availability: "Weekends",
-    postType: "offer",
+    postType: "request",
     exchangeMethod: "exchange",
     amount: null,
     status: "open",
-    templateId: "tpl-cook-offer",
+    templateId: "tpl-cook-request-1",
     createdAt: at(14, 11),
     updatedAt: at(14, 11),
   }),
 
-  // 4. Prompt Sample 4: REQUEST - Looking for a Walking Companion
+  // 4. REQUEST: Looking for a Walking Companion
   post({
     id: "p4",
     authorId: "u4",
@@ -260,35 +260,35 @@ const posts: Post[] = [
     postType: "request",
     exchangeMethod: "free",
     amount: null,
-    status: "open",
-    templateId: "tpl-companion-request",
+    status: "completed",
+    templateId: "tpl-companion-request-1",
     createdAt: at(14, 15),
     updatedAt: at(14, 15),
   }),
 
-  // 5. Additional OFFER: Technology Help
+  // 5. REQUEST: Technology Guidance
   post({
     id: "p5",
     authorId: "u5",
-    title: "Patient Smartphone & Tablet Guidance",
+    title: "Seeking Patient Smartphone & Tablet Guidance",
     description:
-      "Happy to sit down with seniors at a local cafe and patiently show you how to adjust font sizes, set up Line, take clear photos, and prevent digital scams. Friendly and unhurried.",
+      "Looking for a patient neighbor who can sit down at a cafe in Hamamachi and help me adjust font sizes, set up Line messaging, and prevent digital scams. Happy to treat for coffee!",
     category: "Technology",
     skill: "Smartphone Guidance",
     location: "Hamamachi, Nagasaki",
     lat: 32.7431,
     lng: 129.8797,
     availability: "Weekday afternoons",
-    postType: "offer",
+    postType: "request",
     exchangeMethod: "free",
     amount: null,
     status: "open",
-    templateId: "tpl-tech-offer",
+    templateId: "tpl-tech-request-1",
     createdAt: at(15, 14),
     updatedAt: at(15, 14),
   }),
 
-  // 6. Additional REQUEST: Gardening Assistance
+  // 6. REQUEST: Gardening Assistance
   post({
     id: "p6",
     authorId: "u3",
@@ -305,34 +305,34 @@ const posts: Post[] = [
     exchangeMethod: "exchange",
     amount: null,
     status: "open",
-    templateId: "tpl-garden-request",
+    templateId: "tpl-garden-request-1",
     createdAt: at(16, 9),
     updatedAt: at(16, 9),
   }),
 
-  // 7. Additional OFFER: Gardening Advice
+  // 7. REQUEST: Gardening Advice
   post({
     id: "p7",
     authorId: "u8",
-    title: "Balcony Plant Care & Gardening Wisdom",
+    title: "Seeking Balcony Plant Care & Gardening Wisdom",
     description:
-      "Need advice on soil mixtures, seasonal flower planting, or keeping herbs alive in Nagasaki weather? I can visit your balcony or garden to give practical tips.",
+      "Need advice from a green-thumb neighbor on soil mixtures, seasonal flower planting, and keeping potted plants healthy in Nagasaki weather. Happy to exchange for light home fixes.",
     category: "Gardening",
     skill: "Plant Care",
     location: "Urakami, Nagasaki",
     lat: 32.7725,
     lng: 129.8665,
     availability: "Flexible",
-    postType: "offer",
+    postType: "request",
     exchangeMethod: "free",
     amount: null,
     status: "open",
-    templateId: "tpl-garden-offer",
+    templateId: "tpl-garden-request-2",
     createdAt: at(17, 10),
     updatedAt: at(17, 10),
   }),
 
-  // 8. Additional REQUEST: Grocery Shopping
+  // 8. REQUEST: Grocery Shopping
   post({
     id: "p8",
     authorId: "u1",
@@ -349,53 +349,273 @@ const posts: Post[] = [
     exchangeMethod: "free",
     amount: null,
     status: "open",
-    templateId: "tpl-daily-request",
+    templateId: "tpl-daily-request-1",
     createdAt: at(17, 13),
     updatedAt: at(17, 13),
   }),
 
-  // 9. Additional OFFER: Daily Assistance
+  // 9. REQUEST: Daily Assistance
   post({
     id: "p9",
     authorId: "u6",
-    title: "Grocery Pickup & Neighborhood Errands",
+    title: "Assistance with Heavy Grocery Pickup & Errands",
     description:
-      "I cycle through Dejima and Hamamachi daily. Happy to pick up groceries, pharmacy items, or heavy packages for neighborhood elders anytime on weekends.",
+      "Looking for an energetic neighbor near Dejima or Hamamachi to help carry heavy supermarket grocery items, pharmacy necessities, and bottled water on weekends.",
     category: "Daily Assistance",
     skill: "Grocery Errands",
     location: "Dejima, Nagasaki",
     lat: 32.7428,
     lng: 129.8732,
     availability: "Weekends",
-    postType: "offer",
+    postType: "request",
     exchangeMethod: "free",
     amount: null,
     status: "open",
-    templateId: "tpl-daily-offer",
+    templateId: "tpl-daily-request-2",
     createdAt: at(18, 10),
     updatedAt: at(18, 10),
   }),
 
-  // 10. Additional OFFER: Companionship (Paid Demo)
+  // 10. REQUEST: Companionship (Paid Demo)
   post({
     id: "p10",
     authorId: "u7",
-    title: "Afternoon Tea & Relaxed Conversation",
+    title: "Afternoon Tea & Relaxed Conversation Companion",
     description:
-      "A peaceful hour of warm tea and gentle conversation near Meganebashi. Great for practicing storytelling and hearing about life experiences.",
+      "Seeking a thoughtful neighbor for a peaceful hour of warm green tea and gentle conversation near Meganebashi. Great for sharing life experiences, local stories, and companionship.",
     category: "Companionship",
     skill: "Friendly Conversation",
     location: "Meganebashi, Nagasaki",
     lat: 32.7471,
     lng: 129.8803,
     availability: "Weekday evenings",
-    postType: "offer",
+    postType: "request",
     exchangeMethod: "paid",
     amount: 15,
     status: "open",
-    templateId: "tpl-companion-offer",
+    templateId: "tpl-companion-request-2",
     createdAt: at(19, 16),
     updatedAt: at(19, 16),
+  }),
+
+  // 11. REQUEST: Calligraphy & New Year Greeting Practice
+  post({
+    id: "p11",
+    authorId: "u2",
+    title: "Help Writing Nengajo (New Year Cards) & Brush Calligraphy",
+    description:
+      "Seeking an experienced calligraphy neighbor to practice brush strokes (Shodo) and write proper seasonal greetings for New Year postcards (Nengajo) at Meganebashi community room.",
+    category: "Arts & Crafts",
+    skill: "Japanese Calligraphy",
+    location: "Meganebashi, Nagasaki",
+    lat: 32.7471,
+    lng: 129.8803,
+    availability: "Weekday afternoons",
+    postType: "request",
+    exchangeMethod: "exchange",
+    amount: null,
+    status: "open",
+    templateId: "tpl-craft-request-1",
+    createdAt: at(20, 10),
+    updatedAt: at(20, 10),
+  }),
+
+  // 12. REQUEST: Emergency Disaster App Setup
+  post({
+    id: "p12",
+    authorId: "u4",
+    title: "Assistance Setting Up Nagasaki Disaster Alert App",
+    description:
+      "I would greatly appreciate a younger neighbor's patient assistance installing and setting up the official Nagasaki City emergency disaster alert app (Bosai) on my Android smartphone.",
+    category: "Technology",
+    skill: "Disaster App Setup",
+    location: "Glover Hills, Nagasaki",
+    lat: 32.7335,
+    lng: 129.8702,
+    availability: "Weekday mornings",
+    postType: "request",
+    exchangeMethod: "free",
+    amount: null,
+    status: "open",
+    templateId: "tpl-tech-request-2",
+    createdAt: at(20, 14),
+    updatedAt: at(20, 14),
+  }),
+
+  // 13. REQUEST: Seasonal Futon & Tatami Help
+  post({
+    id: "p13",
+    authorId: "u1",
+    title: "Help Moving Heavy Tatami & Seasonal Futon Storage",
+    description:
+      "Need a pair of helpful hands for about 45 minutes to help air out heavy seasonal winter futons and rotate room tatami mats in Urakami. Warm tea and sweet dorayaki treats provided as thanks!",
+    category: "Daily Assistance",
+    skill: "Household Assistance",
+    location: "Urakami, Nagasaki",
+    lat: 32.7725,
+    lng: 129.8665,
+    availability: "Weekends",
+    postType: "request",
+    exchangeMethod: "free",
+    amount: null,
+    status: "open",
+    templateId: "tpl-daily-request-2",
+    createdAt: at(21, 11),
+    updatedAt: at(21, 11),
+  }),
+
+  // 14. REQUEST: Regional Shippoku Cooking Lessons
+  post({
+    id: "p14",
+    authorId: "u5",
+    title: "Want to Learn Nagasaki Shippoku & Kakuni (Braised Pork)",
+    description:
+      "Eager university student seeking a seasoned home cook to teach traditional Nagasaki Shippoku cuisine, particularly slow-simmered tender braised pork belly (Kakuni) and seasonal clear broth.",
+    category: "Cooking",
+    skill: "Shippoku Cooking",
+    location: "Dejima, Nagasaki",
+    lat: 32.7428,
+    lng: 129.8732,
+    availability: "Weekends",
+    postType: "request",
+    exchangeMethod: "exchange",
+    amount: null,
+    status: "open",
+    templateId: "tpl-cook-request-2",
+    createdAt: at(21, 15),
+    updatedAt: at(21, 15),
+  }),
+
+  // 15. REQUEST: Balcony Persimmon & Bonsai Trimming
+  post({
+    id: "p15",
+    authorId: "u3",
+    title: "Balcony Persimmon Tree & Bonsai Pruning Advice",
+    description:
+      "My potted balcony persimmon tree and small bonsai need seasonal branch pruning and repotting in fresh soil. Seeking practical guidance from someone with gardening experience.",
+    category: "Gardening",
+    skill: "Fruit Tree Care",
+    location: "Peace Park, Nagasaki",
+    lat: 32.7767,
+    lng: 129.8633,
+    availability: "Weekday mornings",
+    postType: "request",
+    exchangeMethod: "free",
+    amount: null,
+    status: "open",
+    templateId: "tpl-garden-request-2",
+    createdAt: at(22, 9),
+    updatedAt: at(22, 9),
+  }),
+
+  // 16. REQUEST: Walking Companion on Dutch Slope
+  post({
+    id: "p16",
+    authorId: "u7",
+    title: "Walking Partner along Oura Church & Dutch Slope",
+    description:
+      "Looking for a walking companion for scenic 40-minute afternoon strolls through historic Dutch Slope and Minami-Yamate. Enjoy discussing local history, seasonal flowers, and harbor views.",
+    category: "Companionship",
+    skill: "Walking Companion",
+    location: "Glover Hills, Nagasaki",
+    lat: 32.7335,
+    lng: 129.8702,
+    availability: "Weekday afternoons",
+    postType: "request",
+    exchangeMethod: "free",
+    amount: null,
+    status: "completed",
+    templateId: "tpl-companion-request-1",
+    createdAt: at(22, 16),
+    updatedAt: at(22, 16),
+  }),
+
+  // 17. REQUEST: Traditional Wood Carving Practice
+  post({
+    id: "p17",
+    authorId: "u6",
+    title: "Learn Traditional Wood Carving & Chopstick Craft",
+    description:
+      "Seeking an experienced craftsman or hobbyist to teach me the basics of Japanese wood carving and shaping personal cypress (hinoki) dining chopsticks.",
+    category: "Arts & Crafts",
+    skill: "Wood Carving",
+    location: "Hamamachi, Nagasaki",
+    lat: 32.7431,
+    lng: 129.8797,
+    availability: "Weekday evenings",
+    postType: "request",
+    exchangeMethod: "exchange",
+    amount: null,
+    status: "open",
+    templateId: "tpl-craft-request-2",
+    createdAt: at(23, 18),
+    updatedAt: at(23, 18),
+  }),
+
+  // 18. REQUEST: Ward Office Online Procedures & MyNumber (Paid Demo)
+  post({
+    id: "p18",
+    authorId: "u2",
+    title: "Help with City Ward Digital Procedures & MyNumber App",
+    description:
+      "Need patient guidance understanding online resident certificate requests and using the MyNumber card reader feature on my smartphone. Happy to meet at Hamamachi Library.",
+    category: "Technology",
+    skill: "Administrative Tech",
+    location: "Hamamachi, Nagasaki",
+    lat: 32.7431,
+    lng: 129.8797,
+    availability: "Weekday mornings",
+    postType: "request",
+    exchangeMethod: "paid",
+    amount: 15,
+    status: "open",
+    templateId: "tpl-tech-request-2",
+    createdAt: at(24, 10),
+    updatedAt: at(24, 10),
+  }),
+
+  // 19. REQUEST: Neighborhood Riverbank Cleanup Activity
+  post({
+    id: "p19",
+    authorId: "u8",
+    title: "Volunteers for Nakashima Riverbank Flower Path Cleanup",
+    description:
+      "Looking for neighbors to join a 1-hour community group activity trimming weeds and tidying the flowerbeds along the Nakashima River bridge path before the spring bloom.",
+    category: "Community & Local Activities",
+    skill: "Community Events",
+    location: "Meganebashi, Nagasaki",
+    lat: 32.7471,
+    lng: 129.8803,
+    availability: "Weekends",
+    postType: "request",
+    exchangeMethod: "free",
+    amount: null,
+    status: "open",
+    templateId: "tpl-community-request-1",
+    createdAt: at(24, 14),
+    updatedAt: at(24, 14),
+  }),
+
+  // 20. REQUEST: Nukadoko Fermentation Lessons
+  post({
+    id: "p20",
+    authorId: "u5",
+    title: "Traditional Nukadoko Rice-Bran Pickling Guidance",
+    description:
+      "Seeking a neighborhood elder to teach me how to maintain a traditional rice-bran pickling bed (nukadoko) and pickle fresh seasonal cucumbers, eggplants, and radishes.",
+    category: "Cooking",
+    skill: "Tsukemono Pickling",
+    location: "Urakami, Nagasaki",
+    lat: 32.7725,
+    lng: 129.8665,
+    availability: "Weekends",
+    postType: "request",
+    exchangeMethod: "exchange",
+    amount: null,
+    status: "open",
+    templateId: "tpl-cook-request-1",
+    createdAt: at(25, 11),
+    updatedAt: at(25, 11),
   }),
 ];
 
@@ -436,7 +656,7 @@ export function seedState(): AppState {
         requesterId: "u7",
         ownerId: "u4",
         message: "Good morning Yoshida-san! I run near Glover Hills and would love to join your morning strolls.",
-        status: "accepted",
+        status: "completed",
         direct: false,
         requesterDone: true,
         ownerDone: true,
@@ -450,12 +670,6 @@ export function seedState(): AppState {
         requestId: "r1",
         participantIds: ["u5", "u1"],
         createdAt: at(15, 11),
-      },
-      {
-        id: "c2",
-        requestId: "r3",
-        participantIds: ["u7", "u4"],
-        createdAt: at(15, 9),
       },
     ],
     messages: [
@@ -472,20 +686,6 @@ export function seedState(): AppState {
         senderId: "u1",
         body: "Welcome Maya-san! This Thursday afternoon around 2 PM would be wonderful. I will bring colorful chiyogami paper.",
         createdAt: at(15, 11, 20),
-      },
-      {
-        id: "m3",
-        conversationId: "c2",
-        senderId: "u7",
-        body: "Good morning Yoshida-san! It was a great walk today. The harbor view was stunning.",
-        createdAt: at(16, 11),
-      },
-      {
-        id: "m4",
-        conversationId: "c2",
-        senderId: "u4",
-        body: "Thank you Aoi-san! Having you alongside made the uphill walk very refreshing.",
-        createdAt: at(16, 11, 15),
       },
     ],
     notifications: [
@@ -557,7 +757,6 @@ export function seedState(): AppState {
     blocks: [],
     safetyAck: {
       c1: ["u5", "u1"],
-      c2: ["u7", "u4"],
     },
     sessionUserId: null,
   };

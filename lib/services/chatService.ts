@@ -20,6 +20,60 @@ export function rowToMessage(row: any): Message {
   };
 }
 
+export interface QuickReplyOption {
+  id: string;
+  icon: string;
+  ja: string;
+  en: string;
+}
+
+export const QUICK_REPLIES: QuickReplyOption[] = [
+  {
+    id: "qr-thanks",
+    icon: "🙏",
+    ja: "ご連絡ありがとうございます！",
+    en: "Thank you for reaching out!",
+  },
+  {
+    id: "qr-ok",
+    icon: "👍",
+    ja: "はい、その日時で大丈夫です！",
+    en: "Yes, that date and time works great!",
+  },
+  {
+    id: "qr-time",
+    icon: "📅",
+    ja: "何時頃がご都合よろしいでしょうか？",
+    en: "What time would work best for you?",
+  },
+  {
+    id: "qr-place",
+    icon: "🏛️",
+    ja: "近くの公民館やカフェでお会いしましょう。",
+    en: "Let's meet at a local community center or cafe.",
+  },
+  {
+    id: "qr-welcome",
+    icon: "🍵",
+    ja: "よろしくお願いいたします。楽しみにしています。",
+    en: "Looking forward to working together!",
+  },
+  {
+    id: "qr-details",
+    icon: "❓",
+    ja: "詳しい場所や目印を教えていただけますか？",
+    en: "Could you let me know the meeting spot details?",
+  },
+];
+
+const CANNED_REPLIES = [
+  "Thank you for the message. That time works for me.",
+  "I am happy to help. Shall we meet in a public place?",
+  "That sounds good. I can bring what we need.",
+  "Thanks for explaining. I will be there.",
+  "I appreciate your patience. Let us confirm the place.",
+];
+
 /**
  * Fetch conversations and recent messages for the current user from Supabase
  */
@@ -362,7 +416,11 @@ export function useConversations() {
           post,
         };
       })
-      .filter((item) => !hiddenFrom(blocks, userId, item.otherId))
+      .filter(
+        (item) =>
+          !hiddenFrom(blocks, userId, item.otherId) &&
+          (item.request?.status === "accepted" || item.request?.status === "completed"),
+      )
       .sort((a, b) => (b.last?.createdAt ?? b.conversation.createdAt).localeCompare(a.last?.createdAt ?? a.conversation.createdAt));
   }, [blocks, conversations, messages, posts, requests, userId, users]);
 }
@@ -431,7 +489,8 @@ export function useThread(conversationId: string) {
     const blocks = useAppStore.getState().blocks;
     if (hiddenFrom(blocks, userId, otherId)) return null;
     const request = requests.find((item) => item.id === conversation.requestId) ?? null;
-    if (!request || (request.status !== "accepted" && request.status !== "completed")) return null;
+    // Task completion: chat is closed once both parties mark done
+    if (!request || request.status !== "accepted") return null;
     const post = request.postId ? posts.find((item) => item.id === request.postId) ?? null : null;
     const thread = messages
       .filter((message) => message.conversationId === conversation.id)
@@ -476,12 +535,20 @@ export async function sendMessage(conversationId: string, body: string): Promise
   }
 
   const request = state.requests.find((item) => item.id === conversation.requestId);
-  if (!request || (request.status !== "accepted" && request.status !== "completed")) {
-    throw new ServiceError("Chat opens after a request is accepted.");
+  if (!request || request.status !== "accepted") {
+    throw new ServiceError("Chat is only available for active in-progress activities.");
   }
-
+  // Auto-acknowledge safety tips so elderly users are never blocked by technical error popups
   if (!(state.safetyAck[conversationId] ?? []).includes(me.id)) {
-    throw new ServiceError("Please read the safety tips before sending a message.");
+    useAppStore.setState((current) => {
+      const existing = current.safetyAck[conversationId] ?? [];
+      return {
+        safetyAck: {
+          ...current.safetyAck,
+          [conversationId]: [...existing, me.id],
+        },
+      };
+    });
   }
 
   const otherId = conversation.participantIds.find((id) => id !== me.id);
