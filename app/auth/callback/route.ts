@@ -6,7 +6,11 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
-  const next = searchParams.get("next") ?? "/";
+  // Only allow internal, same-origin paths (prevents open redirects like //evil.com)
+  const rawNext = searchParams.get("next") ?? "/";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.startsWith("/\\") ? rawNext : "/";
+  const isRecovery = next.startsWith("/reset-password");
+  const failurePath = isRecovery ? "/forgot-password" : "/login";
 
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocalEnv = process.env.NODE_ENV === "development";
@@ -19,7 +23,7 @@ export async function GET(request: NextRequest) {
   if (error || errorDescription) {
     console.error("Auth callback error:", error, errorDescription);
     const msg = errorDescription || error || "OAuth error";
-    return NextResponse.redirect(`${redirectBase}/login?error=${encodeURIComponent(msg)}`);
+    return NextResponse.redirect(`${redirectBase}${failurePath}?error=${encodeURIComponent(msg)}`);
   }
 
   if (code) {
@@ -48,9 +52,13 @@ export async function GET(request: NextRequest) {
     }
 
     console.error("Exchange code error:", exchangeError);
-    return NextResponse.redirect(`${redirectBase}/login?error=${encodeURIComponent(exchangeError.message)}`);
+    return NextResponse.redirect(
+      `${redirectBase}${failurePath}?error=${encodeURIComponent(
+        isRecovery ? "Your reset link is invalid or has expired. Please request a new one." : exchangeError.message
+      )}`
+    );
   }
 
-  return NextResponse.redirect(`${redirectBase}/login?error=no_code`);
+  return NextResponse.redirect(`${redirectBase}${failurePath}?error=no_code`);
 }
 
