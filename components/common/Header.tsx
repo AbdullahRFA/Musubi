@@ -7,7 +7,6 @@ import {
   Bell,
   MessageSquare,
   Search,
-  Sparkles,
   LogOut,
   Menu,
   X,
@@ -114,21 +113,6 @@ export const Header = memo(function Header() {
 
         {/* Action Controls & User Menu */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 flex-nowrap shrink-0">
-          {/* Quick Post Button (authenticated only, hidden on phone) */}
-          {session && (
-            <Button
-              asChild
-              variant="default"
-              size="sm"
-              className="hidden sm:inline-flex gap-1.5 bg-primary hover:bg-[#234336] text-white font-bold shadow-xs h-8 px-2.5 text-xs cursor-pointer"
-            >
-              <Link href="/quick-post">
-                <Sparkles className="h-3.5 w-3.5 text-amber-200" />
-                <span>{t("nav.quickPost")}</span>
-              </Link>
-            </Button>
-          )}
-
           {/* Font-Size Selector (Standard / Large) */}
           <div
             className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs font-semibold shrink-0"
@@ -272,17 +256,6 @@ export const Header = memo(function Header() {
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-card px-4 py-4 space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
-          {session && (
-            <Link
-              href="/quick-post"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-white font-bold shadow text-center text-sm"
-            >
-              <Sparkles className="h-4 w-4 text-amber-200" />
-              <span>{t("nav.createQuickPost")}</span>
-            </Link>
-          )}
-
           <div className="grid grid-cols-2 gap-2 pt-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
