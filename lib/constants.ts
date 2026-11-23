@@ -100,6 +100,23 @@ export const SUGGESTED_SERVICES = [
   "Language Exchange",
 ];
 
+export const SUGGESTED_INTERESTS = [
+  "Gardening",
+  "Cooking & Food",
+  "Reading",
+  "Music",
+  "Walking & Nature",
+  "Local History",
+  "Arts & Crafts",
+  "Tea Ceremony",
+  "Photography",
+  "Languages",
+  "Technology",
+  "Board Games & Shogi",
+  "Volunteering",
+  "Festivals & Culture",
+];
+
 /**
  * Automatically detects age group and generation group based on age.
  * Rule: 60+ is Older Generation (og), <60 is Younger Generation (yg).

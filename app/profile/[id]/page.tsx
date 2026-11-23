@@ -17,17 +17,18 @@ import {
   Calendar,
   Sparkles,
   HandHelping,
+  Heart,
   type LucideIcon,
 } from "lucide-react";
 import { usePublicProfile } from "@/lib/services/profileService";
 import { useReviewsForUser } from "@/lib/services/reviewService";
 import { useSession } from "@/lib/services/authService";
-import { reportContent, blockUser } from "@/lib/services/reportService";
-import { groupShort, GROUP_LABEL, REPORT_REASONS } from "@/lib/constants";
+import { blockUser } from "@/lib/services/reportService";
+import { groupShort, GROUP_LABEL } from "@/lib/constants";
 import { initials, formatDay } from "@/lib/utils";
 import { RatingStars } from "@/components/common/RatingStars";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
+import { ReportDialog } from "@/components/common/ReportDialog";
 import { SafetyBanner } from "@/components/common/SafetyBanner";
 
 export default function PublicProfilePage() {
@@ -40,9 +41,6 @@ export default function PublicProfilePage() {
 
   // Modals state
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [selectedReason, setSelectedReason] = useState(REPORT_REASONS[0]);
-  const [reportSuccess, setReportSuccess] = useState(false);
-  const [reportError, setReportError] = useState<string | null>(null);
 
   if (!profile) {
     return (
@@ -62,21 +60,6 @@ export default function PublicProfilePage() {
   }
 
   const isMe = session?.id === profile.id;
-
-  const handleReport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setReportError(null);
-    try {
-      await reportContent("user", profile.id, selectedReason);
-      setReportSuccess(true);
-      setTimeout(() => {
-        setReportModalOpen(false);
-        setReportSuccess(false);
-      }, 1500);
-    } catch (err: any) {
-      setReportError(err?.message || "Failed to submit report.");
-    }
-  };
 
   const handleBlock = async () => {
     if (confirm(`Are you sure you want to block ${profile.fullName}? You will no longer see their posts or messages.`)) {
@@ -190,8 +173,8 @@ export default function PublicProfilePage() {
                 )}
               </div>
               {profile.availability && (
-                <span className="flex items-center gap-1.5 font-medium">
-                  <Clock className="h-4 w-4 text-secondary shrink-0" />
+                <span className="inline-flex items-center gap-1.5 font-semibold rounded-full bg-secondary/10 text-secondary px-2.5 py-0.5">
+                  <Clock className="h-4 w-4 shrink-0" />
                   Available: {profile.availability}
                 </span>
               )}
@@ -235,6 +218,14 @@ export default function PublicProfilePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         <TagListCard icon={Sparkles} title="Skills & Knowledge I Can Share" items={profile.skills} />
         <TagListCard icon={HandHelping} title="Help & Services I Need" items={profile.servicesNeeded} />
+        <TagListCard
+          icon={Heart}
+          title="Interests"
+          items={profile.interests ?? []}
+          variant="soft"
+          className="md:col-span-2"
+          emptyText={isMe ? "Add interests from Edit Profile so neighbours can find common ground." : undefined}
+        />
       </div>
 
       {/* ---------- Reviews ---------- */}
@@ -290,48 +281,13 @@ export default function PublicProfilePage() {
       </section>
 
       {/* ---------- Report dialog ---------- */}
-      <Dialog
+      <ReportDialog
         open={reportModalOpen}
         onOpenChange={setReportModalOpen}
-        title="Report Inappropriate Profile"
-        description={`Please choose a reason for reporting ${profile.fullName}:`}
-      >
-        {reportError && (
-          <div role="alert" className="mb-3 text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
-            {reportError}
-          </div>
-        )}
-        {reportSuccess && (
-          <div role="status" className="mb-3 flex items-center gap-2 text-sm text-success bg-success/10 p-3 rounded-lg font-bold">
-            <CheckCircle2 className="h-4 w-4" />
-            Thank you. Your report has been submitted for review.
-          </div>
-        )}
-
-        <form onSubmit={handleReport} className="space-y-4">
-          <select
-            value={selectedReason}
-            onChange={(e) => setSelectedReason(e.target.value)}
-            aria-label="Report reason"
-            className="w-full min-h-[48px] rounded-md border-2 border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:border-primary/40 focus-visible:border-primary"
-          >
-            {REPORT_REASONS.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-1">
-            <Button type="button" variant="outline" onClick={() => setReportModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="destructive" className="font-bold" disabled={reportSuccess}>
-              Submit Report
-            </Button>
-          </div>
-        </form>
-      </Dialog>
+        targetType="user"
+        targetId={profile.id}
+        targetLabel={profile.fullName}
+      />
     </div>
   );
 }
@@ -365,9 +321,25 @@ function StatTile({
   );
 }
 
-function TagListCard({ icon: Icon, title, items }: { icon: LucideIcon; title: string; items: string[] }) {
+function TagListCard({
+  icon: Icon,
+  title,
+  items,
+  variant = "solid",
+  className = "",
+  emptyText = "None listed yet.",
+}: {
+  icon: LucideIcon;
+  title: string;
+  items: string[];
+  variant?: "solid" | "soft";
+  className?: string;
+  emptyText?: string;
+}) {
   return (
-    <section className="rounded-2xl border-2 border-border bg-card p-5 sm:p-6 space-y-4 transition-shadow duration-300 hover:shadow-soft">
+    <section
+      className={`rounded-2xl border-2 border-border bg-card p-5 sm:p-6 space-y-4 transition-shadow duration-300 hover:shadow-soft ${className}`}
+    >
       <h2 className="flex items-center gap-2.5 text-lg sm:text-xl font-bold text-foreground">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
@@ -375,13 +347,17 @@ function TagListCard({ icon: Icon, title, items }: { icon: LucideIcon; title: st
         {title}
       </h2>
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">None listed yet.</p>
+        <p className="text-sm text-muted-foreground">{emptyText}</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {items.map((item) => (
             <span
               key={item}
-              className="bg-[#315B4B] text-white font-bold text-xs sm:text-sm px-3.5 py-1.5 rounded-full shadow-xs transition-transform duration-200 hover:-translate-y-0.5"
+              className={`font-bold text-xs sm:text-sm px-3.5 py-1.5 rounded-full transition-transform duration-200 hover:-translate-y-0.5 ${
+                variant === "soft"
+                  ? "bg-rose-50 text-rose-800 border border-rose-200"
+                  : "bg-[#315B4B] text-white shadow-xs"
+              }`}
             >
               {item}
             </span>

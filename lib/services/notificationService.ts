@@ -5,6 +5,7 @@ import { useAppStore } from "@/lib/store/useAppStore";
 import type { Notification } from "@/lib/types";
 import { requireUser } from "@/lib/services/shared";
 import { createClient } from "@/lib/supabase/client";
+import { createUuid } from "@/lib/utils";
 
 type NotificationInput = Omit<Notification, "id" | "read" | "createdAt">;
 
@@ -156,7 +157,7 @@ export async function pushNotification(input: NotificationInput): Promise<Notifi
   // it. Generate the id client-side and insert without reading the row back.
   const item: Notification = {
     ...input,
-    id: newUuid(),
+    id: createUuid(),
     read: false,
     createdAt: new Date().toISOString(),
   };
@@ -185,15 +186,6 @@ export async function pushNotification(input: NotificationInput): Promise<Notifi
   }
 
   return item;
-}
-
-function newUuid(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  // RFC 4122 v4 fallback for older browsers
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-  });
 }
 
 /**

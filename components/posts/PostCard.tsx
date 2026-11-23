@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState, memo } from "react";
-import { MapPin, Clock, ArrowRight, Send, MessageCircle, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { MapPin, Clock, ArrowRight, Send, MessageCircle, CheckCircle2, Flag } from "lucide-react";
 import type { Post } from "@/lib/types";
 import { usePublicProfile } from "@/lib/services/profileService";
 import { useSession } from "@/lib/services/authService";
@@ -12,6 +13,7 @@ import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExchangeBadge, PostTypeBadge, POST_TYPE_ACCENT } from "@/components/posts/PostBadges";
+import { ReportDialog } from "@/components/common/ReportDialog";
 
 export const PostCard = memo(function PostCard({ post }: { post: Post }) {
   const author = usePublicProfile(post.authorId);
@@ -22,6 +24,8 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
   const [submitting, setSubmitting] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const router = useRouter();
 
   const isOwner = session?.id === post.authorId;
 
@@ -83,6 +87,18 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
             <Clock className="h-3.5 w-3.5 text-secondary shrink-0" />
             <span>{post.availability}</span>
           </span>
+          {!isOwner && (
+            <button
+              type="button"
+              onClick={() => (session ? setReportOpen(true) : router.push("/login"))}
+              className="ml-auto inline-flex min-h-[32px] items-center gap-1 rounded-full px-2.5 font-semibold text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              aria-label={`Report post: ${post.title}`}
+              title="Report this post"
+            >
+              <Flag className="h-3.5 w-3.5" />
+              Report
+            </button>
+          )}
         </div>
       </CardContent>
 
@@ -177,6 +193,15 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
           </form>
         )}
       </CardFooter>
+      {reportOpen && (
+        <ReportDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          targetType="post"
+          targetId={post.id}
+          targetLabel={`“${post.title}”`}
+        />
+      )}
     </Card>
   );
 });
