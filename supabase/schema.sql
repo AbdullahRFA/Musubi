@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.needs (
 -- 3. Requirement Templates (Quick-post templates for older users)
 CREATE TABLE IF NOT EXISTS public.requirement_templates (
     id TEXT PRIMARY KEY,
-    category TEXT NOT NULL CHECK (category IN ('Cooking', 'Technology', 'Arts & Crafts', 'Gardening', 'Daily Assistance', 'Companionship')),
+    category TEXT NOT NULL CHECK (category IN ('Cooking', 'Technology', 'Arts & Crafts', 'Gardening', 'Daily Assistance', 'Companionship', 'Community & Local Activities')),
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     suggested_exchange TEXT NOT NULL CHECK (suggested_exchange IN ('free', 'exchange', 'paid')),
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS public.posts (
     author_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    category TEXT NOT NULL CHECK (category IN ('Cooking', 'Technology', 'Arts & Crafts', 'Gardening', 'Daily Assistance', 'Companionship')),
+    category TEXT NOT NULL CHECK (category IN ('Cooking', 'Technology', 'Arts & Crafts', 'Gardening', 'Daily Assistance', 'Companionship', 'Community & Local Activities')),
     skill TEXT NOT NULL,
     location TEXT NOT NULL,
     lat DOUBLE PRECISION,
