@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,8 @@ import { postSchema, type PostValues } from "@/lib/validators";
 import { createPost } from "@/lib/services/postService";
 import { useSession } from "@/lib/services/authService";
 import { CATEGORIES, AVAILABILITY, PLACES } from "@/lib/constants";
+import { ASSISTANT_DRAFT_KEY, type AssistantDraftPost } from "@/lib/assistant/types";
+import type { Category } from "@/lib/types";
 import { AuthGuard } from "@/components/common/AuthGuard";
 import { PostForm } from "@/components/posts/PostForm";
 
@@ -32,6 +34,32 @@ export default function CreatePostPage() {
       amount: null,
     },
   });
+
+  // Prefill from a draft written by the Tsunagu Guide assistant (one-time hand-off)
+  const [fromAssistant, setFromAssistant] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(ASSISTANT_DRAFT_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(ASSISTANT_DRAFT_KEY);
+      const draft = JSON.parse(raw) as AssistantDraftPost;
+      const values = form.getValues();
+      form.reset({
+        ...values,
+        title: draft.title?.slice(0, 100) || values.title,
+        description: draft.description?.slice(0, 800) || values.description,
+        category: CATEGORIES.includes(draft.category as Category) ? (draft.category as Category) : values.category,
+        skill: draft.skill?.slice(0, 60) || values.skill,
+        availability: AVAILABILITY.includes(draft.availability) ? draft.availability : values.availability,
+        exchangeMethod: draft.exchangeMethod === "paid" ? "paid" : draft.exchangeMethod === "exchange" ? "exchange" : "free",
+        amount: null,
+      });
+      setFromAssistant(true);
+    } catch {
+      // ignore malformed drafts
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = async (values: PostValues) => {
     setError(null);
@@ -57,7 +85,11 @@ export default function CreatePostPage() {
         icon={PlusCircle}
         eyebrow="Standard Post Creation"
         title="Create a Community Request"
-        description="Request assistance, practical guidance, or companionship from neighbors across generations."
+        description={
+          fromAssistant
+            ? "Tsunagu Guide filled this in for you. Please check every detail, change anything you like, then press Publish."
+            : "Request assistance, practical guidance, or companionship from neighbors across generations."
+        }
         submitLabel="Publish Post"
         loadingLabel="Publishing post..."
       />
