@@ -95,6 +95,28 @@ export function listNeedRows(userId: string): Need[] {
 }
 
 /**
+ * Fetch all public profiles from Supabase PostgreSQL
+ */
+export async function fetchProfiles(): Promise<Profile[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  const profiles = data.map(rowToProfile);
+
+  useAppStore.setState((state) => {
+    const remoteIds = new Set(profiles.map((p) => p.id));
+    const kept = state.users.filter((u) => !remoteIds.has(u.id));
+    return { users: [...profiles, ...kept] };
+  });
+
+  return profiles;
+}
+
+/**
  * Fetch a profile directly from Supabase PostgreSQL by user ID
  */
 export async function getProfileById(id: string): Promise<Profile | null> {

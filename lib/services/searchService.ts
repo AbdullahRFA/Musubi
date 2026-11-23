@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Block, Post, Profile, SearchFilters, SearchResult } from "@/lib/types";
 import { hiddenFrom } from "@/lib/services/shared";
+import { fetchPosts } from "@/lib/services/postService";
+import { fetchProfiles } from "@/lib/services/profileService";
 
 export const EMPTY_FILTERS: SearchFilters = {
   category: "",
@@ -110,6 +112,12 @@ export function useSearch(query: string, filters: SearchFilters) {
   const users = useAppStore((state) => state.users);
   const blocks = useAppStore((state) => state.blocks);
   const viewerId = useAppStore((state) => state.sessionUserId);
+
+  useEffect(() => {
+    fetchPosts();
+    fetchProfiles();
+  }, []);
+
   return useMemo(
     () => searchContent(posts, users, blocks, viewerId, query, filters),
     [blocks, filters, posts, query, users, viewerId],
