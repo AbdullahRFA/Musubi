@@ -5,13 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LogIn, Sparkles, AlertCircle } from "lucide-react";
+import { LogIn, Sparkles } from "lucide-react";
 import { loginSchema, type LoginValues } from "@/lib/validators";
 import { signIn, signInWithGoogle } from "@/lib/services/authService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { GoogleIcon } from "@/components/common/GoogleIcon";
+import { AuthShell, AuthError, AuthField, GoogleAuthButton, PasswordInput, Spinner } from "@/components/auth/AuthShell";
+
+const DEMO_ACCOUNTS = [
+  { email: "haruko.sato@tsunagu.demo", label: "Haruko (Origami)", emoji: "🌸" },
+  { email: "maya.tanaka@tsunagu.demo", label: "Maya (Smartphone)", emoji: "📱" },
+];
 
 function LoginContent() {
   const router = useRouter();
@@ -19,6 +23,7 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<string | null>(null);
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
@@ -64,131 +69,107 @@ function LoginContent() {
     }
   };
 
-  const quickDemoLogin = (email: string) => {
+  const quickDemoLogin = async (email: string) => {
+    setError(null);
+    setDemoLoading(email);
     setValue("email", email);
     setValue("password", "password123");
-    signIn(email, "password123").then(() => {
+    try {
+      await signIn(email, "password123");
       router.push("/");
-    });
+    } catch (err: any) {
+      setError(err?.message || "Demo sign-in failed. Please try again.");
+      setDemoLoading(null);
+    }
   };
 
+  const busy = loading || googleLoading || demoLoading !== null;
+
   return (
-    <div className="flex min-h-[75vh] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md shadow-md border-2 border-border bg-card">
-        <CardHeader className="space-y-2 text-center pb-4">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <LogIn className="h-6 w-6" />
+    <AuthShell
+      icon={LogIn}
+      title="Welcome back"
+      description="Log in to your Tsunagu Generations account"
+      footer={
+        <>
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="font-bold text-primary hover:underline underline-offset-4">
+            Register here
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <AuthError message={error} />
+
+        <GoogleAuthButton
+          onClick={handleGoogleSignIn}
+          loading={googleLoading}
+          disabled={busy}
+          label="Continue with Google"
+          dividerLabel="Or continue with email"
+        />
+
+        <AuthField id="email" label="Email address" error={errors.email?.message}>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            placeholder="you@example.com"
+            {...register("email")}
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? "email-error" : undefined}
+          />
+        </AuthField>
+
+        <AuthField id="password" label="Password" error={errors.password?.message}>
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            {...register("password")}
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? "password-error" : undefined}
+          />
+          <p className="text-xs text-muted-foreground">In this demo MVP, any password with 4+ characters is accepted.</p>
+        </AuthField>
+
+        <Button type="submit" className="w-full font-bold" disabled={busy}>
+          {loading ? (
+            <>
+              <Spinner /> Signing in...
+            </>
+          ) : (
+            "Log in"
+          )}
+        </Button>
+
+        {/* Quick demo accounts */}
+        <div className="rounded-xl border border-dashed border-border bg-muted/40 p-3 sm:p-4 space-y-2.5">
+          <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wide">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            Quick Demo Accounts (1-Click)
+          </span>
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2">
+            {DEMO_ACCOUNTS.map((acct) => (
+              <Button
+                key={acct.email}
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => quickDemoLogin(acct.email)}
+                className="justify-start font-medium hover:-translate-y-0.5"
+              >
+                {demoLoading === acct.email ? <Spinner /> : <span className="text-base">{acct.emoji}</span>}
+                <span className="truncate">{acct.label}</span>
+              </Button>
+            ))}
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription className="text-base">
-            Log in to your Tsunagu Generations account
-          </CardDescription>
-        </CardHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive font-medium border border-destructive/20">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Google Sign-in */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGoogleSignIn}
-              disabled={googleLoading || loading}
-              className="w-full flex items-center justify-center gap-3 h-11 text-sm font-semibold border-2 border-border hover:bg-muted"
-            >
-              <GoogleIcon />
-              <span>{googleLoading ? "Connecting to Google..." : "Continue with Google"}</span>
-            </Button>
-
-            <div className="relative my-2">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground font-semibold">
-                  Or continue with email
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-base font-semibold text-foreground">Email address</label>
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                {...register("email")}
-                aria-invalid={Boolean(errors.email)}
-              />
-              {errors.email && (
-                <p className="text-xs text-destructive font-medium">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-base font-semibold text-foreground">Password</label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                {...register("password")}
-                aria-invalid={Boolean(errors.password)}
-              />
-              {errors.password && (
-                <p className="text-xs text-destructive font-medium">{errors.password.message}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                In this demo MVP, any password with 4+ characters is accepted.
-              </p>
-            </div>
-
-            {/* Quick Demo Pre-fills */}
-            <div className="rounded-md border border-border bg-muted/40 p-3 space-y-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide block">
-                Quick Demo Accounts (1-Click)
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => quickDemoLogin("haruko.sato@tsunagu.demo")}
-                  className="text-xs h-auto py-2 font-medium justify-start"
-                >
-                  <span className="truncate">Haruko (Origami)</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => quickDemoLogin("maya.tanaka@tsunagu.demo")}
-                  className="text-xs h-auto py-2 font-medium justify-start"
-                >
-                  <span className="truncate">Maya (Smartphone)</span>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-
-          <CardFooter className="flex flex-col gap-4 pt-2">
-            <Button type="submit" className="w-full text-base font-bold" disabled={loading}>
-              {loading ? "Signing in..." : "Log in"}
-            </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <Link href="/register" className="font-semibold text-primary hover:underline">
-                Register here
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+        </div>
+      </form>
+    </AuthShell>
   );
 }
 
@@ -196,8 +177,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-lg px-4 py-16 text-center">
-          <p className="text-base text-muted-foreground">Loading sign in...</p>
+        <div className="flex min-h-[60vh] items-center justify-center gap-3 text-muted-foreground">
+          <span className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <span>Loading sign in...</span>
         </div>
       }
     >
