@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { placeByName, detectGeneration } from "@/lib/constants";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Need, Profile, PublicProfile, Skill } from "@/lib/types";
 import { average } from "@/lib/utils";
-import { useSession, profileToRow, syncSessionUser } from "@/lib/services/authService";
+import { useSession, profileToRow, rowToProfile, syncSessionUser } from "@/lib/services/authService";
 import { hiddenFrom, requireUser, ServiceError } from "@/lib/services/shared";
 import { createClient } from "@/lib/supabase/client";
 
@@ -40,6 +40,10 @@ function connected(stateUserIds: { a: string; b: string }, requests: { requester
   );
 }
 
+/**
+ * Converts a Profile object to a PublicProfile, enforcing privacy rules
+ * (e.g. phone number only visible if an accepted connection exists).
+ */
 export function toPublicProfile(user: Profile, viewerId: string | null): PublicProfile {
   const state = useAppStore.getState();
   const received = state.reviews.filter((review) => review.revieweeId === user.id);
@@ -50,6 +54,7 @@ export function toPublicProfile(user: Profile, viewerId: string | null): PublicP
       user.phone &&
       connected({ a: viewerId, b: user.id }, state.requests),
   );
+
   return {
     id: user.id,
     fullName: user.fullName,
@@ -89,30 +94,87 @@ export function listNeedRows(userId: string): Need[] {
   return user.servicesNeeded.map((name, index) => ({ id: `${userId}-need-${index}-${name}`, userId, name }));
 }
 
-export function useProfile(id: string | null) {
+/**
+ * Fetch a profile directly from Supabase PostgreSQL by user ID
+ */
+export async function getProfileById(id: string): Promise<Profile | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const profile = rowToProfile(data);
+  // Cache in app store
+  useAppStore.setState((state) => ({
+    users: state.users.some((u) => u.id === profile.id)
+      ? state.users.map((u) => (u.id === profile.id ? profile : u))
+      : [...state.users, profile],
+  }));
+
+  return profile;
+}
+
+/**
+ * Hook to retrieve a profile, reactively fetching from Supabase if not yet in cache
+ */
+export function useProfile(id: string | null): Profile | null {
   const users = useAppStore((state) => state.users);
   const blocks = useAppStore((state) => state.blocks);
   const viewerId = useAppStore((state) => state.sessionUserId);
+  const [fetchedUser, setFetchedUser] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    const existing = users.find((item) => item.id === id);
+    if (!existing) {
+      getProfileById(id).then((profile) => {
+        if (profile) setFetchedUser(profile);
+      });
+    }
+  }, [id, users]);
+
   return useMemo(() => {
     if (!id) return null;
-    const user = users.find((item) => item.id === id);
+    const user = users.find((item) => item.id === id) ?? fetchedUser;
     if (!user) return null;
     if (hiddenFrom(blocks, viewerId, user.id)) return null;
     return user;
-  }, [blocks, id, users, viewerId]);
+  }, [blocks, fetchedUser, id, users, viewerId]);
 }
 
-export function usePublicProfile(id: string) {
+/**
+ * Hook to retrieve a public profile by ID, fetching from Supabase if needed
+ */
+export function usePublicProfile(id: string): PublicProfile | null {
   const users = useAppStore((state) => state.users);
   const reviews = useAppStore((state) => state.reviews);
   const activities = useAppStore((state) => state.activities);
   const requests = useAppStore((state) => state.requests);
   const blocks = useAppStore((state) => state.blocks);
   const viewer = useSession();
+  const [fetchedUser, setFetchedUser] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    const existing = users.find((item) => item.id === id);
+    if (!existing) {
+      getProfileById(id).then((profile) => {
+        if (profile) setFetchedUser(profile);
+      });
+    }
+  }, [id, users]);
+
   return useMemo(() => {
-    const user = users.find((item) => item.id === id);
+    const user = users.find((item) => item.id === id) ?? fetchedUser;
     if (!user) return null;
     if (viewer && hiddenFrom(blocks, viewer.id, user.id)) return null;
+
     const received = reviews.filter((review) => review.revieweeId === user.id);
     const phoneShared = Boolean(
       viewer &&
@@ -126,6 +188,7 @@ export function usePublicProfile(id: string) {
               (request.requesterId === user.id && request.ownerId === viewer.id)),
         ),
     );
+
     const profile: PublicProfile = {
       id: user.id,
       fullName: user.fullName,
@@ -152,9 +215,12 @@ export function usePublicProfile(id: string) {
       completedCount: activities.filter((activity) => activity.participantIds.includes(user.id)).length,
     };
     return profile;
-  }, [activities, blocks, id, requests, reviews, users, viewer]);
+  }, [activities, blocks, fetchedUser, id, requests, reviews, users, viewer]);
 }
 
+/**
+ * Hook to retrieve user activity and review statistics
+ */
 export function useUserStats(userId: string) {
   const reviews = useAppStore((state) => state.reviews);
   const activities = useAppStore((state) => state.activities);
@@ -168,14 +234,21 @@ export function useUserStats(userId: string) {
   }, [activities, reviews, userId]);
 }
 
-export async function updateProfile(patch: ProfilePatch) {
+/**
+ * Updates the authenticated user's profile in Supabase PostgreSQL
+ * and synchronizes with local state and normalized tables.
+ */
+export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
   const me = requireUser();
+
   if (patch.email) {
     const email = patch.email.trim().toLowerCase();
     const taken = useAppStore.getState().users.some((user) => user.email === email && user.id !== me.id);
     if (taken) throw new ServiceError("That email is already used by another member.");
     patch = { ...patch, email };
   }
+
+  // Automatic Generation Detection (OG vs YG) from age
   if (patch.age !== undefined && patch.age !== null) {
     const gen = detectGeneration(patch.age);
     patch = {
@@ -184,15 +257,18 @@ export async function updateProfile(patch: ProfilePatch) {
       ageGroup: gen.ageGroup,
     };
   }
+
   if (patch.neighborhoods && patch.neighborhoods.length > 0 && !patch.location) {
     patch = {
       ...patch,
       location: patch.neighborhoods[0],
     };
   }
+
   const location = patch.location ?? me.location;
   const place = placeByName(location);
   const neighborhoods = patch.neighborhoods ?? me.neighborhoods ?? (location ? [location] : []);
+
   const next: Profile = {
     ...me,
     ...patch,
@@ -208,23 +284,67 @@ export async function updateProfile(patch: ProfilePatch) {
     servicesOffered: patch.servicesOffered ?? me.servicesOffered,
     servicesNeeded: patch.servicesNeeded ?? me.servicesNeeded,
   };
-  useAppStore.setState((state) => ({
-    users: state.users.map((user) => (user.id === me.id ? next : user)),
-  }));
 
-  // Sync update to Supabase
-  try {
-    const supabase = createClient();
-    await supabase.from("profiles").upsert(profileToRow(next));
-  } catch (err) {
-    console.warn("Failed to sync profile update to Supabase:", err);
+  const supabase = createClient();
+  const dbRow = profileToRow(next);
+
+  // 1. Update in Supabase profiles table
+  const { error } = await supabase.from("profiles").upsert(dbRow);
+  if (error) {
+    console.error("Failed to update profile in Supabase:", error);
+    throw new ServiceError(error.message || "Failed to update profile in database.");
   }
+
+  // 2. Sync normalized skills table if skills were provided
+  if (patch.skills !== undefined) {
+    try {
+      await supabase.from("skills").delete().eq("user_id", me.id);
+      if (patch.skills.length > 0) {
+        await supabase.from("skills").insert(
+          patch.skills.map((name) => ({ user_id: me.id, name }))
+        );
+      }
+    } catch (skillErr) {
+      console.warn("Could not sync normalized skills:", skillErr);
+    }
+  }
+
+  // 3. Sync normalized needs table if servicesNeeded were provided
+  if (patch.servicesNeeded !== undefined) {
+    try {
+      await supabase.from("needs").delete().eq("user_id", me.id);
+      if (patch.servicesNeeded.length > 0) {
+        await supabase.from("needs").insert(
+          patch.servicesNeeded.map((name) => ({ user_id: me.id, name }))
+        );
+      }
+    } catch (needErr) {
+      console.warn("Could not sync normalized needs:", needErr);
+    }
+  }
+
+  // 4. Update local application store
+  syncSessionUser(next);
 
   return next;
 }
 
-export async function updateAvatar(dataUrl: string | null) {
+/**
+ * Updates the authenticated user's avatar image URL in Supabase
+ */
+export async function updateAvatar(dataUrl: string | null): Promise<void> {
   const me = requireUser();
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: dataUrl, updated_at: new Date().toISOString() })
+    .eq("id", me.id);
+
+  if (error) {
+    throw new ServiceError(error.message || "Failed to update avatar.");
+  }
+
   useAppStore.setState((state) => ({
     users: state.users.map((user) => (user.id === me.id ? { ...user, avatarUrl: dataUrl } : user)),
   }));
