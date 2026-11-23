@@ -6,6 +6,7 @@ import type { Report, ReportTarget, Block } from "@/lib/types";
 import { REPORT_REASONS } from "@/lib/constants";
 import { requireUser, ServiceError } from "@/lib/services/shared";
 import { createClient } from "@/lib/supabase/client";
+import { createUuid } from "@/lib/utils";
 
 export function rowToReport(row: any): Report {
   return {
@@ -75,32 +76,35 @@ export async function reportContent(
     if (post && post.authorId === me.id) throw new ServiceError("You cannot report your own post.");
   }
 
-  const supabase = createClient();
-  const newRow = {
-    reporter_id: me.id,
-    target_type: targetType,
-    target_id: targetId,
+  const duplicate = state.reports.some(
+    (r) => r.reporterId === me.id && r.targetType === targetType && r.targetId === targetId,
+  );
+  if (duplicate) throw new ServiceError("You have already reported this. Our team will review it.");
+
+  // `reports` has no SELECT policy (reports are private to moderators), so an
+  // insert().select() would fail RLS on the read-back and roll the insert back.
+  // Generate the id client-side and insert without returning the row.
+  const report: Report = {
+    id: createUuid(),
+    reporterId: me.id,
+    targetType,
+    targetId,
     reason,
+    createdAt: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
-    .from("reports")
-    .insert(newRow)
-    .select()
-    .single();
-
-  let report: Report;
-  if (!error && data) {
-    report = rowToReport(data);
-  } else {
-    report = {
-      id: "rep_" + Math.random().toString(36).substring(2, 9),
-      reporterId: me.id,
-      targetType,
-      targetId,
-      reason,
-      createdAt: new Date().toISOString(),
-    };
+  const supabase = createClient();
+  const { error } = await supabase.from("reports").insert({
+    id: report.id,
+    reporter_id: report.reporterId,
+    target_type: report.targetType,
+    target_id: report.targetId,
+    reason: report.reason,
+    created_at: report.createdAt,
+  });
+  if (error) {
+    console.error("reportContent Supabase error:", error);
+    throw new ServiceError("We couldn't submit your report. Please try again.");
   }
 
   useAppStore.setState((current) => ({
