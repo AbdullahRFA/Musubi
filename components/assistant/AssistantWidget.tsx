@@ -17,6 +17,9 @@ import {
   Volume2,
   VolumeX,
   X,
+  Zap,
+  HelpCircle,
+  ChevronRight,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { useSession } from "@/lib/services/authService";
@@ -28,6 +31,8 @@ import {
   type AssistantResponse,
 } from "@/lib/assistant/types";
 import { ExchangeBadge } from "@/components/posts/PostBadges";
+import { FAQS, FAQ_BY_ID, FAQ_TOPICS, type FaqTopic } from "@/lib/assistant/faq";
+import { answerLanguage, matchFaq } from "@/lib/assistant/faqMatcher";
 
 const STORAGE_KEY = "tsunagu_assistant_conversation";
 const AUTO_SPEAK_KEY = "tsunagu_assistant_autospeak";
@@ -53,6 +58,9 @@ const COPY = {
     view: "View",
     error: "Sorry, something went wrong. Please try again.",
     noVoice: "Voice input isn't supported in this browser. Please type instead.",
+    instant: "Instant answer",
+    commonQuestions: "Common questions",
+    hideQuestions: "Hide common questions",
   },
   ja: {
     open: "つなぐガイドに聞く",
@@ -74,6 +82,9 @@ const COPY = {
     view: "見る",
     error: "申し訳ありません、エラーが発生しました。もう一度お試しください。",
     noVoice: "このブラウザは音声入力に対応していません。文字で入力してください。",
+    instant: "すぐにお答え",
+    commonQuestions: "よくある質問",
+    hideQuestions: "よくある質問を閉じる",
   },
 } as const;
 
@@ -103,6 +114,8 @@ export function AssistantWidget() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  const [showFaq, setShowFaq] = useState(false);
+  const [openTopic, setOpenTopic] = useState<FaqTopic | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -163,6 +176,30 @@ export function AssistantWidget() {
       setInput("");
 
       const userMsg: AssistantMessage = { id: newId(), role: "user", content };
+      setShowFaq(false);
+
+      // 1) Stored FAQ: answer instantly in the browser — no AI call needed
+      const faqMatch = matchFaq(content, lang);
+      if (faqMatch) {
+        const { faq } = faqMatch;
+        const replyLang = answerLanguage(content, lang);
+        const botMsg: AssistantMessage = {
+          id: newId(),
+          role: "assistant",
+          source: "faq",
+          content: faq.answer[replyLang],
+          navigate: faq.link ? { href: faq.link.href, label: faq.link.label[replyLang] } : null,
+          quickReplies: (faq.related ?? [])
+            .map((id) => FAQ_BY_ID.get(id)?.question[replyLang])
+            .filter((q): q is string => Boolean(q))
+            .slice(0, 3),
+        };
+        setMessages((prev) => [...prev, userMsg, botMsg]);
+        if (opts.fromVoice || autoSpeak) speech.speak(botMsg.id, botMsg.content);
+        return;
+      }
+
+      // 2) Everything else goes to the AI
       const history = [...messages.filter((m) => !m.error), userMsg];
       setMessages((prev) => [...prev, userMsg]);
       setLoading(true);
@@ -181,7 +218,7 @@ export function AssistantWidget() {
         if (!res.ok) throw new Error(data?.error || t.error);
 
         const reply = data as AssistantResponse;
-        const botMsg: AssistantMessage = { id: newId(), role: "assistant", ...reply, content: reply.reply };
+        const botMsg: AssistantMessage = { id: newId(), role: "assistant", source: "ai", ...reply, content: reply.reply };
         setMessages((prev) => [...prev, botMsg]);
 
         // Speak the answer when the user talked to us, or when auto-read is on
@@ -334,9 +371,69 @@ export function AssistantWidget() {
                 </div>
               )}
 
+              {/* Browse stored FAQ by topic — tap to get an instant answer */}
+              <div className="pl-10">
+                <button
+                  type="button"
+                  onClick={() => setShowFaq((v) => !v)}
+                  aria-expanded={showFaq}
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-3 text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  {showFaq ? t.hideQuestions : t.commonQuestions}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showFaq ? "rotate-180" : ""}`} />
+                </button>
+                {showFaq && (
+                  <div className="mt-2 overflow-hidden rounded-2xl border-2 border-border bg-card divide-y divide-border animate-in fade-in slide-in-from-top-1">
+                    {(Object.keys(FAQ_TOPICS) as FaqTopic[]).map((topic) => {
+                      const items = FAQS.filter((f) => f.topic === topic);
+                      const expanded = openTopic === topic;
+                      return (
+                        <div key={topic}>
+                          <button
+                            type="button"
+                            onClick={() => setOpenTopic(expanded ? null : topic)}
+                            aria-expanded={expanded}
+                            className="flex w-full min-h-[48px] items-center justify-between gap-2 px-4 text-left text-sm font-bold text-foreground hover:bg-muted/60 transition-colors"
+                          >
+                            {FAQ_TOPICS[topic][lang]}
+                            <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                              {items.length}
+                              <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                            </span>
+                          </button>
+                          {expanded && (
+                            <ul className="bg-background/60 pb-1">
+                              {items.map((f) => (
+                                <li key={f.id}>
+                                  <button
+                                    type="button"
+                                    onClick={() => send(f.question[lang])}
+                                    className="group flex w-full min-h-[44px] items-center gap-2 px-4 py-2 text-left text-sm text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+                                  >
+                                    <span className="flex-1">{f.question[lang]}</span>
+                                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {messages.map((m) => (
                 <div key={m.id} className="space-y-2.5 animate-in fade-in slide-in-from-bottom-2">
                   <Bubble role={m.role} error={m.error}>
+                    {m.source === "faq" && (
+                      <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">
+                        <Zap className="h-3 w-3" />
+                        {t.instant}
+                      </span>
+                    )}
                     <p className="whitespace-pre-wrap">{m.content}</p>
                     {m.role === "assistant" && !m.error && speech.voiceOutputSupported && (
                       <button

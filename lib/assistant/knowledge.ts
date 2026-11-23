@@ -6,6 +6,7 @@
  */
 import { CATEGORIES, EXCHANGE_METHODS, AVAILABILITY } from "@/lib/constants";
 import { REQUIREMENT_TEMPLATES } from "@/lib/templates";
+import { FAQS } from "@/lib/assistant/faq";
 
 /** Pages the assistant may send people to. Anything else is rejected server-side. */
 export const ASSISTANT_ROUTES = [
@@ -29,6 +30,8 @@ export type AssistantRoute = (typeof ASSISTANT_ROUTES)[number]["href"];
 const templateLines = REQUIREMENT_TEMPLATES.map(
   (t) => `- [${t.category}] "${t.title}" (skill: ${t.skill}; suggested exchange: ${t.suggestedExchange})`
 ).join("\n");
+
+const faqLines = FAQS.map((f) => `Q: ${f.question.en}\nA: ${f.answer.en}`).join("\n\n");
 
 export const ASSISTANT_SYSTEM_PROMPT = `You are "Tsunagu Guide", the friendly built-in assistant of Tsunagu Generations (繋ぐ = "to connect"), a community website in Nagasaki, Japan that connects older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.
 
@@ -65,6 +68,9 @@ SAFETY (mention when relevant, especially for meeting in person)
 
 QUICK POST TEMPLATES (good starting points to suggest)
 ${templateLines}
+
+OFFICIAL FAQ ANSWERS (use these facts; reword naturally and translate when replying in Japanese)
+${faqLines}
 
 YOUR TASKS
 1. Guide new visitors around the website and explain how to get started.

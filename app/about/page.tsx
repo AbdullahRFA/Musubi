@@ -15,29 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const FAQS = [
-  {
-    q: "Who is Tsunagu Generations for?",
-    a: "Tsunagu Generations is designed for both older generation members (looking to share wisdom, traditional crafts, or receive everyday assistance) and younger generation members (eager to learn life skills, languages, or offer practical support). There are no strict age cutoffs—everyone can both teach and learn.",
-  },
-  {
-    q: "Is real money required or processed on Tsunagu?",
-    a: "No! Tsunagu Generations is a community exchange. Any payment options in the app are strictly simulated demo transactions (clearly labelled DEMO). No credit card numbers or real payment gateways are connected.",
-  },
-  {
-    q: "How does the Quick Post wizard work?",
-    a: "The Quick Post wizard provides accessible, guided templates across all 6 core categories for both Offers and Requests with large buttons, minimal typing, and readable text for all community members.",
-  },
-  {
-    q: "When does chat open between two members?",
-    a: "To prevent spam and protect privacy, private chat is unlocked only after the post owner formally accepts a service request.",
-  },
-  {
-    q: "Can I share my phone number?",
-    a: "Yes, but only if you choose 'Phone' as your contact method in your profile preferences, and only with a member whose request has been accepted. Your number is never made public.",
-  },
-];
+import { FAQS, FAQ_TOPICS, type FaqTopic } from "@/lib/assistant/faq";
 
 const SAFETY_PRINCIPLES = [
   {
@@ -176,21 +154,39 @@ export default function AboutSafetyPage() {
         {/* FAQ */}
         <section id="faq" className="space-y-6 scroll-mt-24">
           <SectionTitle icon={HelpCircle}>Frequently Asked Questions</SectionTitle>
-          <div className="space-y-3">
-            {FAQS.map((faq, idx) => (
-              <details
-                key={faq.q}
-                open={idx === 0}
-                className="group rounded-xl border-2 border-border bg-card transition-colors duration-200 open:border-primary/30 open:shadow-soft hover:border-primary/30"
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 sm:p-5 font-bold text-base sm:text-lg text-foreground [&::-webkit-details-marker]:hidden">
-                  <span>{faq.q}</span>
-                  <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180 group-open:text-primary" />
-                </summary>
-                <p className="px-4 sm:px-5 pb-5 -mt-1 text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  {faq.a}
-                </p>
-              </details>
+          <p className="-mt-2 text-sm text-muted-foreground">
+            Tip: you can also ask these questions to Tsunagu Guide (the chat button) by typing or speaking — common
+            questions are answered instantly.
+          </p>
+          <div className="space-y-8">
+            {(Object.keys(FAQ_TOPICS) as FaqTopic[]).map((topic) => (
+              <div key={topic} className="space-y-3">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{FAQ_TOPICS[topic].en}</h3>
+                {FAQS.filter((f) => f.topic === topic).map((faq) => (
+                  <details
+                    key={faq.id}
+                    id={`faq-${faq.id}`}
+                    className="group rounded-xl border-2 border-border bg-card transition-colors duration-200 open:border-primary/30 open:shadow-soft hover:border-primary/30 scroll-mt-24"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 sm:p-5 font-bold text-base sm:text-lg text-foreground [&::-webkit-details-marker]:hidden">
+                      <span>{faq.question.en}</span>
+                      <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180 group-open:text-primary" />
+                    </summary>
+                    <div className="px-4 sm:px-5 pb-5 -mt-1 space-y-3">
+                      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{faq.answer.en}</p>
+                      {faq.link && (
+                        <Link
+                          href={faq.link.href}
+                          className="group/link inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline underline-offset-4"
+                        >
+                          {faq.link.label.en}
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover/link:translate-x-0.5" />
+                        </Link>
+                      )}
+                    </div>
+                  </details>
+                ))}
+              </div>
             ))}
           </div>
         </section>
