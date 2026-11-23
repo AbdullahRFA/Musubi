@@ -35,7 +35,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(values.email, values.password);
-      router.push("/dashboard");
+      router.push("/");
     } catch (err: any) {
       setError(err?.message || "Failed to sign in. Please try again.");
     } finally {
@@ -47,7 +47,7 @@ export default function LoginPage() {
     setValue("email", email);
     setValue("password", "password123");
     signIn(email, "password123").then(() => {
-      router.push("/dashboard");
+      router.push("/");
     });
   };
 
@@ -112,19 +112,19 @@ export default function LoginPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => quickDemoLogin("kenji.sato@example.com")}
+                  onClick={() => quickDemoLogin("haruko.sato@tsunagu.demo")}
                   className="text-xs h-auto py-2 font-medium justify-start"
                 >
-                  <span className="truncate">Kenji (O.G.)</span>
+                  <span className="truncate">Haruko (Origami)</span>
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => quickDemoLogin("maya.tanaka@example.com")}
+                  onClick={() => quickDemoLogin("maya.tanaka@tsunagu.demo")}
                   className="text-xs h-auto py-2 font-medium justify-start"
                 >
-                  <span className="truncate">Maya (Y.G.)</span>
+                  <span className="truncate">Maya (Smartphone)</span>
                 </Button>
               </div>
             </div>

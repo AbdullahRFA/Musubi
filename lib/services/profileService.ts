@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { placeByName } from "@/lib/constants";
+import { placeByName, detectGeneration } from "@/lib/constants";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Need, Profile, PublicProfile, Skill } from "@/lib/types";
 import { average } from "@/lib/utils";
@@ -13,9 +13,11 @@ export type ProfilePatch = Partial<
     Profile,
     | "fullName"
     | "email"
+    | "age"
     | "userGroup"
     | "ageGroup"
     | "location"
+    | "neighborhoods"
     | "bio"
     | "interests"
     | "skills"
@@ -51,8 +53,10 @@ export function toPublicProfile(user: Profile, viewerId: string | null): PublicP
     id: user.id,
     fullName: user.fullName,
     avatarUrl: user.avatarUrl,
+    age: user.age ?? null,
     ageGroup: user.ageGroup,
     location: user.location,
+    neighborhoods: user.neighborhoods ?? (user.location ? [user.location] : []),
     lat: user.lat,
     lng: user.lng,
     bio: user.bio,
@@ -125,8 +129,10 @@ export function usePublicProfile(id: string) {
       id: user.id,
       fullName: user.fullName,
       avatarUrl: user.avatarUrl,
+      age: user.age ?? null,
       ageGroup: user.ageGroup,
       location: user.location,
+      neighborhoods: user.neighborhoods ?? (user.location ? [user.location] : []),
       lat: user.lat,
       lng: user.lng,
       bio: user.bio,
@@ -169,14 +175,30 @@ export async function updateProfile(patch: ProfilePatch) {
     if (taken) throw new ServiceError("That email is already used by another member.");
     patch = { ...patch, email };
   }
+  if (patch.age !== undefined && patch.age !== null) {
+    const gen = detectGeneration(patch.age);
+    patch = {
+      ...patch,
+      userGroup: gen.userGroup,
+      ageGroup: gen.ageGroup,
+    };
+  }
+  if (patch.neighborhoods && patch.neighborhoods.length > 0 && !patch.location) {
+    patch = {
+      ...patch,
+      location: patch.neighborhoods[0],
+    };
+  }
   const location = patch.location ?? me.location;
   const place = placeByName(location);
+  const neighborhoods = patch.neighborhoods ?? me.neighborhoods ?? (location ? [location] : []);
   const next: Profile = {
     ...me,
     ...patch,
     fullName: (patch.fullName ?? me.fullName).trim(),
     bio: (patch.bio ?? me.bio).trim(),
     location,
+    neighborhoods,
     lat: place?.lat ?? (location === me.location ? me.lat : null),
     lng: place?.lng ?? (location === me.location ? me.lng : null),
     phone: patch.contactMethod === "chat" ? null : (patch.phone ?? me.phone),

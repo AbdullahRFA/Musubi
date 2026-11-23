@@ -189,32 +189,32 @@ function SearchContent() {
         </div>
       )}
 
-      {/* LinkedIn-style Result Tabs */}
-      <div className="flex border-b-2 border-border gap-6">
+      {/* Result Tabs */}
+      <div className="flex border-b-2 border-border gap-4 sm:gap-6 overflow-x-auto scrollbar-none">
         <button
           type="button"
           onClick={() => setActiveTab("posts")}
-          className={`flex items-center gap-2 pb-3 font-bold text-lg border-b-4 transition-all -mb-[2px] ${
+          className={`flex items-center gap-1.5 pb-2.5 font-bold text-sm sm:text-lg border-b-4 transition-all -mb-[2px] shrink-0 ${
             activeTab === "posts"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Compass className="h-5 w-5" />
+          <Compass className="h-4 w-4 sm:h-5 sm:w-5" />
           <span>Posts ({searchResults.posts.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("people")}
-          className={`flex items-center gap-2 pb-3 font-bold text-lg border-b-4 transition-all -mb-[2px] ${
+          className={`flex items-center gap-1.5 pb-2.5 font-bold text-sm sm:text-lg border-b-4 transition-all -mb-[2px] shrink-0 ${
             activeTab === "people"
               ? "border-secondary text-secondary"
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Users className="h-5 w-5" />
-          <span>People who may help ({searchResults.people.length})</span>
+          <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span>People ({searchResults.people.length})</span>
         </button>
       </div>
 

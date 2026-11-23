@@ -4,6 +4,7 @@ import { useAppStore } from "@/lib/store/useAppStore";
 import type { Profile, UserGroup } from "@/lib/types";
 import { createId } from "@/lib/utils";
 import { ServiceError, requireUser } from "@/lib/services/shared";
+import { detectGeneration, placeByName } from "@/lib/constants";
 
 export function useSession() {
   const userId = useAppStore((state) => state.sessionUserId);
@@ -12,25 +13,46 @@ export function useSession() {
   return users.find((user) => user.id === userId) ?? null;
 }
 
-function blankProfile(input: { email: string; fullName: string; userGroup: UserGroup }): Profile {
+function blankProfile(input: {
+  email: string;
+  fullName: string;
+  userGroup?: UserGroup;
+  age?: number | null;
+  neighborhood?: string;
+  neighborhoods?: string[];
+}): Profile {
+  const age = input.age ?? null;
+  let userGroup = input.userGroup || "yg";
+  let ageGroup = null;
+  if (age !== null && age !== undefined) {
+    const gen = detectGeneration(age);
+    userGroup = gen.userGroup;
+    ageGroup = gen.ageGroup;
+  }
+  const neighborhoods = input.neighborhoods ?? (input.neighborhood ? [input.neighborhood] : []);
+  const location = neighborhoods[0] || input.neighborhood || "";
+  const place = placeByName(location);
+
   return {
     id: createId("u"),
     email: input.email,
     fullName: input.fullName,
     avatarUrl: null,
-    ageGroup: null,
-    location: "",
-    lat: null,
-    lng: null,
+    age,
+    ageGroup,
+    location,
+    neighborhoods,
+    lat: place?.lat ?? null,
+    lng: place?.lng ?? null,
     bio: "",
     interests: [],
     skills: [],
     servicesOffered: [],
     servicesNeeded: [],
-    availability: "",
+    availability: "Flexible",
     contactMethod: "chat",
     phone: null,
-    userGroup: input.userGroup,
+    userGroup,
     createdAt: new Date().toISOString(),
   };
 }
@@ -52,7 +74,15 @@ export async function signIn(email: string, _password: string) {
   return user;
 }
 
-export async function signUp(input: { email: string; password: string; fullName: string; userGroup: UserGroup }) {
+export async function signUp(input: {
+  email: string;
+  password: string;
+  fullName: string;
+  age?: number;
+  neighborhood?: string;
+  neighborhoods?: string[];
+  userGroup?: UserGroup;
+}) {
   const normalized = input.email.trim().toLowerCase();
   const taken = useAppStore.getState().users.some((user) => user.email === normalized);
   if (taken) {
@@ -64,6 +94,9 @@ export async function signUp(input: { email: string; password: string; fullName:
   const user = blankProfile({
     email: normalized,
     fullName: input.fullName.trim(),
+    age: input.age,
+    neighborhood: input.neighborhood,
+    neighborhoods: input.neighborhoods,
     userGroup: input.userGroup,
   });
   useAppStore.setState((state) => ({

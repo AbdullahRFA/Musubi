@@ -173,9 +173,9 @@ export default function PostDetailPage() {
                     Exchange Arrangement
                   </span>
                   <div className="flex items-center gap-1.5 font-bold text-foreground text-base">
-                    {post.exchangeMethod === "knowledge" && <BookOpen className="h-5 w-5 text-secondary" />}
-                    {post.exchangeMethod === "service" && <HandHelping className="h-5 w-5 text-primary" />}
-                    {post.exchangeMethod === "payment" && <Coins className="h-5 w-5 text-amber-600" />}
+                    {post.exchangeMethod === "free" && <BookOpen className="h-5 w-5 text-emerald-600" />}
+                    {post.exchangeMethod === "exchange" && <HandHelping className="h-5 w-5 text-primary" />}
+                    {post.exchangeMethod === "paid" && <Coins className="h-5 w-5 text-amber-600" />}
                     <span>{exchangeLabel(post.exchangeMethod)}</span>
                     {post.amount && (
                       <span className="ml-1 text-sm text-primary font-mono">
@@ -186,7 +186,7 @@ export default function PostDetailPage() {
                 </div>
               </div>
 
-              {post.exchangeMethod === "payment" && <DemoPaymentBanner />}
+              {post.exchangeMethod === "paid" && <DemoPaymentBanner />}
 
               {/* Map Preview */}
               <div className="space-y-2 pt-2">
@@ -204,30 +204,30 @@ export default function PostDetailPage() {
 
             {/* Post Owner Controls */}
             {isOwner && (
-              <CardFooter className="border-t border-border pt-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Link href={`/posts/${post.id}/edit`}>
-                    <Button variant="outline" size="sm" className="gap-1.5">
+              <CardFooter className="border-t border-border pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  <Link href={`/posts/${post.id}/edit`} className="flex-1 sm:flex-initial">
+                    <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
                       <Edit className="h-4 w-4" />
                       <span>Edit Post</span>
                     </Button>
                   </Link>
                   {post.status === "open" && (
-                    <Button variant="outline" size="sm" onClick={handleClose} className="gap-1.5 text-muted-foreground">
+                    <Button variant="outline" size="sm" onClick={handleClose} className="gap-1.5 text-muted-foreground flex-1 sm:flex-initial text-xs">
                       <XCircle className="h-4 w-4" />
-                      <span>Close Post</span>
+                      <span>Close</span>
                     </Button>
                   )}
                   {post.status === "open" && (
-                    <Button variant="ghost" size="sm" onClick={handleDelete} className="gap-1.5 text-destructive hover:bg-destructive/10">
+                    <Button variant="ghost" size="sm" onClick={handleDelete} className="gap-1.5 text-destructive hover:bg-destructive/10 text-xs">
                       <Trash2 className="h-4 w-4" />
                       <span>Delete</span>
                     </Button>
                   )}
                 </div>
 
-                <Link href="/requests">
-                  <Button variant="secondary" size="sm">
+                <Link href="/requests" className="w-full sm:w-auto">
+                  <Button variant="secondary" size="sm" className="w-full sm:w-auto text-xs">
                     View Incoming Requests ({requests.length})
                   </Button>
                 </Link>
@@ -249,7 +249,24 @@ export default function PostDetailPage() {
               </CardHeader>
 
               <CardContent className="space-y-4">
-                {myExistingRequest ? (
+                {!session ? (
+                  <div className="rounded-xl border-2 border-dashed border-primary/40 bg-[#E7EEE4]/40 p-6 text-center space-y-3">
+                    <p className="font-bold text-foreground text-base">
+                      Interested in connecting with {author?.fullName || "this neighbor"}?
+                    </p>
+                    <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                      Please log in or create a free Tsunagu Generations account to send a service request, exchange skills, or coordinate a meetup.
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 max-w-xs mx-auto">
+                      <Button asChild size="sm" className="w-full sm:w-auto bg-primary hover:bg-[#234336] text-white font-bold text-xs h-9 px-5 cursor-pointer">
+                        <Link href="/login">Log In to Respond</Link>
+                      </Button>
+                      <Button asChild variant="outline" size="sm" className="w-full sm:w-auto font-bold text-xs h-9 px-5 border-2 border-border cursor-pointer">
+                        <Link href="/register">Register</Link>
+                      </Button>
+                    </div>
+                  </div>
+                ) : myExistingRequest ? (
                   <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-amber-900">You already responded to this post</span>

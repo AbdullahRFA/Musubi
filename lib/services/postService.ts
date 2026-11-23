@@ -18,7 +18,7 @@ function withPlace(input: PostInput, authorId: string, id: string, createdAt: st
     authorId,
     lat: place?.lat ?? null,
     lng: place?.lng ?? null,
-    amount: input.exchangeMethod === "payment" ? input.amount : null,
+    amount: input.exchangeMethod === "paid" ? input.amount : null,
     status: "open",
     createdAt,
     updatedAt: createdAt,
@@ -85,7 +85,7 @@ export async function updatePost(id: string, input: PostInput) {
     ...input,
     lat: place?.lat ?? null,
     lng: place?.lng ?? null,
-    amount: input.exchangeMethod === "payment" ? input.amount : null,
+    amount: input.exchangeMethod === "paid" ? input.amount : null,
     updatedAt: new Date().toISOString(),
   };
   useAppStore.setState((state) => ({

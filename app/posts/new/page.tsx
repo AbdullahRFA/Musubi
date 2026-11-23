@@ -37,7 +37,7 @@ export default function CreatePostPage() {
       location: session?.location || PLACES[0].name,
       availability: session?.availability || AVAILABILITY[0],
       postType: "offer",
-      exchangeMethod: "knowledge",
+      exchangeMethod: "free",
       amount: null,
     },
   });
@@ -223,7 +223,7 @@ export default function CreatePostPage() {
                 </div>
 
                 {/* Amount selection if monetary */}
-                {exchangeMethod === "payment" && (
+                {exchangeMethod === "paid" && (
                   <div className="space-y-3 p-4 rounded-lg border border-blue-200 bg-blue-50/50">
                     <DemoPaymentBanner />
                     <label className="text-sm font-bold text-foreground block">

@@ -152,11 +152,15 @@ export default function PublicProfilePage() {
               >
                 {groupShort(profile.userGroup)}
               </span>
-              {profile.ageGroup && (
-                <Badge variant="outline" className="text-xs">
-                  Age {profile.ageGroup}
+              {profile.age ? (
+                <Badge variant="outline" className="text-xs font-bold border-border bg-muted/30">
+                  Age {profile.age} • {profile.userGroup === "og" ? "Older Generation" : "Younger Generation"}
                 </Badge>
-              )}
+              ) : profile.ageGroup ? (
+                <Badge variant="outline" className="text-xs font-bold border-border bg-muted/30">
+                  Age {profile.ageGroup} • {profile.userGroup === "og" ? "Older Generation" : "Younger Generation"}
+                </Badge>
+              ) : null}
             </div>
 
             <p className="text-xs font-semibold text-muted-foreground uppercase">
@@ -164,14 +168,29 @@ export default function PublicProfilePage() {
             </p>
 
             <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-muted-foreground pt-1">
-              <span className="flex items-center gap-1 font-medium">
-                <MapPin className="h-4 w-4 text-primary" />
-                {profile.location || "Local community"}
-              </span>
-              <span className="flex items-center gap-1 font-medium">
-                <Clock className="h-4 w-4 text-secondary" />
-                Available: {profile.availability}
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5 font-medium">
+                <MapPin className="h-4 w-4 text-primary shrink-0" />
+                {profile.neighborhoods && profile.neighborhoods.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {profile.neighborhoods.map((n) => (
+                      <span
+                        key={n}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#315B4B]/10 text-primary border border-primary/20"
+                      >
+                        {n}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span>{profile.location || "Local community"}</span>
+                )}
+              </div>
+              {profile.availability && (
+                <span className="flex items-center gap-1 font-medium">
+                  <Clock className="h-4 w-4 text-secondary" />
+                  Available: {profile.availability}
+                </span>
+              )}
               <span className="flex items-center gap-1 font-medium">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 Member since {formatDay(profile.createdAt)}
@@ -237,7 +256,10 @@ export default function PublicProfilePage() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {profile.skills.map((s) => (
-                <span key={s} className="bg-primary/10 text-primary font-semibold text-sm px-3 py-1 rounded-md border border-primary/20">
+                <span
+                  key={s}
+                  className="bg-[#315B4B] text-white font-bold text-xs sm:text-sm px-3.5 py-1.5 rounded-full shadow-2xs"
+                >
                   {s}
                 </span>
               ))}
@@ -253,7 +275,10 @@ export default function PublicProfilePage() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {profile.servicesNeeded.map((n) => (
-                <span key={n} className="bg-secondary/10 text-secondary font-semibold text-sm px-3 py-1 rounded-md border border-secondary/20">
+                <span
+                  key={n}
+                  className="bg-[#315B4B] text-white font-bold text-xs sm:text-sm px-3.5 py-1.5 rounded-full shadow-2xs"
+                >
                   {n}
                 </span>
               ))}
