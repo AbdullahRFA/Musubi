@@ -3,17 +3,24 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, MessageSquare, ArrowRight, X } from "lucide-react";
+import { useAppStore } from "@/lib/store/useAppStore";
+import { createClient } from "@/lib/supabase/client";
 import {
-  useNotifications,
+  fetchNotifications,
+  rowToNotification,
   markNotificationRead,
   playNotificationSound,
 } from "@/lib/services/notificationService";
 import type { Notification } from "@/lib/types";
 
 export function NotificationToast() {
-  const notifications = useNotifications();
+  const sessionUserId = useAppStore((state) => state.sessionUserId);
+  const session = useAppStore((state) =>
+    state.users.find((u) => u.id === state.sessionUserId)
+  );
+  const userId = session?.id || sessionUserId;
+
   const [activeToast, setActiveToast] = useState<Notification | null>(null);
-  const [lastShownId, setLastShownId] = useState<string | null>(null);
 
   // Request browser desktop notification permission once on mount
   useEffect(() => {
@@ -24,36 +31,77 @@ export function NotificationToast() {
     }
   }, []);
 
-  // Show toast when a new unread notification arrives
+  // Set up single Realtime listener + 3-second background polling for the logged-in user
   useEffect(() => {
-    if (notifications.length > 0) {
-      const newest = notifications[0];
-      if (!newest.read && newest.id !== lastShownId) {
-        // Only trigger toast for recently created notifications (within last 30s)
-        const ageInMs = Date.now() - new Date(newest.createdAt).getTime();
-        if (ageInMs < 30000) {
-          setActiveToast(newest);
-          setLastShownId(newest.id);
-          playNotificationSound();
+    if (!userId) return;
 
-          if (
-            typeof window !== "undefined" &&
-            "Notification" in window &&
-            Notification.permission === "granted"
-          ) {
-            try {
-              new Notification(newest.title, {
-                body: newest.body,
-                icon: "/favicon.ico",
-              });
-            } catch (e) {
-              // Ignore push errors on unsupported environments
+    fetchNotifications();
+
+    const supabase = createClient();
+    // Unique channel identifier ensures no collision with previous or existing channels
+    const uniqueChannelName = `notifs_live_${userId}_${Math.random().toString(36).substring(2, 8)}`;
+    const channel = supabase
+      .channel(uniqueChannelName)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const newNotif = rowToNotification(payload.new);
+            if (newNotif.userId === userId) {
+              useAppStore.setState((state) => ({
+                notifications: [
+                  newNotif,
+                  ...state.notifications.filter((n) => n.id !== newNotif.id),
+                ],
+              }));
+
+              playNotificationSound();
+              setActiveToast(newNotif);
+
+              if (
+                typeof window !== "undefined" &&
+                "Notification" in window &&
+                Notification.permission === "granted"
+              ) {
+                try {
+                  new Notification(newNotif.title, {
+                    body: newNotif.body,
+                    icon: "/favicon.ico",
+                  });
+                } catch (e) {
+                  // Ignore push errors on unsupported environments
+                }
+              }
+            }
+          } else if (payload.eventType === "UPDATE") {
+            const updated = rowToNotification(payload.new);
+            if (updated.userId === userId) {
+              useAppStore.setState((state) => ({
+                notifications: state.notifications.map((n) =>
+                  n.id === updated.id ? updated : n
+                ),
+              }));
             }
           }
         }
-      }
-    }
-  }, [notifications, lastShownId]);
+      )
+      .subscribe();
+
+    // 3-second polling sync guarantees accuracy even when WebSocket is inactive or reconnecting
+    const pollInterval = setInterval(() => {
+      fetchNotifications();
+    }, 3000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+    };
+  }, [userId]);
 
   // Auto-dismiss toast after 6 seconds
   useEffect(() => {

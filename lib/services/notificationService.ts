@@ -120,7 +120,7 @@ export async function fetchNotifications(): Promise<Notification[]> {
 }
 
 /**
- * Hook to retrieve user's notifications, auto-fetching and subscribing to live Realtime updates
+ * Hook to retrieve user's notifications, auto-fetching on mount
  */
 export function useNotifications(): Notification[] {
   const sessionUserId = useAppStore((state) => state.sessionUserId);
@@ -131,57 +131,9 @@ export function useNotifications(): Notification[] {
   const notifications = useAppStore((state) => state.notifications);
 
   useEffect(() => {
-    if (!userId) return;
-
-    // 1. Initial fetch
-    fetchNotifications();
-
-    // 2. Supabase Realtime WebSocket listener for instant live notifications
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`notifs_live_${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "notifications",
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            const newNotif = rowToNotification(payload.new);
-            if (newNotif.userId === userId) {
-              useAppStore.setState((state) => ({
-                notifications: [
-                  newNotif,
-                  ...state.notifications.filter((n) => n.id !== newNotif.id),
-                ],
-              }));
-              playNotificationSound();
-            }
-          } else if (payload.eventType === "UPDATE") {
-            const updated = rowToNotification(payload.new);
-            if (updated.userId === userId) {
-              useAppStore.setState((state) => ({
-                notifications: state.notifications.map((n) =>
-                  n.id === updated.id ? updated : n
-                ),
-              }));
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    // 3. Background 3-second polling sync to guarantee badge accuracy across tabs
-    const interval = setInterval(() => {
+    if (userId) {
       fetchNotifications();
-    }, 3000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
-    };
+    }
   }, [userId]);
 
   return useMemo(
@@ -194,13 +146,34 @@ export function useNotifications(): Notification[] {
 }
 
 export function useUnreadCount(): number {
-  const items = useNotifications();
-  return items.filter((item) => !item.read).length;
+  const sessionUserId = useAppStore((state) => state.sessionUserId);
+  const session = useAppStore((state) =>
+    state.users.find((u) => u.id === state.sessionUserId)
+  );
+  const userId = session?.id || sessionUserId;
+  const notifications = useAppStore((state) => state.notifications);
+
+  return useMemo(
+    () => notifications.filter((item) => !item.read && item.userId === userId).length,
+    [notifications, userId],
+  );
 }
 
 export function useUnreadMessageCount(): number {
-  const items = useNotifications();
-  return items.filter((item) => !item.read && item.type === "message").length;
+  const sessionUserId = useAppStore((state) => state.sessionUserId);
+  const session = useAppStore((state) =>
+    state.users.find((u) => u.id === state.sessionUserId)
+  );
+  const userId = session?.id || sessionUserId;
+  const notifications = useAppStore((state) => state.notifications);
+
+  return useMemo(
+    () =>
+      notifications.filter(
+        (item) => !item.read && item.userId === userId && item.type === "message",
+      ).length,
+    [notifications, userId],
+  );
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
