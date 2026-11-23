@@ -62,8 +62,8 @@ export const Header = memo(function Header() {
 
   const navLinks = [
     { href: "/posts", label: postsLabel, icon: Compass },
-    { href: "/search", label: t("nav.search"), icon: Search },
     { href: "/my-activity", label: t("nav.myActivity"), icon: FileCheck2 },
+    { href: "/search", label: t("nav.search"), icon: Search },
   ];
 
   return (
