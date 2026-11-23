@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -17,6 +18,8 @@ import {
   Check,
   BookOpen,
   HelpCircle,
+  KeyRound,
+  ArrowRight,
   type LucideIcon,
 } from "lucide-react";
 import { profileSchema, type ProfileValues } from "@/lib/validators";
@@ -267,6 +270,20 @@ export default function EditProfilePage() {
                 </div>
                 <p className="text-[11px] text-muted-foreground">PNG, JPG, or WEBP up to 5MB. Resized automatically.</p>
               </div>
+            </div>
+
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Security</p>
+              <Link
+                href="/change-password"
+                className="group flex items-center justify-between gap-2 rounded-xl border border-border px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <span className="flex items-center gap-2">
+                  <KeyRound className="h-4 w-4 text-primary" />
+                  Change password
+                </span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
             </div>
           </aside>
 

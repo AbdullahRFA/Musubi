@@ -123,7 +123,16 @@ function LoginContent() {
           />
         </AuthField>
 
-        <AuthField id="password" label="Password" error={errors.password?.message}>
+        <AuthField
+          id="password"
+          label="Password"
+          error={errors.password?.message}
+          hint={
+            <Link href="/forgot-password" className="font-semibold text-primary hover:underline underline-offset-4">
+              Forgot password?
+            </Link>
+          }
+        >
           <PasswordInput
             id="password"
             autoComplete="current-password"

@@ -94,6 +94,47 @@ export const onboardingSchema = z.object({
   need: z.string().trim().max(40).optional(),
 });
 
+/* Passwords ---------------------------------------------------------------- */
+
+const newPassword = z
+  .string()
+  .min(8, "Use at least 8 characters.")
+  .max(72, "Password is too long.")
+  .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), "Include at least one letter and one number.");
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address."),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: newPassword,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords don't match.",
+  });
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().optional(),
+    password: newPassword,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords don't match.",
+  })
+  .refine((v) => !v.currentPassword || v.currentPassword !== v.password, {
+    path: ["password"],
+    message: "New password must be different from your current password.",
+  });
+
+export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
+
 export type LoginValues = z.infer<typeof loginSchema>;
 export type RegisterValues = z.infer<typeof registerSchema>;
 export type ProfileValues = z.infer<typeof profileSchema>;

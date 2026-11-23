@@ -342,3 +342,110 @@ export async function updateAccount(input: {
   syncSessionUser(next);
   return next;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Passwords                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function friendlyAuthError(message: string | undefined, fallback: string): string {
+  if (!message) return fallback;
+  const m = message.toLowerCase();
+  if (m.includes("rate limit") || m.includes("security purposes") || m.includes("only request this after")) {
+    return "Too many requests. Please wait a minute and try again.";
+  }
+  if (m.includes("same") && m.includes("password")) {
+    return "Your new password must be different from your current password.";
+  }
+  if (m.includes("weak") || m.includes("at least")) {
+    return message;
+  }
+  if (m.includes("reauthentication")) {
+    return "For security, please sign out and sign in again, then retry.";
+  }
+  if (m.includes("session") && (m.includes("missing") || m.includes("expired"))) {
+    return "Your reset link has expired. Please request a new one.";
+  }
+  return message;
+}
+
+/**
+ * Sends a password-reset email. The link returns through /auth/callback,
+ * which exchanges the code for a recovery session and forwards the user to
+ * /reset-password. Always resolves without revealing whether the email
+ * exists (only rate-limit / network errors are surfaced).
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const normalized = email.trim().toLowerCase();
+  const supabase = createClient();
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`
+      : undefined;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(normalized, { redirectTo });
+  if (error) {
+    const m = error.message?.toLowerCase() ?? "";
+    // Don't leak account existence; only surface actionable errors
+    if (m.includes("rate limit") || m.includes("security purposes") || m.includes("only request this after") || m.includes("fetch")) {
+      throw new ServiceError(friendlyAuthError(error.message, "Could not send the reset email."));
+    }
+    console.warn("resetPasswordForEmail:", error.message);
+  }
+}
+
+/** True when the current browser holds an authenticated (or recovery) session. */
+export async function hasActiveSession(): Promise<boolean> {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  return Boolean(data.session);
+}
+
+/**
+ * Sets a new password for the signed-in user. Used after following a reset
+ * link (recovery session) and by changePassword once the current password is
+ * verified.
+ */
+export async function updatePassword(newPassword: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw new ServiceError(friendlyAuthError(error.message, "Could not update your password."));
+}
+
+/** Whether the signed-in account has an email/password identity (vs Google only). */
+export async function accountHasPassword(): Promise<boolean> {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
+  if (!user) return false;
+  const providers: string[] = (user.app_metadata?.providers as string[]) ?? [];
+  if (providers.includes("email")) return true;
+  return (user.identities ?? []).some((identity) => identity.provider === "email");
+}
+
+/**
+ * Changes the password for a signed-in user. When the account already has a
+ * password, the current one is verified first so a hijacked open session
+ * can't silently change it.
+ */
+export async function changePassword(input: { currentPassword?: string; newPassword: string }): Promise<void> {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
+  if (!user?.email) throw new ServiceError("Please sign in again to change your password.");
+
+  if (await accountHasPassword()) {
+    if (!input.currentPassword) throw new ServiceError("Please enter your current password.");
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: input.currentPassword,
+    });
+    if (verifyError) {
+      const m = verifyError.message.toLowerCase();
+      throw new ServiceError(
+        m.includes("invalid") ? "Your current password is incorrect." : friendlyAuthError(verifyError.message, "Could not verify your password.")
+      );
+    }
+  }
+
+  await updatePassword(input.newPassword);
+}
