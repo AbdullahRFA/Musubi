@@ -279,9 +279,15 @@ CREATE POLICY "Reviews viewable by everyone" ON public.reviews
 CREATE POLICY "Completed activity participants can create review" ON public.reviews
     FOR INSERT WITH CHECK (auth.uid() = reviewer_id);
 
--- Transactions: Payer and Payee can view
+-- Transactions: Payer and Payee can view, payer can insert, participants can update
 CREATE POLICY "Payer and payee can view transactions" ON public.transactions
     FOR SELECT USING (auth.uid() = payer_id OR auth.uid() = payee_id);
+
+CREATE POLICY "Payer can insert transactions" ON public.transactions
+    FOR INSERT WITH CHECK (auth.uid() = payer_id);
+
+CREATE POLICY "Participants can update transactions" ON public.transactions
+    FOR UPDATE USING (auth.uid() = payer_id OR auth.uid() = payee_id);
 
 -- Reports & Blocks
 CREATE POLICY "Users can create reports" ON public.reports
