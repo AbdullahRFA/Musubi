@@ -103,7 +103,7 @@ export function ChatThreadView({
     (a) => a.requestId === request.id || (a.postId && a.postId === post?.id)
   );
   const myReview = matchedActivity && session
-    ? reviews.find((r) => r.activityId === matchedActivity.id && r.authorId === session.id)
+    ? reviews.find((r) => r.activityId === matchedActivity.id && r.reviewerId === session.id)
     : null;
 
   const handleSend = async (e?: React.FormEvent) => {
