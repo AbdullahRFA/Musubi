@@ -13,10 +13,11 @@ import {
 import type { Notification } from "@/lib/types";
 
 export function NotificationToast() {
+  const sessionUserId = useAppStore((state) => state.sessionUserId);
   const session = useAppStore((state) =>
     state.users.find((u) => u.id === state.sessionUserId)
   );
-  const userId = session?.id || useAppStore((state) => state.sessionUserId);
+  const userId = session?.id || sessionUserId;
   const [activeToast, setActiveToast] = useState<Notification | null>(null);
 
   // Request browser notification permission once
