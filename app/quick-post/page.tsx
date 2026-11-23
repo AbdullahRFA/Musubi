@@ -395,14 +395,8 @@ export default function QuickPostWizardPage() {
               {/* Post Preview Card */}
               <div className="rounded-xl border-2 border-primary/40 bg-[#FAF9F5] p-5 space-y-3">
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-black uppercase ${
-                      postType === "offer"
-                        ? "bg-[#E7EEE4] text-[#234336] border border-[#315B4B]/30"
-                        : "bg-blue-50 text-blue-800 border border-blue-300"
-                    }`}
-                  >
-                    {postType.toUpperCase()}
+                  <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-black uppercase bg-blue-50 text-blue-800 border border-blue-300">
+                    REQUEST
                   </span>
                   <span className="text-xs font-bold text-muted-foreground">
                     Category: {selectedCategory}

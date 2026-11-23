@@ -8,7 +8,6 @@ import {
   ArrowRight,
   HandHelping,
   Coins,
-  Sparkles,
   Send,
   MessageCircle,
   CheckCircle2,
@@ -35,7 +34,6 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
   const [error, setError] = useState<string | null>(null);
 
   const isOwner = session?.id === post.authorId;
-  const isOffer = post.postType === "offer";
 
   const handleQuickRespond = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,31 +61,16 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
   return (
     <Card className="flex flex-col justify-between hover:shadow-md transition-all duration-200 border-2 border-border bg-card rounded-xl overflow-hidden w-full">
       {/* Top Banner Accent */}
-      <div className={`h-1.5 w-full ${isOffer ? "bg-[#315B4B]" : "bg-[#2563eb]"}`} />
+      <div className="h-1.5 w-full bg-[#2563eb]" />
 
       <CardHeader className="p-4 sm:p-5 pb-2 sm:pb-3">
         {/* Top Badges */}
         <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 mb-2">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {/* Offer (Green) / Request (Blue) Dual-Encoded Badge */}
-            <span
-              className={`inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider border ${
-                isOffer
-                  ? "bg-[#E7EEE4] text-[#234336] border-[#315B4B]/40"
-                  : "bg-blue-50 text-blue-800 border-blue-300"
-              }`}
-            >
-              {isOffer ? (
-                <>
-                  <Sparkles className="h-3 w-3 text-[#315B4B]" />
-                  <span>OFFER</span>
-                </>
-              ) : (
-                <>
-                  <HandHelping className="h-3 w-3 text-blue-600" />
-                  <span>REQUEST</span>
-                </>
-              )}
+            {/* Request Badge */}
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider border bg-blue-50 text-blue-800 border-blue-300">
+              <HandHelping className="h-3 w-3 text-blue-600" />
+              <span>REQUEST</span>
             </span>
 
             {/* Category Badge */}

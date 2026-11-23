@@ -16,6 +16,7 @@ function withPlace(input: PostInput, authorId: string, id: string, createdAt: st
     ...input,
     id,
     authorId,
+    postType: input.postType || "request",
     lat: place?.lat ?? null,
     lng: place?.lng ?? null,
     amount: input.exchangeMethod === "paid" ? input.amount : null,
