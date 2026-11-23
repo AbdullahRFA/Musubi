@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/common/BottomNav";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { NotificationToast } from "@/components/notifications/NotificationToast";
+import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -41,6 +42,7 @@ export default function RootLayout({
             <main id="main-content" className="flex-1 focus:outline-none">{children}</main>
             <Footer />
             <BottomNav />
+            <AssistantWidget />
           </LanguageProvider>
         </AuthProvider>
       </body>
