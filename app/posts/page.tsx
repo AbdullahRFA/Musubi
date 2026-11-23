@@ -2,181 +2,226 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
-import { Sparkles, PlusCircle, RefreshCcw } from "lucide-react";
+import { Sparkles, PlusCircle, RefreshCcw, Search, SearchX } from "lucide-react";
 import { usePosts } from "@/lib/services/postService";
 import { useSession } from "@/lib/services/authService";
 import { CATEGORIES, EXCHANGE_METHODS } from "@/lib/constants";
 import { PostCard } from "@/components/posts/PostCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 
 export default function PostsDirectoryPage() {
   const session = useSession();
   const allPosts = usePosts();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
 
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedExchange, setSelectedExchange] = useState("all");
+  const [query, setQuery] = useState("");
 
   const filteredPosts = useMemo(() => {
+    const q = query.trim().toLowerCase();
     return allPosts.filter((post) => {
       if (selectedCategory !== "all" && post.category !== selectedCategory) return false;
       if (selectedExchange !== "all" && post.exchangeMethod !== selectedExchange) return false;
+      if (
+        q &&
+        ![post.title, post.description, post.location, post.skill].some((field) => field?.toLowerCase().includes(q))
+      )
+        return false;
       return true;
     });
-  }, [allPosts, selectedCategory, selectedExchange]);
+  }, [allPosts, selectedCategory, selectedExchange, query]);
+
+  const hasFilters = selectedCategory !== "all" || selectedExchange !== "all" || query.trim() !== "";
 
   const resetFilters = () => {
     setSelectedCategory("all");
     setSelectedExchange("all");
+    setQuery("");
   };
 
+  const chip = (active: boolean) =>
+    `shrink-0 snap-start rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+      active
+        ? "border-primary bg-primary text-primary-foreground shadow-glow"
+        : "border-border bg-card text-foreground hover:border-primary/40 hover:text-primary"
+    }`;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-border pb-6">
-        <div>
-          <h1 className="text-3xl font-extrabold text-foreground">
-            {t("postsPage.title", "Community Posts")}
-          </h1>
-          <p className="text-base text-muted-foreground">
-            {t(
-              "postsPage.subtitle",
-              "Explore skill offers, requests for assistance, and companionship in our neighborhood"
-            )}
-          </p>
-        </div>
-
-        {session && (
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full sm:w-auto">
-            <Button asChild className="w-full sm:w-auto gap-1.5 font-bold bg-primary hover:bg-[#234336] text-white shadow-xs h-9 text-xs cursor-pointer">
-              <Link href="/quick-post">
-                <Sparkles className="h-4 w-4 text-amber-200" />
-                <span>{t("postsPage.quickPost", "Quick Post")}</span>
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full sm:w-auto gap-1.5 font-semibold h-9 text-xs cursor-pointer">
-              <Link href="/posts/new">
-                <PlusCircle className="h-4 w-4" />
-                <span>{t("postsPage.standardPost", "Standard Post")}</span>
-              </Link>
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Guest Exploration Banner for Logged-Out / Unregistered Visitors */}
-      {!session && (
-        <div className="rounded-xl border-2 border-primary/30 bg-[#E7EEE4]/60 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 font-bold text-xs sm:text-sm text-primary">
-              <Sparkles className="h-4 w-4 text-amber-600" />
-              <span>{t("postsPage.guestBannerTitle", "Browsing Community Exchanges as a Guest")}</span>
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+    <div className="pb-12 sm:pb-16">
+      {/* ---------- Header band ---------- */}
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-card to-background">
+        <div
+          className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_85%_10%,rgba(154,52,18,0.10),transparent_45%),radial-gradient(circle_at_5%_90%,rgba(63,79,58,0.10),transparent_40%)]"
+          aria-hidden="true"
+        />
+        <div className="relative page-container py-8 sm:py-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2 max-w-2xl animate-fade-up">
+            <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+              {t("postsPage.title", "Community Posts")}
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
               {t(
-                "postsPage.guestBannerDesc",
-                "You can explore all skills, offers, and requests. Sign in or register when you are ready to respond to a neighbor or create your own post."
+                "postsPage.subtitle",
+                "Explore skill offers, requests for assistance, and companionship in our neighborhood"
               )}
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-            <Button asChild variant="outline" size="sm" className="font-bold text-xs h-8 px-3 cursor-pointer w-full sm:w-auto">
-              <Link href="/login">{t("nav.login", "Log In")}</Link>
-            </Button>
-            <Button asChild size="sm" className="font-bold text-xs h-8 px-3 bg-primary hover:bg-[#234336] text-white cursor-pointer w-full sm:w-auto">
-              <Link href="/register">{t("nav.register", "Register")}</Link>
-            </Button>
+
+          {session && (
+            <div className="grid grid-cols-2 md:flex md:items-center gap-2.5 w-full md:w-auto animate-fade-up [animation-delay:100ms]">
+              <Button asChild className="group gap-1.5 font-bold">
+                <Link href="/quick-post">
+                  <Sparkles className="h-4 w-4 text-amber-200 transition-transform group-hover:rotate-12" />
+                  {t("postsPage.quickPost", "Quick Post")}
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="gap-1.5 font-semibold">
+                <Link href="/posts/new">
+                  <PlusCircle className="h-4 w-4" />
+                  {t("postsPage.standardPost", "Standard Post")}
+                </Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="page-container pt-6 sm:pt-8 space-y-6">
+        {/* ---------- Guest banner ---------- */}
+        {!session && (
+          <div className="rounded-2xl border-2 border-primary/20 bg-[#E7EEE4]/60 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-up">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 font-bold text-sm text-primary">
+                <Sparkles className="h-4 w-4 text-amber-600" />
+                {t("postsPage.guestBannerTitle", "Browsing Community Exchanges as a Guest")}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "postsPage.guestBannerDesc",
+                  "You can explore all skills, offers, and requests. Sign in or register when you are ready to respond to a neighbor or create your own post."
+                )}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 shrink-0 w-full sm:w-auto">
+              <Button asChild variant="outline" size="sm" className="font-bold">
+                <Link href="/login">{t("nav.login", "Log In")}</Link>
+              </Button>
+              <Button asChild size="sm" className="font-bold">
+                <Link href="/register">{t("nav.register", "Register")}</Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ---------- Filters ---------- */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+              <Input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("postsPage.searchPlaceholder", "Search posts by title, skill or area...")}
+                aria-label={t("postsPage.searchPlaceholder", "Search posts")}
+                className="pl-12 rounded-xl shadow-xs"
+              />
+            </div>
+            <div className="sm:w-60">
+              <label htmlFor="exchange-filter" className="sr-only">
+                {t("postsPage.exchangeLabel", "Exchange Method")}
+              </label>
+              <select
+                id="exchange-filter"
+                value={selectedExchange}
+                onChange={(e) => setSelectedExchange(e.target.value)}
+                className="w-full min-h-[48px] rounded-xl border-2 border-border bg-card px-4 text-sm font-semibold text-foreground shadow-xs transition-colors hover:border-primary/40 focus:outline-none focus:border-primary"
+              >
+                <option value="all">{t("postsPage.allExchanges", "All Exchange Types")}</option>
+                {EXCHANGE_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Category chips: horizontal scroll on mobile, wrap on desktop */}
+          <div
+            role="group"
+            aria-label={t("postsPage.categoryLabel", "Category")}
+            className="-mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 overflow-x-auto snap-x scrollbar-none pb-1 sm:flex-wrap sm:overflow-visible"
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("all")}
+              className={chip(selectedCategory === "all")}
+              aria-pressed={selectedCategory === "all"}
+            >
+              {t("postsPage.allCategories", "All Categories")}
+            </button>
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setSelectedCategory(c)}
+                className={chip(selectedCategory === c)}
+                aria-pressed={selectedCategory === c}
+              >
+                {c}
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
-      {/* Filter Toolbar */}
-      <div className="rounded-lg border-2 border-border bg-card p-4 sm:p-6 space-y-3 shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Category Selector */}
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">
-              {t("postsPage.categoryLabel", "Category")}
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full rounded-md border-2 border-border bg-card px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="all">{t("postsPage.allCategories", "All Categories")}</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Exchange Method Selector */}
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">
-              {t("postsPage.exchangeLabel", "Exchange Method")}
-            </label>
-            <select
-              value={selectedExchange}
-              onChange={(e) => setSelectedExchange(e.target.value)}
-              className="w-full rounded-md border-2 border-border bg-card px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="all">{t("postsPage.allExchanges", "All Exchange Types")}</option>
-              {EXCHANGE_METHODS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Clear all filters below dropdowns (right side) */}
-        {(selectedCategory !== "all" || selectedExchange !== "all") && (
-          <div className="flex justify-end pt-1">
+        {/* ---------- Results header ---------- */}
+        <div className="flex items-center justify-between gap-3 text-sm font-semibold text-muted-foreground" aria-live="polite">
+          <span>
+            {t("postsPage.showingCount", `Showing ${filteredPosts.length} posts`, { count: filteredPosts.length })}
+          </span>
+          {hasFilters && (
             <Button
               variant="ghost"
               size="sm"
               onClick={resetFilters}
-              className="text-muted-foreground hover:text-foreground gap-1.5 shrink-0 h-8 text-xs cursor-pointer"
+              className="text-muted-foreground hover:text-primary gap-1.5"
             >
-              <RefreshCcw className="h-3.5 w-3.5" />
-              <span>{t("postsPage.resetFilters", "Clear all filters")}</span>
+              <RefreshCcw className="h-4 w-4" />
+              {t("postsPage.resetFilters", "Clear all filters")}
             </Button>
+          )}
+        </div>
+
+        {/* ---------- Grid ---------- */}
+        {filteredPosts.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-border bg-card px-6 py-14 text-center space-y-4 animate-fade-in">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+              <SearchX className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-bold text-foreground">{t("postsPage.noPostsTitle", "No posts match your filters.")}</p>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {t("postsPage.noPostsDesc", "Try adjusting your filters, or check back soon as neighbors add new posts.")}
+            </p>
+            {hasFilters && (
+              <Button variant="outline" onClick={resetFilters}>
+                {t("postsPage.resetFilters", "Clear all filters")}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
+            {filteredPosts.map((post, i) => (
+              <div key={post.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
+                <PostCard post={post} />
+              </div>
+            ))}
           </div>
         )}
       </div>
-
-      {/* Results Header */}
-      <div className="flex items-center justify-between text-sm font-semibold text-muted-foreground">
-        <span>{t("postsPage.showingCount", `Showing ${filteredPosts.length} posts`, { count: filteredPosts.length })}</span>
-      </div>
-
-      {/* Posts Grid */}
-      {filteredPosts.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-border bg-card p-12 text-center space-y-4">
-          <p className="text-lg font-medium text-foreground">
-            {t("postsPage.noPostsTitle", "No posts match your filters.")}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t(
-              "postsPage.noPostsDesc",
-              "Try adjusting your filters, or check back soon as neighbors add new posts."
-            )}
-          </p>
-          <Button variant="outline" onClick={resetFilters}>
-            {t("postsPage.resetFilters", "Clear all filters")}
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPosts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
