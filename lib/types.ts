@@ -21,7 +21,8 @@ export type Category =
   | "Arts & Crafts"
   | "Gardening"
   | "Daily Assistance"
-  | "Companionship";
+  | "Companionship"
+  | "Community & Local Activities";
 
 /** profiles */
 export interface Profile {

@@ -7,6 +7,7 @@ const categories = [
   "Gardening",
   "Daily Assistance",
   "Companionship",
+  "Community & Local Activities",
 ] as const;
 
 export const loginSchema = z.object({

@@ -7,6 +7,7 @@ export const CATEGORIES: Category[] = [
   "Gardening",
   "Daily Assistance",
   "Companionship",
+  "Community & Local Activities",
 ];
 
 export const EXCHANGE_METHODS: { value: ExchangeMethod; label: string; hint: string }[] = [

@@ -18,15 +18,16 @@ import { useSession, signOut } from "@/lib/services/authService";
 import { useUnreadCount } from "@/lib/services/notificationService";
 import { Button } from "@/components/ui/button";
 import { initials } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 export const Header = memo(function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const session = useSession();
   const unreadCount = useUnreadCount();
+  const { language, setLanguage, t } = useLanguage();
 
   const [fontSize, setFontSize] = useState<"standard" | "large">("standard");
-  const [language, setLanguage] = useState<"en" | "ja">("en");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -34,11 +35,6 @@ export const Header = memo(function Header() {
     if (savedFont === "large") {
       setFontSize("large");
       document.documentElement.classList.add("large-text");
-    }
-
-    const savedLang = localStorage.getItem("tsunagu_lang") as "en" | "ja" | null;
-    if (savedLang) {
-      setLanguage(savedLang);
     }
   }, []);
 
@@ -54,7 +50,6 @@ export const Header = memo(function Header() {
 
   const handleToggleLanguage = (lang: "en" | "ja") => {
     setLanguage(lang);
-    localStorage.setItem("tsunagu_lang", lang);
   };
 
   const handleSignOut = async () => {
@@ -63,14 +58,12 @@ export const Header = memo(function Header() {
     router.push("/");
   };
 
-  const postsLabel = session
-    ? (language === "ja" ? "投稿一覧" : "Posts")
-    : (language === "ja" ? "探索する" : "Explore");
+  const postsLabel = session ? t("nav.posts") : t("nav.explore");
 
   const navLinks = [
     { href: "/posts", label: postsLabel, icon: Compass },
-    { href: "/search", label: language === "ja" ? "検索" : "Search", icon: Search },
-    { href: "/my-activity", label: language === "ja" ? "マイ活動" : "My Activity", icon: FileCheck2 },
+    { href: "/search", label: t("nav.search"), icon: Search },
+    { href: "/my-activity", label: t("nav.myActivity"), icon: FileCheck2 },
   ];
 
   return (
@@ -92,7 +85,7 @@ export const Header = memo(function Header() {
               </span>
             </div>
             <span className="text-[10px] text-muted-foreground font-medium hidden md:inline -mt-0.5">
-              {language === "ja" ? "過去の知恵と現在のエネルギーを繋ぐ" : "Connecting the Past to the Present"}
+              {t("brandSubtitle")}
             </span>
           </Link>
 
@@ -131,7 +124,7 @@ export const Header = memo(function Header() {
             >
               <Link href="/quick-post">
                 <Sparkles className="h-3.5 w-3.5 text-amber-200" />
-                <span>Quick Post</span>
+                <span>{t("nav.quickPost")}</span>
               </Link>
             </Button>
           )}
@@ -140,7 +133,7 @@ export const Header = memo(function Header() {
           <div
             className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs font-semibold shrink-0"
             role="group"
-            aria-label="Font size selector"
+            aria-label={t("nav.fontSize")}
           >
             <button
               type="button"
@@ -150,7 +143,7 @@ export const Header = memo(function Header() {
                   ? "bg-card text-foreground font-bold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               }`}
-              title="Standard font size"
+              title={t("nav.fontSizeStandard")}
             >
               A
             </button>
@@ -162,7 +155,7 @@ export const Header = memo(function Header() {
                   ? "bg-primary text-white font-bold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               }`}
-              title="Large font size for easier reading"
+              title={t("nav.fontSizeLarge")}
             >
               A+
             </button>
@@ -172,7 +165,7 @@ export const Header = memo(function Header() {
           <div
             className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs font-semibold shrink-0"
             role="group"
-            aria-label="Language selector"
+            aria-label={t("nav.languageSelector")}
           >
             <button
               type="button"
@@ -207,7 +200,7 @@ export const Header = memo(function Header() {
               <Link
                 href="/chat"
                 className="hidden sm:inline-flex relative p-1.5 rounded-md text-foreground hover:bg-muted border border-transparent hover:border-border transition-colors"
-                aria-label="Messages"
+                aria-label={t("nav.messages")}
               >
                 <MessageSquare className="h-4 w-4" />
               </Link>
@@ -216,7 +209,7 @@ export const Header = memo(function Header() {
               <Link
                 href="/notifications"
                 className="relative p-1.5 rounded-md text-foreground hover:bg-muted border border-transparent hover:border-border transition-colors shrink-0"
-                aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
+                aria-label={`${t("nav.notifications")} ${unreadCount > 0 ? `(${unreadCount})` : ""}`}
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
@@ -231,7 +224,7 @@ export const Header = memo(function Header() {
                 <Link
                   href={`/profile/${session.id}`}
                   className="flex items-center gap-1.5 p-0.5 rounded-md hover:bg-muted transition-colors"
-                  title="View your profile"
+                  title={t("nav.viewProfile")}
                 >
                   <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground font-bold text-xs shadow-inner">
                     {initials(session.fullName)}
@@ -245,8 +238,8 @@ export const Header = memo(function Header() {
                   type="button"
                   onClick={handleSignOut}
                   className="hidden sm:inline-flex p-1 text-muted-foreground hover:text-destructive hover:bg-muted rounded-md transition-colors"
-                  title="Sign out"
-                  aria-label="Sign out"
+                  title={t("nav.signOut")}
+                  aria-label={t("nav.signOut")}
                 >
                   <LogOut className="h-3.5 w-3.5" />
                 </button>
@@ -256,10 +249,10 @@ export const Header = memo(function Header() {
             /* Logged Out Visitor Actions */
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <Button asChild variant="outline" size="sm" className="font-semibold text-xs h-7 sm:h-8 px-2 sm:px-3 cursor-pointer">
-                <Link href="/login">Log In</Link>
+                <Link href="/login">{t("nav.login")}</Link>
               </Button>
               <Button asChild variant="default" size="sm" className="font-semibold text-xs h-7 sm:h-8 px-2 sm:px-3 bg-primary hover:bg-[#234336] text-white cursor-pointer">
-                <Link href="/register">Register</Link>
+                <Link href="/register">{t("nav.register")}</Link>
               </Button>
             </div>
           )}
@@ -286,7 +279,7 @@ export const Header = memo(function Header() {
               className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-white font-bold shadow text-center text-sm"
             >
               <Sparkles className="h-4 w-4 text-amber-200" />
-              <span>Create Quick Post</span>
+              <span>{t("nav.createQuickPost")}</span>
             </Link>
           )}
 
@@ -320,19 +313,19 @@ export const Header = memo(function Header() {
                 <div className="font-bold text-xs text-foreground truncate">{session.fullName}</div>
               </Link>
               <Button variant="outline" size="sm" onClick={handleSignOut} className="text-xs h-8 shrink-0">
-                Sign Out
+                {t("nav.signOut")}
               </Button>
             </div>
           ) : (
             <div className="pt-2 border-t border-border grid grid-cols-2 gap-2">
               <Button asChild variant="outline" className="w-full text-xs h-9 font-bold cursor-pointer">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  Log In
+                  {t("nav.login")}
                 </Link>
               </Button>
               <Button asChild variant="default" className="w-full text-xs h-9 bg-primary text-white font-bold cursor-pointer">
                 <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-                  Register
+                  {t("nav.register")}
                 </Link>
               </Button>
             </div>

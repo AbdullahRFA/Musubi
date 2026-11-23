@@ -124,6 +124,26 @@ export const REQUIREMENT_TEMPLATES: RequirementTemplate[] = [
     skill: "Walking Companion",
     postType: "request",
   },
+
+  // 7. Community & Local Activities
+  {
+    id: "tpl-community-offer",
+    category: "Community & Local Activities",
+    title: "Neighborhood Walking Tour & Cultural History",
+    description: "I love sharing the history, local shrines, and hidden spots of our neighborhood with interested neighbors.",
+    suggestedExchange: "free",
+    skill: "Local History & Culture",
+    postType: "offer",
+  },
+  {
+    id: "tpl-community-request",
+    category: "Community & Local Activities",
+    title: "Join Neighborhood Events & Group Activities",
+    description: "Looking for friendly neighbors to join local festivals, community gardening, or neighborhood group activities together.",
+    suggestedExchange: "free",
+    skill: "Community Events",
+    postType: "request",
+  },
 ];
 
 export function templatesByCategory(category: Category, postType?: PostType) {

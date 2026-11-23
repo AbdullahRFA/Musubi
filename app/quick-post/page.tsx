@@ -20,6 +20,7 @@ import {
   Palette,
   Flower2,
   HeartHandshake,
+  Users,
 } from "lucide-react";
 import { REQUIREMENT_TEMPLATES, templatesByCategory } from "@/lib/templates";
 import { CATEGORIES, EXCHANGE_METHODS, AVAILABILITY, PLACES } from "@/lib/constants";
@@ -111,6 +112,7 @@ export default function QuickPostWizardPage() {
     Gardening: Flower2,
     "Daily Assistance": HandHelping,
     Companionship: HeartHandshake,
+    "Community & Local Activities": Users,
   };
 
   return (

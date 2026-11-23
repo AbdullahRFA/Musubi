@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Sparkles,
   ArrowRight,
@@ -15,15 +15,17 @@ import {
   MessageSquare,
   CheckCircle2,
   Smartphone,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/services/authService";
-import { HeroVideoSlider, HERO_VIDEOS } from "@/components/home/HeroVideoSlider";
+import { HeroBackgroundVideo } from "@/components/home/HeroBackgroundVideo";
+import { useLanguage } from "@/lib/i18n";
 
 export default function HomePage() {
   const router = useRouter();
   const session = useSession();
-  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const { language, t } = useLanguage();
 
   // Redirect authenticated users directly to the posts directory
   useEffect(() => {
@@ -38,133 +40,95 @@ export default function HomePage() {
       <div className="min-h-[50vh] flex items-center justify-center p-8">
         <div className="flex items-center gap-3 text-sm text-muted-foreground font-semibold">
           <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <span>Redirecting to community posts...</span>
+          <span>{language === "ja" ? "コミュニティ投稿へ移動中..." : "Redirecting to community posts..."}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-full space-y-12 sm:space-y-16 pb-20">
+    <div className="flex flex-col min-h-full space-y-8 sm:space-y-12 pb-6 sm:pb-8">
       {/* ========================================================================= */}
-      {/* 2. HERO SECTION WITH SEAMLESS 3-VIDEO AUTOMATIC SLIDER                    */}
+      {/* 2. HERO SECTION — FULL BACKGROUND VIDEO SLIDER (DSi-INSPIRED)             */}
       {/* ========================================================================= */}
-      <section className="bg-gradient-to-b from-[#FAF9F5] via-[#F6F4EE] to-background border-b-2 border-border pt-8 pb-12 sm:pt-14 sm:pb-16 lg:pt-16 lg:pb-20 overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center">
-            {/* Left Column: Mission, Typography, Actions, Story Chapter Tabs */}
-            <div className="lg:col-span-6 xl:col-span-6 space-y-5 sm:space-y-6 text-left">
-              {/* Top Pill Badge */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#D97D54]/30 bg-[#FDF4EF] px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#8A3D24] shadow-xs">
-                <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#C85D36] shrink-0" />
-                <span>Community Skill &amp; Knowledge Exchange</span>
-              </div>
+      <HeroBackgroundVideo>
+        <div className="max-w-4xl space-y-6 sm:space-y-8 text-left">
+          {/* Top Pill Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 backdrop-blur-md px-4 py-1.5 text-xs sm:text-sm font-semibold text-white shadow-sm">
+            <Sparkles className="h-4 w-4 text-amber-300 shrink-0" />
+            <span>{t("hero.badge", "Community Skill & Knowledge Exchange")}</span>
+          </div>
 
-              {/* Headline with Brand Underline Styling */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[2.65rem] xl:text-[2.85rem] font-black tracking-tight text-[#231F1C] leading-[1.2] sm:leading-[1.18]">
+          {/* Large Bold High-Contrast Headline */}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-[4rem] xl:text-[4.25rem] font-black tracking-tight text-white leading-[1.14] sm:leading-[1.1] [text-shadow:_0_2px_14px_rgba(0,0,0,0.85)]">
+            {language === "ja" ? (
+              <>
+                <span className="relative inline-block text-amber-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  <span>過去の知恵</span>
+                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#E5B55E] rounded-full shadow-md" />
+                </span>
+                <span>と、</span>
+                <br className="hidden sm:inline" />{" "}
+                <span className="relative inline-block text-emerald-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  <span>現在のエネルギー</span>
+                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#66C2A5] rounded-full shadow-md" />
+                </span>
+                <span>をつなぐ。</span>
+              </>
+            ) : (
+              <>
                 Connecting the{" "}
-                <span className="relative inline-block text-[#9E391A]">
+                <span className="relative inline-block text-amber-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                   <span>wisdom of the</span>
-                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[6px] bg-[#E5B55E] rounded-full" />
+                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#E5B55E] rounded-full shadow-md" />
                 </span>
-                <br className="hidden sm:inline" />
-                {" "}
-                <span className="relative inline-block text-[#9E391A]">
+                <br className="hidden sm:inline" />{" "}
+                <span className="relative inline-block text-amber-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                   <span>past</span>
-                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[6px] bg-[#E5B55E] rounded-full" />
-                </span>
-                {" "}with the{" "}
-                <span className="relative inline-block text-[#2A4D3E]">
+                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#E5B55E] rounded-full shadow-md" />
+                </span>{" "}
+                with the{" "}
+                <span className="relative inline-block text-emerald-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                   <span>energy of today.</span>
-                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[6px] bg-[#66C2A5] rounded-full" />
+                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#66C2A5] rounded-full shadow-md" />
                 </span>
-              </h1>
+              </>
+            )}
+          </h1>
 
-              {/* Subtitle */}
-              <p className="text-sm sm:text-base lg:text-lg text-[#5C5248] font-medium leading-relaxed max-w-xl">
-                Tsunagu Generations brings older and younger generations together to share knowledge, exchange practical help, and build meaningful companionship.
-              </p>
+          {/* Supporting Text */}
+          <p className="text-base sm:text-lg md:text-xl text-white font-medium leading-relaxed max-w-2xl [text-shadow:_0_1px_8px_rgba(0,0,0,0.85)]">
+            {t(
+              "hero.subtitle",
+              "Tsunagu Generations brings older and younger generations together to share knowledge, exchange practical help, and build meaningful companionship."
+            )}
+          </p>
 
-              {/* Mobile-Only Video Placement for Clear Vertical Priority */}
-              <div className="block lg:hidden pt-1">
-                <HeroVideoSlider
-                  externalIndex={activeVideoIndex}
-                  onSlideChange={setActiveVideoIndex}
-                />
-              </div>
-
-              {/* CTA Action Buttons */}
-              <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-[#315B4B] hover:bg-[#234336] text-white font-bold text-sm sm:text-base px-7 py-3.5 h-12 rounded-xl shadow-md gap-2 cursor-pointer transition-transform hover:scale-[1.02]"
-                >
-                  <Link href="/posts">
-                    <span>Explore Community Posts</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="border-2 border-border bg-card hover:bg-muted font-bold text-sm sm:text-base px-6 py-3.5 h-12 rounded-xl cursor-pointer"
-                >
-                  <Link href="/register">
-                    <span>Join Our Community</span>
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Interactive Story Tabs Synchronized with Active Video */}
-              <div className="pt-3 border-t border-border/70 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
-                  <span className="text-[11px] uppercase tracking-wider">Community Story Highlights:</span>
-                  <span className="text-[11px] font-mono font-semibold text-primary">
-                    0{activeVideoIndex + 1} / 0{HERO_VIDEOS.length}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {HERO_VIDEOS.map((v, i) => (
-                    <button
-                      key={v.tag}
-                      type="button"
-                      onClick={() => setActiveVideoIndex(i)}
-                      className={`p-2 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                        activeVideoIndex === i
-                          ? "bg-[#315B4B] text-white border-[#315B4B] shadow-sm scale-[1.02]"
-                          : "bg-card/90 text-foreground border-border hover:border-primary/50 hover:bg-muted/70"
-                      }`}
-                    >
-                      <span className={`text-[10px] font-mono font-bold block ${
-                        activeVideoIndex === i ? "text-amber-300" : "text-muted-foreground"
-                      }`}>
-                        0{i + 1}
-                      </span>
-                      <span className="text-[11px] sm:text-xs font-bold leading-tight line-clamp-1 mt-0.5">
-                        {v.tag}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column (Desktop & Tablet): Framed Automatic Video Slider */}
-            <div className="hidden lg:block lg:col-span-6 xl:col-span-6">
-              <div className="relative">
-                {/* Subtle Ambient Decorative Glow */}
-                <div className="absolute -inset-2 bg-gradient-to-r from-amber-200/30 to-emerald-200/30 rounded-3xl blur-xl opacity-70 pointer-events-none" />
-                <HeroVideoSlider
-                  externalIndex={activeVideoIndex}
-                  onSlideChange={setActiveVideoIndex}
-                />
-              </div>
-            </div>
+          {/* Prominent CTA Buttons */}
+          <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 max-w-md sm:max-w-none">
+            <Button
+              asChild
+              size="lg"
+              className="bg-[#315B4B] hover:bg-[#234336] text-white font-bold text-sm sm:text-base px-8 py-4 h-13 rounded-xl shadow-xl gap-2 cursor-pointer transition-all hover:scale-[1.02] border border-emerald-400/30"
+            >
+              <Link href="/posts">
+                <span>{t("hero.exploreBtn", "Explore Community Posts")}</span>
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="bg-white/10 hover:bg-white/20 border-white/35 text-white font-bold text-sm sm:text-base px-8 py-4 h-13 rounded-xl backdrop-blur-md transition-all cursor-pointer hover:border-white shadow-lg"
+            >
+              <Link href="/register">
+                <span>{t("hero.joinBtn", "Join Our Community")}</span>
+              </Link>
+            </Button>
           </div>
         </div>
-      </section>
+      </HeroBackgroundVideo>
 
       {/* ========================================================================= */}
       {/* 3. ABOUT OUR PLATFORM SECTION                                             */}
@@ -172,13 +136,16 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-            <span>Our Core Philosophy</span>
+            <span>{t("about.badge", "Our Core Philosophy")}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
-            Everyone Can Teach, Everyone Can Learn
+            {t("about.title", "Everyone Can Teach, Everyone Can Learn")}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Tsunagu Generations is founded on reciprocal community exchange. No user is locked into a permanent provider or receiver role—each generation brings valuable experience, curiosity, and care.
+            {t(
+              "about.subtitle",
+              "Tsunagu Generations is founded on reciprocal community exchange. No user is locked into a permanent provider or receiver role—each generation brings valuable experience, curiosity, and care."
+            )}
           </p>
         </div>
 
@@ -191,14 +158,17 @@ export default function HomePage() {
                 <BookOpen className="h-6 w-6" />
               </div>
               <h3 className="text-xl font-black text-foreground">
-                Knowledge Sharing
+                {t("about.cards.0.title", "Knowledge Sharing")}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Pass down traditional recipes, cultural crafts, calligraphy, gardening wisdom, and life stories, while younger members exchange modern skills, digital tools, and fresh viewpoints.
+                {t(
+                  "about.cards.0.desc",
+                  "Pass down traditional recipes, cultural crafts, calligraphy, gardening wisdom, and life stories, while younger members exchange modern skills, digital tools, and fresh viewpoints."
+                )}
               </p>
             </div>
             <div className="pt-2 border-t border-border/60 text-xs font-bold text-primary flex items-center gap-1">
-              <span>Reciprocal learning</span>
+              <span>{t("about.cards.0.tag", "Reciprocal learning")}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -210,14 +180,17 @@ export default function HomePage() {
                 <HandHelping className="h-6 w-6" />
               </div>
               <h3 className="text-xl font-black text-foreground">
-                Mutual Support
+                {t("about.cards.1.title", "Mutual Support")}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Help with everyday tasks such as smartphone settings, video calling, grocery errands, minor household chores, or seasonal preparation—provided with patience and neighborhood goodwill.
+                {t(
+                  "about.cards.1.desc",
+                  "Help with everyday tasks such as smartphone settings, video calling, grocery errands, minor household chores, or seasonal preparation—provided with patience and neighborhood goodwill."
+                )}
               </p>
             </div>
             <div className="pt-2 border-t border-border/60 text-xs font-bold text-amber-800 flex items-center gap-1">
-              <span>Practical assistance</span>
+              <span>{t("about.cards.1.tag", "Practical assistance")}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -229,14 +202,17 @@ export default function HomePage() {
                 <HeartHandshake className="h-6 w-6" />
               </div>
               <h3 className="text-xl font-black text-foreground">
-                Companionship
+                {t("about.cards.2.title", "Companionship")}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Build genuine intergenerational friendships through casual conversation over tea, peaceful neighborhood walks, listening, and sharing hobbies that alleviate social isolation.
+                {t(
+                  "about.cards.2.desc",
+                  "Build genuine intergenerational friendships through casual conversation over tea, peaceful neighborhood walks, listening, and sharing hobbies that alleviate social isolation."
+                )}
               </p>
             </div>
             <div className="pt-2 border-t border-border/60 text-xs font-bold text-rose-700 flex items-center gap-1">
-              <span>Social connection</span>
+              <span>{t("about.cards.2.tag", "Social connection")}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -250,10 +226,13 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
-              How Tsunagu Works
+              {t("howItWorks.title", "How Tsunagu Works")}
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground">
-              A simple, respectful four-step process designed to make connecting effortless and safe for all ages.
+              {t(
+                "howItWorks.subtitle",
+                "A simple, respectful four-step process designed to make connecting effortless and safe for all ages."
+              )}
             </p>
           </div>
 
@@ -269,14 +248,17 @@ export default function HomePage() {
                   </div>
                 </div>
                 <h3 className="text-lg font-black text-foreground">
-                  Create a Post
+                  {t("howItWorks.steps.0.title", "Create a Post")}
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Post a skill or service you would love to share, or write a friendly request for assistance you need.
+                  {t(
+                    "howItWorks.steps.0.desc",
+                    "Post a skill or service you would love to share, or write a friendly request for assistance you need."
+                  )}
                 </p>
               </div>
               <div className="text-[11px] font-bold text-muted-foreground">
-                Easy quick-post format
+                {t("howItWorks.steps.0.badge", "Easy quick-post format")}
               </div>
             </div>
 
@@ -290,14 +272,17 @@ export default function HomePage() {
                   </div>
                 </div>
                 <h3 className="text-lg font-black text-foreground">
-                  Discover & Respond
+                  {t("howItWorks.steps.1.title", "Discover & Respond")}
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Explore listings in your neighborhood. Send a polite connection request with an introductory message.
+                  {t(
+                    "howItWorks.steps.1.desc",
+                    "Explore listings in your neighborhood. Send a polite connection request with an introductory message."
+                  )}
                 </p>
               </div>
               <div className="text-[11px] font-bold text-muted-foreground">
-                Filter by category & area
+                {t("howItWorks.steps.1.badge", "Filter by category & area")}
               </div>
             </div>
 
@@ -311,14 +296,17 @@ export default function HomePage() {
                   </div>
                 </div>
                 <h3 className="text-lg font-black text-foreground">
-                  Connect & Coordinate
+                  {t("howItWorks.steps.2.title", "Connect & Coordinate")}
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Chat securely within Tsunagu. Agree on the date, time, and comfortable public location for your exchange.
+                  {t(
+                    "howItWorks.steps.2.desc",
+                    "Chat securely within Tsunagu. Agree on the date, time, and comfortable public location for your exchange."
+                  )}
                 </p>
               </div>
               <div className="text-[11px] font-bold text-muted-foreground">
-                In-app private messaging
+                {t("howItWorks.steps.2.badge", "In-app private messaging")}
               </div>
             </div>
 
@@ -332,14 +320,17 @@ export default function HomePage() {
                   </div>
                 </div>
                 <h3 className="text-lg font-black text-foreground">
-                  Complete & Review
+                  {t("howItWorks.steps.3.title", "Complete & Review")}
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Meet up, enjoy the mutual exchange, confirm completion, and leave warm, encouraging feedback for each other.
+                  {t(
+                    "howItWorks.steps.3.desc",
+                    "Meet up, enjoy the mutual exchange, confirm completion, and leave warm, encouraging feedback for each other."
+                  )}
                 </p>
               </div>
               <div className="text-[11px] font-bold text-muted-foreground">
-                Build community trust
+                {t("howItWorks.steps.3.badge", "Build community trust")}
               </div>
             </div>
           </div>
@@ -347,19 +338,22 @@ export default function HomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 5. EXCHANGE CATEGORIES SECTION — 5 INFORMATIONAL CARDS                     */}
+      {/* 5. EXCHANGE CATEGORIES SECTION — 6 INFORMATIONAL CARDS (3x2 GRID)         */}
       {/* ========================================================================= */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-2">
           <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
-            Exchange Categories
+            {t("categories.title", "Exchange Categories")}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Explore the diverse areas of mutual exchange supported across our community.
+            {t(
+              "categories.subtitle",
+              "Explore the diverse areas of mutual exchange supported across our community."
+            )}
           </p>
         </div>
 
-        {/* 5 Informational Category Cards */}
+        {/* 6 Informational Category Cards in a clean 3x2 Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* 1. Daily Assistance */}
           <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
@@ -367,20 +361,25 @@ export default function HomePage() {
               <HandHelping className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-foreground">Daily Assistance</h3>
+              <h3 className="text-lg font-black text-foreground">
+                {t("categories.items.0.title", "Daily Assistance")}
+              </h3>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                Practical help with grocery runs, errands, light parcel carrying, and daily neighborhood tasks.
+                {t(
+                  "categories.items.0.desc",
+                  "Practical help with grocery runs, errands, light parcel carrying, and daily neighborhood tasks."
+                )}
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Grocery Runs
+                {t("categories.items.0.tags.0", "Grocery Runs")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Errands
+                {t("categories.items.0.tags.1", "Errands")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Neighborhood Help
+                {t("categories.items.0.tags.2", "Neighborhood Help")}
               </span>
             </div>
           </div>
@@ -391,20 +390,25 @@ export default function HomePage() {
               <Smartphone className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-foreground">Technology Help</h3>
+              <h3 className="text-lg font-black text-foreground">
+                {t("categories.items.1.title", "Technology Help")}
+              </h3>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                Patient guidance on smartphone navigation, video calls with family, email setup, and digital devices.
+                {t(
+                  "categories.items.1.desc",
+                  "Patient guidance on smartphone navigation, video calls with family, email setup, and digital devices."
+                )}
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Smartphones
+                {t("categories.items.1.tags.0", "Smartphones")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Video Calls
+                {t("categories.items.1.tags.1", "Video Calls")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Digital Apps
+                {t("categories.items.1.tags.2", "Digital Apps")}
               </span>
             </div>
           </div>
@@ -415,20 +419,25 @@ export default function HomePage() {
               <HeartHandshake className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-foreground">Companionship</h3>
+              <h3 className="text-lg font-black text-foreground">
+                {t("categories.items.2.title", "Companionship")}
+              </h3>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                Warm and friendly conversation over tea, park strolls, reminiscing, and sharing joyful moments.
+                {t(
+                  "categories.items.2.desc",
+                  "Warm and friendly conversation over tea, park strolls, reminiscing, and sharing joyful moments."
+                )}
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Tea Chats
+                {t("categories.items.2.tags.0", "Tea Chats")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Walking
+                {t("categories.items.2.tags.1", "Walking")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Shared Hobbies
+                {t("categories.items.2.tags.2", "Shared Hobbies")}
               </span>
             </div>
           </div>
@@ -439,44 +448,83 @@ export default function HomePage() {
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-foreground">Learning & Skills</h3>
+              <h3 className="text-lg font-black text-foreground">
+                {t("categories.items.3.title", "Learning & Skills")}
+              </h3>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                Traditional home cooking, calligraphy, origami, language practice, history, and craft techniques.
+                {t(
+                  "categories.items.3.desc",
+                  "Traditional home cooking, calligraphy, origami, language practice, history, and craft techniques."
+                )}
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Home Cooking
+                {t("categories.items.3.tags.0", "Home Cooking")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Handicrafts
+                {t("categories.items.3.tags.1", "Handicrafts")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Languages
+                {t("categories.items.3.tags.2", "Languages")}
               </span>
             </div>
           </div>
 
           {/* 5. Home Assistance */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4 md:col-span-2 lg:col-span-1">
+          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
             <div className="h-11 w-11 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center">
               <Flower2 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-foreground">Home Assistance</h3>
+              <h3 className="text-lg font-black text-foreground">
+                {t("categories.items.4.title", "Home Assistance")}
+              </h3>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                Balcony gardening tips, plant watering during trips, book organization, and seasonal home tidying.
+                {t(
+                  "categories.items.4.desc",
+                  "Balcony gardening tips, plant watering during trips, book organization, and seasonal home tidying."
+                )}
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Gardening
+                {t("categories.items.4.tags.0", "Gardening")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Plant Care
+                {t("categories.items.4.tags.1", "Plant Care")}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                Home Organization
+                {t("categories.items.4.tags.2", "Home Organization")}
+              </span>
+            </div>
+          </div>
+
+          {/* 6. Community & Local Activities */}
+          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
+            <div className="h-11 w-11 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center">
+              <Users className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-foreground">
+                {t("categories.items.5.title", "Community & Local Activities")}
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                {t(
+                  "categories.items.5.desc",
+                  "Join neighborhood events, cultural activities, community gardening, and local group activities to build friendships and stay connected."
+                )}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
+                {t("categories.items.5.tags.0", "Local Events")}
+              </span>
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
+                {t("categories.items.5.tags.1", "Cultural Activities")}
+              </span>
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
+                {t("categories.items.5.tags.2", "Community Groups")}
               </span>
             </div>
           </div>
@@ -484,16 +532,19 @@ export default function HomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 6. FINAL CALL TO ACTION — COMPACT CARD MATCHING SECTION STYLE             */}
+      {/* 6. FINAL CALL TO ACTION — FULL-WIDTH NATURAL CARD MATCHING GRID           */}
       {/* ========================================================================= */}
-      <section className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border-2 border-border bg-gradient-to-r from-[#234336] via-[#2F5344] to-[#234336] text-white p-6 sm:p-8 text-center space-y-4 shadow-sm relative overflow-hidden">
-          <div className="max-w-xl mx-auto space-y-2">
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border-2 border-border bg-gradient-to-r from-[#234336] via-[#2F5344] to-[#234336] text-white p-6 sm:p-10 text-center space-y-4 shadow-sm relative overflow-hidden">
+          <div className="max-w-2xl mx-auto space-y-2">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-snug">
-              Everyone has something to share. Everyone has something to gain.
+              {t("cta.title", "Everyone has something to share. Everyone has something to gain.")}
             </h2>
             <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
-              Join your local Tsunagu community today. Whether you wish to share wisdom, lend an everyday hand, or connect with a neighbor, there is a place for you.
+              {t(
+                "cta.subtitle",
+                "Join your local Tsunagu community today. Whether you wish to share wisdom, lend an everyday hand, or connect with a neighbor, there is a place for you."
+              )}
             </p>
           </div>
 
@@ -501,10 +552,10 @@ export default function HomePage() {
             <Button
               asChild
               size="lg"
-              className="bg-amber-400 hover:bg-amber-300 text-stone-900 font-black text-xs sm:text-sm px-7 py-3 h-11 rounded-xl shadow-md transition-all cursor-pointer gap-2"
+              className="bg-amber-400 hover:bg-amber-300 text-stone-900 font-black text-xs sm:text-sm px-8 py-3.5 h-12 rounded-xl shadow-md transition-all cursor-pointer gap-2"
             >
               <Link href="/posts">
-                <span>Get Started</span>
+                <span>{t("cta.getStarted", "Get Started")}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

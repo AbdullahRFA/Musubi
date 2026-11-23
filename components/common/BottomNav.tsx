@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Compass, PlusCircle, MessageSquare, User } from "lucide-react";
 import { useSession } from "@/lib/services/authService";
+import { useLanguage } from "@/lib/i18n";
 
 export function BottomNav() {
   const pathname = usePathname();
   const session = useSession();
+  const { t } = useLanguage();
 
   // Bottom navigation is shown exclusively to authenticated users on mobile viewports
   if (!session) return null;
@@ -15,32 +17,32 @@ export function BottomNav() {
   const navItems = [
     {
       href: "/",
-      label: "Home",
+      label: t("bottomNav.home", "Home"),
       icon: Home,
       isActive: pathname === "/",
     },
     {
       href: "/search",
-      label: "Discover",
+      label: t("bottomNav.discover", "Discover"),
       icon: Compass,
       isActive: pathname.startsWith("/search") || pathname.startsWith("/posts"),
     },
     {
       href: "/quick-post",
-      label: "Create",
+      label: t("bottomNav.create", "Create"),
       icon: PlusCircle,
       isActive: pathname.startsWith("/quick-post") || pathname.startsWith("/posts/new"),
       highlight: true,
     },
     {
       href: "/chat",
-      label: "Messages",
+      label: t("bottomNav.messages", "Messages"),
       icon: MessageSquare,
       isActive: pathname.startsWith("/chat"),
     },
     {
       href: `/profile/${session.id}`,
-      label: "Profile",
+      label: t("bottomNav.profile", "Profile"),
       icon: User,
       isActive: pathname.startsWith(`/profile/${session.id}`),
     },
