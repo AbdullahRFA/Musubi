@@ -38,6 +38,8 @@ export interface AssistantMessage extends Partial<Omit<AssistantResponse, "reply
   role: "user" | "assistant";
   content: string;
   error?: boolean;
+  /** "faq" when answered instantly from the stored FAQ (no AI call). */
+  source?: "faq" | "ai";
 }
 
 /** sessionStorage key used to hand a draft to the post form. */
