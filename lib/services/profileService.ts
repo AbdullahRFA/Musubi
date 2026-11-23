@@ -5,8 +5,9 @@ import { placeByName, detectGeneration } from "@/lib/constants";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Need, Profile, PublicProfile, Skill } from "@/lib/types";
 import { average } from "@/lib/utils";
-import { useSession } from "@/lib/services/authService";
+import { useSession, profileToRow, syncSessionUser } from "@/lib/services/authService";
 import { hiddenFrom, requireUser, ServiceError } from "@/lib/services/shared";
+import { createClient } from "@/lib/supabase/client";
 
 export type ProfilePatch = Partial<
   Pick<
@@ -210,6 +211,15 @@ export async function updateProfile(patch: ProfilePatch) {
   useAppStore.setState((state) => ({
     users: state.users.map((user) => (user.id === me.id ? next : user)),
   }));
+
+  // Sync update to Supabase
+  try {
+    const supabase = createClient();
+    await supabase.from("profiles").upsert(profileToRow(next));
+  } catch (err) {
+    console.warn("Failed to sync profile update to Supabase:", err);
+  }
+
   return next;
 }
 

@@ -11,8 +11,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     email TEXT NOT NULL,
     full_name TEXT NOT NULL,
     avatar_url TEXT,
+    age INTEGER,
     age_group TEXT CHECK (age_group IN ('18-29', '30-49', '50-64', '65+')),
     location TEXT NOT NULL DEFAULT '',
+    neighborhoods TEXT[] DEFAULT '{}',
     lat DOUBLE PRECISION,
     lng DOUBLE PRECISION,
     bio TEXT NOT NULL DEFAULT '',
@@ -276,3 +278,46 @@ CREATE POLICY "Users can manage blocks" ON public.blocks
 -- Realtime publications
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+
+-- ==============================================================================
+-- AUTOMATIC PROFILE CREATION TRIGGER
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (
+    id,
+    email,
+    full_name,
+    age,
+    age_group,
+    location,
+    neighborhoods,
+    user_group,
+    created_at,
+    updated_at
+  ) VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    (NEW.raw_user_meta_data->>'age')::INTEGER,
+    NEW.raw_user_meta_data->>'age_group',
+    COALESCE(NEW.raw_user_meta_data->>'location', ''),
+    COALESCE(ARRAY(SELECT jsonb_array_elements_text(NEW.raw_user_meta_data->'neighborhoods')), '{}'::TEXT[]),
+    COALESCE(NEW.raw_user_meta_data->>'user_group', 'yg'),
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = EXCLUDED.full_name,
+    email = EXCLUDED.email,
+    updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
