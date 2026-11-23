@@ -18,6 +18,7 @@ import {
   CalendarDays,
   Inbox,
   SearchX,
+  Flag,
 } from "lucide-react";
 import { usePost, closePost, deletePost } from "@/lib/services/postService";
 import { usePublicProfile } from "@/lib/services/profileService";
@@ -28,6 +29,7 @@ import { initials, formatDay } from "@/lib/utils";
 import { PostStatusBadge, RequestStatusBadge } from "@/components/common/StatusBadge";
 import { RatingStars } from "@/components/common/RatingStars";
 import { SafetyBanner } from "@/components/common/SafetyBanner";
+import { ReportDialog } from "@/components/common/ReportDialog";
 import { DemoPaymentBanner } from "@/components/common/DemoPaymentBanner";
 import { DynamicMap } from "@/components/maps/DynamicMap";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,7 @@ export default function PostDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   if (!post) {
     return (
@@ -152,7 +155,22 @@ export default function PostDetailPage() {
                     {post.category}
                   </Badge>
                 </div>
-                <PostStatusBadge status={post.status} />
+                <div className="flex items-center gap-1.5">
+                  <PostStatusBadge status={post.status} />
+                  {!isOwner && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => (session ? setReportOpen(true) : router.push("/login"))}
+                      className="min-h-[36px] px-2.5 gap-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      aria-label="Report this post"
+                      title="Report this post"
+                    >
+                      <Flag className="h-4 w-4" />
+                      <span className="hidden sm:inline">Report</span>
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-tight text-foreground break-words">
@@ -428,6 +446,14 @@ export default function PostDetailPage() {
           )}
         </aside>
       </div>
+
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        targetType="post"
+        targetId={post.id}
+        targetLabel={`“${post.title}”`}
+      />
 
       {/* Sticky respond CTA on mobile for non-owners */}
       {!isOwner && post.status === "open" && session && !myExistingRequest && (
