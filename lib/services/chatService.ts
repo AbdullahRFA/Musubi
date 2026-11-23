@@ -6,7 +6,7 @@ import type { Conversation, Message } from "@/lib/types";
 import { pushNotification } from "@/lib/services/notificationService";
 import { hiddenFrom, requireUser, ServiceError, userById } from "@/lib/services/shared";
 import { createClient } from "@/lib/supabase/client";
-import { rowToConversation, rowToRequest } from "@/lib/services/requestService";
+import { rowToConversation, rowToRequest, rowToActivity } from "@/lib/services/requestService";
 import { rowToProfile } from "@/lib/services/authService";
 import { rowToPost } from "@/lib/services/postService";
 
@@ -235,6 +235,20 @@ export async function fetchConversationThread(conversationId: string): Promise<v
 
   const request = reqData ? rowToRequest(reqData) : null;
 
+  // Fetch completed activity if request is completed
+  let activity = null;
+  if (request?.status === "completed") {
+    const { data: actData } = await supabase
+      .from("activities")
+      .select("*")
+      .eq("request_id", request.id)
+      .single();
+
+    if (actData) {
+      activity = rowToActivity(actData);
+    }
+  }
+
   if (request?.postId) {
     const { data: postData } = await supabase
       .from("posts")
@@ -276,6 +290,11 @@ export async function fetchConversationThread(conversationId: string): Promise<v
           ? state.requests.map((r) => (r.id === request.id ? request : r))
           : [request, ...state.requests]
         : state.requests,
+      activities: activity
+        ? state.activities.some((a) => a.id === activity.id)
+          ? state.activities.map((a) => (a.id === activity.id ? activity : a))
+          : [activity, ...state.activities]
+        : state.activities,
       messages: [...keptMsgs, ...messages],
       users: Array.from(userMap.values()),
     };
@@ -360,11 +379,16 @@ export function useThread(conversationId: string) {
   const safetyAck = useAppStore((state) => state.safetyAck);
   const userId = useAppStore((state) => state.sessionUserId);
 
-  // 1. Initial fetch of conversation & thread
+  // 1. Initial fetch of conversation & thread + 3s sync for completion/feedback status
   useEffect(() => {
-    if (conversationId) {
+    if (!conversationId) return;
+    fetchConversationThread(conversationId);
+
+    const interval = setInterval(() => {
       fetchConversationThread(conversationId);
-    }
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [conversationId]);
 
   // 2. Supabase Realtime channel subscription for instant live messaging

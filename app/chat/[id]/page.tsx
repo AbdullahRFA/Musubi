@@ -13,11 +13,13 @@ import {
   Sparkles,
   AlertCircle,
   Coins,
+  Star,
 } from "lucide-react";
 import { useThread, sendMessage, acknowledgeSafety } from "@/lib/services/chatService";
 import { usePublicProfile } from "@/lib/services/profileService";
 import { confirmCompletion } from "@/lib/services/requestService";
 import { useSession } from "@/lib/services/authService";
+import { useAppStore } from "@/lib/store/useAppStore";
 import { groupShort } from "@/lib/constants";
 import { formatWhen, initials, money } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -95,8 +97,6 @@ export default function ChatRoomPage() {
       const res = await confirmCompletion(request.id);
       if (res.completed && res.activityId) {
         router.push(`/feedback/${res.activityId}`);
-      } else {
-        alert("You marked this activity completed! Waiting for the other person to confirm.");
       }
     } catch (err: any) {
       alert(err?.message || "Failed to update completion.");
@@ -105,7 +105,15 @@ export default function ChatRoomPage() {
     }
   };
 
+  const isRequester = request.requesterId === session?.id;
+  const myDone = isRequester ? request.requesterDone : request.ownerDone;
+  const otherDone = isRequester ? request.ownerDone : request.requesterDone;
   const isCompleted = request.status === "completed";
+
+  const activities = useAppStore((state) => state.activities);
+  const reviews = useAppStore((state) => state.reviews);
+  const activity = activities.find((a) => a.requestId === request.id) || null;
+  const myReview = activity ? reviews.find((r) => r.activityId === activity.id && r.reviewerId === session?.id) : null;
 
   return (
     <AuthGuard>
@@ -163,8 +171,41 @@ export default function ChatRoomPage() {
               </Link>
             )}
 
-            {/* Mark Activity Completed Button */}
-            {!isCompleted ? (
+            {/* Mark Activity Completed / Mutual Confirmation / Feedback State */}
+            {isCompleted ? (
+              <div className="flex items-center gap-2">
+                {myReview ? (
+                  <Link href={`/profile/${other?.id}`}>
+                    <Button size="sm" variant="outline" className="text-xs font-semibold gap-1 text-emerald-800 bg-emerald-50 border-emerald-300">
+                      <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-400" />
+                      <span>Feedback Given</span>
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href={activity ? `/feedback/${activity.id}` : `/my-activity?tab=completed`}>
+                    <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs gap-1.5 shadow-sm">
+                      <Star className="h-3.5 w-3.5 fill-white text-white" />
+                      <span>Leave Feedback</span>
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ) : myDone && !otherDone ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-xs font-semibold">
+                <Clock className="h-3.5 w-3.5 text-amber-700 animate-spin" />
+                <span>Waiting for {other?.fullName?.split(" ")[0] || "neighbor"}</span>
+              </div>
+            ) : !myDone && otherDone ? (
+              <Button
+                size="sm"
+                onClick={handleCompleteActivity}
+                disabled={completing}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-sm animate-pulse"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Confirm & Finish</span>
+              </Button>
+            ) : (
               <Button
                 size="sm"
                 variant="outline"
@@ -175,20 +216,59 @@ export default function ChatRoomPage() {
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                 <span>Mark Completed</span>
               </Button>
-            ) : (
-              <span className="text-xs font-bold text-success flex items-center gap-1">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Completed</span>
-              </span>
             )}
           </div>
         </div>
 
-        {/* Public Place Safety Tip Banner */}
-        <div className="bg-amber-50 border-x-2 border-amber-300 px-4 py-2 text-xs font-medium text-amber-900 flex items-center gap-2">
-          <ShieldAlert className="h-4 w-4 text-amber-700 shrink-0" />
-          <span>For first meetings, always choose a public or community place (library, cafe, park).</span>
-        </div>
+        {/* Interactive Mutual Completion Status Banner */}
+        {isCompleted ? (
+          <div className="bg-emerald-50 border-x-2 border-emerald-300 px-4 py-2.5 text-xs text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>
+                🎉 <strong>Exchange completed!</strong> Both neighbors confirmed. You can now leave feedback for each other.
+              </span>
+            </div>
+            {!myReview && activity && (
+              <Link href={`/feedback/${activity.id}`}>
+                <Button size="sm" className="h-7 text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-bold gap-1 shrink-0">
+                  <Star className="h-3 w-3 fill-amber-300 text-amber-300" />
+                  <span>Rate & Review</span>
+                </Button>
+              </Link>
+            )}
+          </div>
+        ) : myDone && !otherDone ? (
+          <div className="bg-amber-50 border-x-2 border-amber-300 px-4 py-2 text-xs text-amber-900 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-amber-700 shrink-0" />
+            <span>
+              You marked this exchange completed. Waiting for <strong>{other?.fullName}</strong> to also confirm. Once both confirm, feedback will unlock.
+            </span>
+          </div>
+        ) : !myDone && otherDone ? (
+          <div className="bg-emerald-50 border-x-2 border-emerald-400 px-4 py-2.5 text-xs text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>
+                <strong>{other?.fullName}</strong> has confirmed the exchange is done! Confirm completion to exchange reviews.
+              </span>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleCompleteActivity}
+              disabled={completing}
+              className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 shrink-0"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Confirm Now</span>
+            </Button>
+          </div>
+        ) : (
+          <div className="bg-amber-50/60 border-x-2 border-amber-200 px-4 py-1.5 text-xs font-medium text-amber-900 flex items-center gap-2">
+            <ShieldAlert className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+            <span>For first meetings, always choose a public or community place (library, cafe, park).</span>
+          </div>
+        )}
 
         {/* Message Thread List */}
         <div className="flex-1 overflow-y-auto border-x-2 border-border bg-[#faf6f0] p-4 sm:p-6 space-y-4">

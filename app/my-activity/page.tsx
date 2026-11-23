@@ -174,13 +174,29 @@ function ActivityContent() {
                 const other = getUser(req.requesterId === session?.id ? req.ownerId : req.requesterId);
                 const conversation = conversations.find((c) => c.requestId === req.id);
                 const chatHref = conversation ? `/chat/${conversation.id}` : "/chat";
+                const isRequester = req.requesterId === session?.id;
+                const myDone = isRequester ? req.requesterDone : req.ownerDone;
+                const otherDone = isRequester ? req.ownerDone : req.requesterDone;
+
                 return (
                   <Card key={req.id} className="p-5 border-2 border-secondary bg-secondary/5 space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <h3 className="font-bold text-lg text-foreground">
-                          Exchange with {other?.fullName}
-                        </h3>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-lg text-foreground">
+                            Exchange with {other?.fullName}
+                          </h3>
+                          {myDone && !otherDone && (
+                            <span className="text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded">
+                              Waiting for partner confirmation
+                            </span>
+                          )}
+                          {!myDone && otherDone && (
+                            <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded animate-pulse">
+                              Partner marked completed!
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           Status: Active · Connected since {formatWhen(req.updatedAt)}
                         </p>
