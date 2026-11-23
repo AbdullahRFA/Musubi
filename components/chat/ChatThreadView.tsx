@@ -24,6 +24,11 @@ import {
 } from "@/lib/services/chatService";
 import { usePublicProfile } from "@/lib/services/profileService";
 import { confirmCompletion } from "@/lib/services/requestService";
+import {
+  markConversationRead,
+  setActiveConversation,
+  getActiveConversation,
+} from "@/lib/services/notificationService";
 import { useSession } from "@/lib/services/authService";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { useLanguage } from "@/lib/i18n";
@@ -64,6 +69,25 @@ export function ChatThreadView({
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [thread?.messages.length]);
+
+  // Messenger-style read receipts: while this thread is open, its message
+  // notifications are cleared and new ones don't raise a toast
+  useEffect(() => {
+    setActiveConversation(conversationId);
+    markConversationRead(conversationId);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") markConversationRead(conversationId);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      if (getActiveConversation() === conversationId) setActiveConversation(null);
+    };
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (document.visibilityState === "visible") markConversationRead(conversationId);
+  }, [conversationId, thread?.messages.length]);
 
   // Clean up speech synthesis on unmount
   useEffect(() => {

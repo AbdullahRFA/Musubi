@@ -6,6 +6,7 @@ import { Home, Compass, PlusCircle, MessageSquare, User } from "lucide-react";
 import { useSession } from "@/lib/services/authService";
 import { useUnreadMessageCount } from "@/lib/services/notificationService";
 import { useLanguage } from "@/lib/i18n";
+import { CountBadge } from "@/components/notifications/NavPanels";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -87,11 +88,7 @@ export function BottomNav() {
                   }`}
                 >
                   <Icon className={item.highlight ? "h-6 w-6" : "h-5 w-5"} />
-                  {item.href === "/chat" && unreadMessages > 0 && (
-                    <span className="absolute -top-0.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white ring-2 ring-card">
-                      {unreadMessages > 9 ? "9+" : unreadMessages}
-                    </span>
-                  )}
+                  {item.href === "/chat" && <CountBadge count={unreadMessages} className="-top-1 right-0.5" />}
                 </span>
                 <span className="w-full truncate text-center px-0.5 leading-tight">{item.label}</span>
               </Link>

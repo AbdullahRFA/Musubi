@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, memo } from "react";
 import {
-  Bell,
-  MessageSquare,
   Search,
   LogOut,
   Menu,
@@ -14,7 +12,7 @@ import {
   FileCheck2,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/services/authService";
-import { useUnreadCount, useUnreadMessageCount } from "@/lib/services/notificationService";
+import { MessagesMenu, NotificationsMenu } from "@/components/notifications/NavPanels";
 import { Button } from "@/components/ui/button";
 import { initials } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -23,8 +21,6 @@ export const Header = memo(function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const session = useSession();
-  const unreadCount = useUnreadCount();
-  const unreadMessageCount = useUnreadMessageCount();
   const { language, setLanguage, t } = useLanguage();
 
   const [fontSize, setFontSize] = useState<"standard" | "large">("standard");
@@ -200,33 +196,11 @@ export const Header = memo(function Header() {
           {/* If Logged In: Notifications, Chat, Profile Menu */}
           {session ? (
             <>
-              {/* Chat Icon (desktop/tablet; mobile has bottom nav) */}
-              <Link
-                href="/chat"
-                className="hidden md:inline-flex relative h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted hover:text-primary transition-colors duration-200"
-                aria-label={t("nav.messages")}
-              >
-                <MessageSquare className="h-5 w-5" />
-                {unreadMessageCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white shadow">
-                    {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
-                  </span>
-                )}
-              </Link>
+              {/* Messenger (desktop dropdown; phones use the bottom nav) */}
+              <MessagesMenu label={t("nav.messages")} />
 
-              {/* Notification Bell */}
-              <Link
-                href="/notifications"
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted hover:text-primary transition-colors duration-200 shrink-0"
-                aria-label={`${t("nav.notifications")} ${unreadCount > 0 ? `(${unreadCount})` : ""}`}
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white shadow">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </Link>
+              {/* Notifications bell (desktop dropdown, phones link to the page) */}
+              <NotificationsMenu label={t("nav.notifications")} />
 
               {/* User Avatar & Name Link */}
               <div className="hidden md:flex items-center gap-1 pl-2 ml-1 border-l border-border shrink-0">

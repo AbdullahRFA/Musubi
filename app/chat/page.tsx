@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { MessageSquare, Clock, ShieldCheck, ChevronRight, Compass } from "lucide-react";
 import { useConversations } from "@/lib/services/chatService";
+import { useUnreadByConversation } from "@/lib/services/notificationService";
 import { formatWhen, initials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AuthGuard } from "@/components/common/AuthGuard";
@@ -16,6 +17,7 @@ function ChatMasterDetail() {
   const searchParams = useSearchParams();
   const paramId = searchParams.get("id");
   const conversations = useConversations();
+  const unreadByConvo = useUnreadByConversation();
   const { language } = useLanguage();
   const isJa = language === "ja";
 
@@ -121,6 +123,7 @@ function ChatMasterDetail() {
             <ul className="flex-1 overflow-y-auto overscroll-contain divide-y divide-border/70">
               {conversations.map(({ conversation, other, last, post }) => {
                 const isSelected = selectedId === conversation.id;
+                const unread = isSelected ? 0 : unreadByConvo[conversation.id] ?? 0;
                 return (
                   <li key={conversation.id}>
                     <button
@@ -128,10 +131,15 @@ function ChatMasterDetail() {
                       onClick={() => handleSelectConversation(conversation.id)}
                       aria-current={isSelected ? "true" : undefined}
                       className={`group w-full text-left px-4 py-4 transition-colors duration-200 flex items-start gap-3 border-l-4 ${
-                        isSelected ? "bg-[#F3F7F2] border-l-[#315B4B]" : "bg-card border-l-transparent hover:bg-[#FAF9F5]"
+                        isSelected
+                          ? "bg-[#F3F7F2] border-l-[#315B4B]"
+                          : unread > 0
+                          ? "bg-primary/[0.04] border-l-primary/60 hover:bg-primary/[0.07]"
+                          : "bg-card border-l-transparent hover:bg-[#FAF9F5]"
                       }`}
                     >
-                      <div className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-base shrink-0 border border-border overflow-hidden transition-transform group-hover:scale-105">
+                      <div className="relative shrink-0">
+                      <div className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-base border border-border overflow-hidden transition-transform group-hover:scale-105">
                         {other?.avatarUrl ? (
                           <img src={other.avatarUrl} alt="" className="h-full w-full object-cover" />
                         ) : other ? (
@@ -140,10 +148,14 @@ function ChatMasterDetail() {
                           "?"
                         )}
                       </div>
+                        {unread > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-primary ring-2 ring-card" aria-hidden="true" />
+                        )}
+                      </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
-                          <h3 className="font-bold text-base text-foreground truncate">
+                          <h3 className={`text-base text-foreground truncate ${unread > 0 ? "font-black" : "font-bold"}`}>
                             {other?.fullName ?? (isJa ? "地域の仲間" : "Community Member")}
                           </h3>
                           <span className="text-[11px] text-muted-foreground flex items-center gap-1 shrink-0">
@@ -163,9 +175,23 @@ function ChatMasterDetail() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground truncate leading-snug">
-                          {last ? last.body : isJa ? "やり取りを開始しましょう" : "Say hello!"}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p
+                            className={`flex-1 text-sm truncate leading-snug ${
+                              unread > 0 ? "text-foreground font-semibold" : "text-muted-foreground"
+                            }`}
+                          >
+                            {last ? last.body : isJa ? "やり取りを開始しましょう" : "Say hello!"}
+                          </p>
+                          {unread > 0 && (
+                            <span
+                              className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground tabular-nums animate-in zoom-in-95"
+                              aria-label={`${unread} unread`}
+                            >
+                              {unread > 9 ? "9+" : unread}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <ChevronRight

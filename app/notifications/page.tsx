@@ -1,45 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import {
-  Bell,
-  BellOff,
-  CheckCheck,
-  Clock,
-  Inbox,
-  CheckCircle2,
-  XCircle,
-  MessageSquare,
-  Activity,
-  Star,
-  Coins,
-  ChevronRight,
-  type LucideIcon,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bell, BellOff, CheckCheck, Clock, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import {
   useNotifications,
   markNotificationRead,
-  markAllNotificationsRead,
+  markAllActivityRead,
+  isSoundEnabled,
+  setSoundEnabled,
+  playAlertSound,
 } from "@/lib/services/notificationService";
-import type { Notification, NotificationType } from "@/lib/types";
+import type { Notification } from "@/lib/types";
+import { notificationStyle, timeAgo } from "@/components/notifications/notificationStyles";
 import { formatWhen } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AuthGuard } from "@/components/common/AuthGuard";
 
-const TYPE_STYLE: Record<NotificationType, { icon: LucideIcon; className: string }> = {
-  request_new: { icon: Inbox, className: "bg-blue-50 text-blue-700" },
-  request_accepted: { icon: CheckCircle2, className: "bg-emerald-50 text-emerald-700" },
-  request_rejected: { icon: XCircle, className: "bg-rose-50 text-rose-700" },
-  message: { icon: MessageSquare, className: "bg-[#E7EEE4] text-[#315B4B]" },
-  activity: { icon: Activity, className: "bg-amber-50 text-amber-700" },
-  completed: { icon: CheckCheck, className: "bg-emerald-50 text-emerald-700" },
-  review: { icon: Star, className: "bg-amber-50 text-amber-600" },
-  payment: { icon: Coins, className: "bg-blue-50 text-blue-700" },
-};
-
 function NotificationRow({ n }: { n: Notification }) {
-  const style = TYPE_STYLE[n.type] ?? { icon: Bell, className: "bg-muted text-foreground" };
+  const style = notificationStyle(n.type);
   const Icon = style.icon;
   return (
     <li>
@@ -64,7 +43,9 @@ function NotificationRow({ n }: { n: Notification }) {
             <h3 className={`text-base font-bold ${n.read ? "text-foreground" : "text-primary"}`}>{n.title}</h3>
             <span className="flex items-center gap-1 shrink-0 text-xs text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
-              {formatWhen(n.createdAt)}
+              <time dateTime={n.createdAt} title={formatWhen(n.createdAt)}>
+                {timeAgo(n.createdAt)}
+              </time>
             </span>
           </div>
           <p className={`text-sm ${n.read ? "text-muted-foreground" : "text-foreground/90"}`}>{n.body}</p>
@@ -77,7 +58,10 @@ function NotificationRow({ n }: { n: Notification }) {
 }
 
 export default function NotificationsPage() {
-  const notifications = useNotifications();
+  // Chat messages live in Messages (like Facebook / Messenger), so they're excluded here
+  const notifications = useNotifications().filter((n) => n.type !== "message");
+  const [sound, setSound] = useState(true);
+  useEffect(() => setSound(isSoundEnabled()), []);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const unread = useMemo(() => notifications.filter((n) => !n.read), [notifications]);
@@ -110,12 +94,28 @@ export default function NotificationsPage() {
             </p>
           </div>
 
-          {unread.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => markAllNotificationsRead()} className="gap-1.5 font-semibold self-start sm:self-auto">
-              <CheckCheck className="h-4 w-4" />
-              Mark all as read
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSoundEnabled(!sound);
+                setSound(!sound);
+                if (!sound) playAlertSound("notification");
+              }}
+              aria-pressed={sound}
+              className="gap-1.5 font-semibold"
+            >
+              {sound ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              {sound ? "Sound on" : "Sound off"}
             </Button>
-          )}
+            {unread.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => markAllActivityRead()} className="gap-1.5 font-semibold">
+                <CheckCheck className="h-4 w-4" />
+                Mark all as read
+              </Button>
+            )}
+          </div>
         </div>
 
         {notifications.length > 0 && (

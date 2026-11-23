@@ -8,26 +8,127 @@ import { createClient } from "@/lib/supabase/client";
 
 type NotificationInput = Omit<Notification, "id" | "read" | "createdAt">;
 
-export function playNotificationSound() {
-  if (typeof window === "undefined") return;
+/* -------------------------------------------------------------------------- */
+/* Sound                                                                      */
+/* -------------------------------------------------------------------------- */
+
+const SOUND_PREF_KEY = "tsunagu_sound_enabled";
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioCtx) return null;
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+/**
+ * Browsers block audio until the user interacts with the page. Call once on
+ * mount: the shared AudioContext is resumed on the first tap / key press so
+ * later alerts can play even when they arrive in the background.
+ */
+export function unlockAudioOnFirstInteraction() {
+  if (typeof window === "undefined") return () => {};
+  const unlock = () => {
+    const ctx = getAudioContext();
+    ctx?.resume().catch(() => {});
+    window.removeEventListener("pointerdown", unlock);
+    window.removeEventListener("keydown", unlock);
+  };
+  window.addEventListener("pointerdown", unlock, { once: true });
+  window.addEventListener("keydown", unlock, { once: true });
+  return () => {
+    window.removeEventListener("pointerdown", unlock);
+    window.removeEventListener("keydown", unlock);
+  };
+}
+
+export function isSoundEnabled(): boolean {
+  if (typeof window === "undefined") return true;
   try {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.4);
-  } catch (e) {
+    return localStorage.getItem(SOUND_PREF_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+export function setSoundEnabled(enabled: boolean) {
+  try {
+    localStorage.setItem(SOUND_PREF_KEY, enabled ? "on" : "off");
+  } catch {
+    // storage unavailable (private mode) — preference just won't persist
+  }
+}
+
+function tone(ctx: AudioContext, freq: number, start: number, duration: number, volume: number, type: OscillatorType = "sine") {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start + duration + 0.02);
+}
+
+/**
+ * Plays a short synthesized alert.
+ * - "message": quick two-note "pop" (Messenger-style)
+ * - "notification": softer three-note chime (bell-style)
+ * - "in-chat": very quiet tick for messages in the conversation you're viewing
+ */
+export function playAlertSound(kind: "message" | "notification" | "in-chat" = "notification") {
+  if (!isSoundEnabled()) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    const t = ctx.currentTime + 0.01;
+    if (kind === "message") {
+      tone(ctx, 880, t, 0.12, 0.22, "triangle"); // A5
+      tone(ctx, 1318.5, t + 0.09, 0.18, 0.18, "triangle"); // E6
+    } else if (kind === "in-chat") {
+      tone(ctx, 1046.5, t, 0.08, 0.06, "sine"); // C6, very soft
+    } else {
+      tone(ctx, 659.25, t, 0.35, 0.16); // E5
+      tone(ctx, 830.61, t + 0.12, 0.35, 0.14); // G#5
+      tone(ctx, 987.77, t + 0.24, 0.5, 0.12); // B5
+    }
+  } catch {
     // Ignore autoplay or audio context errors
   }
+}
+
+/** @deprecated kept for backwards compatibility — use playAlertSound */
+export function playNotificationSound() {
+  playAlertSound("notification");
+}
+
+/* -------------------------------------------------------------------------- */
+/* Active conversation tracking                                               */
+/* -------------------------------------------------------------------------- */
+
+let activeConversationId: string | null = null;
+
+/** Set by the open chat thread so incoming messages for it don't raise a toast. */
+export function setActiveConversation(id: string | null) {
+  activeConversationId = id;
+}
+
+export function getActiveConversation() {
+  return activeConversationId;
+}
+
+/** Extracts the conversation id from a message notification link. */
+export function conversationIdFromHref(href: string): string | null {
+  const path = href.match(/^\/chat\/([^/?#]+)/);
+  if (path) return decodeURIComponent(path[1]);
+  const query = href.match(/[?&]id=([^&#]+)/);
+  return href.startsWith("/chat") && query ? decodeURIComponent(query[1]) : null;
 }
 
 export function rowToNotification(row: any): Notification {
@@ -48,38 +149,34 @@ export function rowToNotification(row: any): Notification {
  */
 export async function pushNotification(input: NotificationInput): Promise<Notification> {
   const supabase = createClient();
-  const newRow = {
-    user_id: input.userId,
-    type: input.type,
-    title: input.title,
-    body: input.body,
-    href: input.href,
+
+  // Notifications are almost always addressed to *another* user. RLS only lets
+  // the recipient SELECT their rows, so `insert().select()` (RETURNING) fails
+  // with a policy error and rolls the insert back — the recipient never gets
+  // it. Generate the id client-side and insert without reading the row back.
+  const item: Notification = {
+    ...input,
+    id: newUuid(),
     read: false,
+    createdAt: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
-    .from("notifications")
-    .insert(newRow)
-    .select()
-    .single();
+  const { error } = await supabase.from("notifications").insert({
+    id: item.id,
+    user_id: item.userId,
+    type: item.type,
+    title: item.title,
+    body: item.body,
+    href: item.href,
+    read: false,
+    created_at: item.createdAt,
+  });
 
   if (error) {
     console.error("pushNotification Supabase error:", error);
   }
 
-  let item: Notification;
-  if (!error && data) {
-    item = rowToNotification(data);
-  } else {
-    item = {
-      ...input,
-      id: "n_" + Math.random().toString(36).substring(2, 9),
-      read: false,
-      createdAt: new Date().toISOString(),
-    };
-  }
-
-  // Only update local notifications if this notification is for the current user
+  // Only reflect locally if the notification is for the current user
   const currentUserId = useAppStore.getState().sessionUserId;
   if (item.userId === currentUserId) {
     useAppStore.setState((state) => ({
@@ -88,6 +185,15 @@ export async function pushNotification(input: NotificationInput): Promise<Notifi
   }
 
   return item;
+}
+
+function newUuid(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  // RFC 4122 v4 fallback for older browsers
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
 }
 
 /**
@@ -145,35 +251,84 @@ export function useNotifications(): Notification[] {
   );
 }
 
-export function useUnreadCount(): number {
+function useCurrentUserId() {
   const sessionUserId = useAppStore((state) => state.sessionUserId);
-  const session = useAppStore((state) =>
-    state.users.find((u) => u.id === state.sessionUserId)
-  );
-  const userId = session?.id || sessionUserId;
-  const notifications = useAppStore((state) => state.notifications);
+  const session = useAppStore((state) => state.users.find((u) => u.id === state.sessionUserId));
+  return session?.id || sessionUserId;
+}
 
+/** Unread activity notifications (everything except chat messages) — drives the bell badge. */
+export function useUnreadCount(): number {
+  const userId = useCurrentUserId();
+  const notifications = useAppStore((state) => state.notifications);
   return useMemo(
-    () => notifications.filter((item) => !item.read && item.userId === userId).length,
+    () => notifications.filter((item) => !item.read && item.userId === userId && item.type !== "message").length,
     [notifications, userId],
   );
 }
 
+/** Unread chat messages — drives the messenger badge. */
 export function useUnreadMessageCount(): number {
-  const sessionUserId = useAppStore((state) => state.sessionUserId);
-  const session = useAppStore((state) =>
-    state.users.find((u) => u.id === state.sessionUserId)
-  );
-  const userId = session?.id || sessionUserId;
+  const userId = useCurrentUserId();
   const notifications = useAppStore((state) => state.notifications);
-
   return useMemo(
-    () =>
-      notifications.filter(
-        (item) => !item.read && item.userId === userId && item.type === "message",
-      ).length,
+    () => notifications.filter((item) => !item.read && item.userId === userId && item.type === "message").length,
     [notifications, userId],
   );
+}
+
+/** Map of conversationId -> number of unread messages. */
+export function useUnreadByConversation(): Record<string, number> {
+  const userId = useCurrentUserId();
+  const notifications = useAppStore((state) => state.notifications);
+  return useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const n of notifications) {
+      if (n.read || n.userId !== userId || n.type !== "message") continue;
+      const id = conversationIdFromHref(n.href);
+      if (id) counts[id] = (counts[id] ?? 0) + 1;
+    }
+    return counts;
+  }, [notifications, userId]);
+}
+
+/**
+ * Marks every unread message notification for a conversation as read
+ * (called when the user opens / is viewing that chat).
+ */
+export async function markConversationRead(conversationId: string): Promise<void> {
+  const userId = useAppStore.getState().sessionUserId;
+  if (!userId) return;
+  const ids = useAppStore
+    .getState()
+    .notifications.filter(
+      (n) => !n.read && n.userId === userId && n.type === "message" && conversationIdFromHref(n.href) === conversationId,
+    )
+    .map((n) => n.id);
+  if (ids.length === 0) return;
+
+  // Optimistic local update so badges clear instantly
+  useAppStore.setState((state) => ({
+    notifications: state.notifications.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)),
+  }));
+
+  const supabase = createClient();
+  await supabase.from("notifications").update({ read: true }).in("id", ids).eq("user_id", userId);
+}
+
+/** Marks all unread activity (non-message) notifications as read. */
+export async function markAllActivityRead(): Promise<void> {
+  const me = requireUser();
+  const ids = useAppStore
+    .getState()
+    .notifications.filter((n) => !n.read && n.userId === me.id && n.type !== "message")
+    .map((n) => n.id);
+  if (ids.length === 0) return;
+  useAppStore.setState((state) => ({
+    notifications: state.notifications.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)),
+  }));
+  const supabase = createClient();
+  await supabase.from("notifications").update({ read: true }).in("id", ids).eq("user_id", me.id);
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
