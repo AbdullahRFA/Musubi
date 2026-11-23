@@ -253,12 +253,15 @@ CREATE POLICY "Participants can send messages" ON public.messages
         )
     );
 
--- Notifications: Only target user can view and update
+-- Notifications: Only target user can view and update, authenticated users can send notifications
 CREATE POLICY "Users can view own notifications" ON public.notifications
     FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can update own notifications" ON public.notifications
     FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert notifications" ON public.notifications
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- Activities: Participants can view and create completed activities
 CREATE POLICY "Participants can view activities" ON public.activities

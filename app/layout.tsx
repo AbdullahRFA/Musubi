@@ -4,6 +4,7 @@ import { Footer } from "@/components/common/Footer";
 import { BottomNav } from "@/components/common/BottomNav";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { NotificationToast } from "@/components/notifications/NotificationToast";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function RootLayout({
         <AuthProvider>
           <LanguageProvider>
             <Header />
+            <NotificationToast />
             <main className="flex-1 focus:outline-none pb-16 md:pb-0">{children}</main>
             <Footer />
             <BottomNav />

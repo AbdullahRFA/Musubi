@@ -8,6 +8,28 @@ import { createClient } from "@/lib/supabase/client";
 
 type NotificationInput = Omit<Notification, "id" | "read" | "createdAt">;
 
+export function playNotificationSound() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.4);
+  } catch (e) {
+    // Ignore autoplay or audio context errors
+  }
+}
+
 export function rowToNotification(row: any): Notification {
   return {
     id: row.id,
@@ -41,6 +63,10 @@ export async function pushNotification(input: NotificationInput): Promise<Notifi
     .select()
     .single();
 
+  if (error) {
+    console.error("pushNotification Supabase error:", error);
+  }
+
   let item: Notification;
   if (!error && data) {
     item = rowToNotification(data);
@@ -53,9 +79,13 @@ export async function pushNotification(input: NotificationInput): Promise<Notifi
     };
   }
 
-  useAppStore.setState((state) => ({
-    notifications: [item, ...state.notifications],
-  }));
+  // Only update local notifications if this notification is for the current user
+  const currentUserId = useAppStore.getState().sessionUserId;
+  if (item.userId === currentUserId) {
+    useAppStore.setState((state) => ({
+      notifications: [item, ...state.notifications.filter((n) => n.id !== item.id)],
+    }));
+  }
 
   return item;
 }
@@ -64,14 +94,17 @@ export async function pushNotification(input: NotificationInput): Promise<Notifi
  * Fetch notifications from Supabase for the current user
  */
 export async function fetchNotifications(): Promise<Notification[]> {
-  const user = useAppStore.getState().users.find((u) => u.id === useAppStore.getState().sessionUserId);
-  if (!user) return [];
-
   const supabase = createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  const currentUserId = authUser?.id || useAppStore.getState().sessionUserId;
+  if (!currentUserId) return [];
+
   const { data, error } = await supabase
     .from("notifications")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", currentUserId)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
