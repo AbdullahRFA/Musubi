@@ -198,3 +198,56 @@ export const PasswordInput = forwardRef<HTMLInputElement, Omit<InputProps, "type
     </div>
   );
 });
+
+/** Live password strength meter with checklist (used when choosing a new password). */
+export function PasswordStrength({ value }: { value: string }) {
+  const checks = [
+    { ok: value.length >= 8, label: "8+ characters" },
+    { ok: /[A-Za-z]/.test(value) && /\d/.test(value), label: "Letters & numbers" },
+    { ok: /[A-Z]/.test(value) && /[a-z]/.test(value), label: "Upper & lower case" },
+    { ok: /[^A-Za-z0-9]/.test(value), label: "A symbol" },
+  ];
+  const score = checks.filter((c) => c.ok).length + (value.length >= 12 ? 1 : 0);
+  const level =
+    value.length === 0
+      ? { label: "", bar: "bg-muted", text: "text-muted-foreground" }
+      : score <= 1
+      ? { label: "Weak", bar: "bg-destructive", text: "text-destructive" }
+      : score <= 3
+      ? { label: "Fair", bar: "bg-amber-500", text: "text-amber-700" }
+      : { label: "Strong", bar: "bg-success", text: "text-success" };
+
+  return (
+    <div className="space-y-2" aria-live="polite">
+      <div className="flex items-center gap-2">
+        <div className="grid flex-1 grid-cols-5 gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-colors duration-300 ${i < score && value ? level.bar : "bg-muted"}`}
+            />
+          ))}
+        </div>
+        {level.label && <span className={`text-xs font-bold w-12 text-right ${level.text}`}>{level.label}</span>}
+      </div>
+      <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        {checks.map((c) => (
+          <li
+            key={c.label}
+            className={`flex items-center gap-1.5 transition-colors ${c.ok ? "text-success font-semibold" : "text-muted-foreground"}`}
+          >
+            <span
+              className={`flex h-3.5 w-3.5 items-center justify-center rounded-full text-[9px] ${
+                c.ok ? "bg-success text-white" : "border border-border"
+              }`}
+              aria-hidden="true"
+            >
+              {c.ok ? "✓" : ""}
+            </span>
+            {c.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
