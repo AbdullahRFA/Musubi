@@ -55,7 +55,7 @@ export const postSchema = z.object({
   skill: z.string().trim().min(2, "Name the skill or service.").max(60),
   location: z.string().trim().min(2, "Choose a location."),
   availability: z.string().trim().min(2, "Choose availability."),
-  postType: z.enum(["offer", "request"]),
+  postType: z.enum(["offer", "request"]).default("request"),
   exchangeMethod: z.enum(["free", "exchange", "paid"]),
   amount: z.number().nullable(),
 }).superRefine((value, ctx) => {
