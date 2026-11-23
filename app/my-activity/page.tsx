@@ -241,7 +241,7 @@ function ActivityContent() {
                   const isRequester = req.requesterId === session?.id;
                   const other = getUser(isRequester ? req.ownerId : req.requesterId);
                   const conversation = conversations.find((c) => c.requestId === req.id);
-                  const chatHref = conversation ? `/chat/${conversation.id}` : "/chat";
+                  const chatHref = conversation ? `/chat?id=${conversation.id}` : "/chat";
                   const post = allPosts.find((p) => p.id === req.postId);
                   const myDone = isRequester ? req.requesterDone : req.ownerDone;
                   const otherDone = isRequester ? req.ownerDone : req.requesterDone;

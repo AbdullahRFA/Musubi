@@ -96,7 +96,7 @@ export default function RequestsPage() {
 
   const conversationHref = (requestId: string) => {
     const convo = conversations.find((c) => c.requestId === requestId);
-    return convo ? `/chat/${convo.id}` : "/chat";
+    return convo ? `/chat?id=${convo.id}` : "/chat";
   };
 
   const tabs = [
