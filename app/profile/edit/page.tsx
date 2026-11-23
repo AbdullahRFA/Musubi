@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,10 +13,13 @@ import {
   MapPin,
   HeartHandshake,
   Search,
+  Camera,
+  Trash2,
 } from "lucide-react";
 import { profileSchema, type ProfileValues } from "@/lib/validators";
 import { useSession } from "@/lib/services/authService";
 import { updateProfile } from "@/lib/services/profileService";
+import { initials } from "@/lib/utils";
 import {
   POPULAR_NEIGHBORHOODS,
   SUGGESTED_SKILLS,
@@ -48,6 +51,10 @@ export default function EditProfilePage() {
   const [servicesNeeded, setServicesNeeded] = useState<string[]>([]);
   const [needQuery, setNeedQuery] = useState("");
   const [isNeedOpen, setIsNeedOpen] = useState(false);
+
+  // Profile Picture state
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +94,7 @@ export default function EditProfilePage() {
       }
       setSkills(session.skills || []);
       setServicesNeeded(session.servicesNeeded || []);
+      if (session.avatarUrl) setAvatarPreview(session.avatarUrl);
     }
   }, [session, reset]);
 
@@ -177,6 +185,51 @@ export default function EditProfilePage() {
     setServicesNeeded(servicesNeeded.filter((n) => n !== tag));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Please choose an image under 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_SIZE = 400;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        setAvatarPreview(compressedDataUrl);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const onSubmit = async (values: ProfileValues) => {
     setError(null);
     if (neighborhoods.length === 0) {
@@ -189,17 +242,18 @@ export default function EditProfilePage() {
       const numericAge = typeof age === "number" ? age : Number(age) || null;
       await updateProfile({
         fullName: values.fullName,
-        email: values.email,
+        email: values.email || session?.email,
         age: numericAge,
         neighborhoods,
-        location: neighborhoods[0] || values.location,
-        bio: values.bio,
+        location: neighborhoods[0] || values.location || session?.location || "",
+        bio: values.bio || "",
         availability: values.availability || "Flexible",
         contactMethod: values.contactMethod,
         phone: values.contactMethod === "phone" ? values.phone : null,
         skills,
         servicesOffered: skills,
         servicesNeeded,
+        avatarUrl: avatarPreview,
       });
       router.push(`/profile/${session?.id}`);
     } catch (err: any) {
@@ -220,7 +274,12 @@ export default function EditProfilePage() {
             </p>
           </CardHeader>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form
+            onSubmit={handleSubmit(onSubmit, (formErrors) => {
+              const firstErr = Object.values(formErrors)[0]?.message;
+              if (firstErr) setError(firstErr);
+            })}
+          >
             <CardContent className="space-y-6 pt-6">
               {error && (
                 <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive font-medium border border-destructive/20">
@@ -228,6 +287,62 @@ export default function EditProfilePage() {
                   <span>{error}</span>
                 </div>
               )}
+
+              {/* Profile Picture Upload */}
+              <div className="space-y-2 pb-4 border-b border-border/80">
+                <label className="text-sm sm:text-base font-bold text-foreground">
+                  Profile Picture
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="h-20 w-20 rounded-full border-2 border-border bg-secondary text-secondary-foreground flex items-center justify-center text-xl font-bold overflow-hidden shadow-xs shrink-0">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt="Profile picture"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      initials(session?.fullName || "User")
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="gap-1.5 font-bold text-xs"
+                      >
+                        <Camera className="h-3.5 w-3.5" />
+                        <span>{avatarPreview ? "Change Photo" : "Upload Photo"}</span>
+                      </Button>
+                      {avatarPreview && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveAvatar}
+                          className="gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span>Remove</span>
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      PNG, JPG, or WEBP up to 5MB. Resized automatically.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* Full Name */}
               <div className="space-y-1.5">

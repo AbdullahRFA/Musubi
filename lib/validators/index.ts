@@ -24,26 +24,26 @@ export const registerSchema = loginSchema.extend({
 
 export const profileSchema = z.object({
   fullName: z.string().trim().min(2, "Please enter your full name.").max(80),
-  email: z.string().trim().email("Enter a valid email address."),
+  email: z.string().trim().email("Enter a valid email address.").optional(),
   age: z.coerce.number().min(13).max(120).nullable().optional(),
   userGroup: z.enum(["og", "yg"]).optional(),
   ageGroup: z.enum(["18-29", "30-49", "50-64", "65+"]).or(z.literal("")).optional(),
-  location: z.string().trim().min(2, "Choose a location."),
+  location: z.string().trim().optional(),
   neighborhoods: z.array(z.string().trim().min(1)).max(5).optional(),
-  bio: z.string().trim().max(400, "Please keep your bio under 400 characters."),
-  availability: z.string().trim().optional(),
-  contactMethod: z.enum(["chat", "phone"]),
-  phone: z.string().trim().max(30),
-  interests: z.array(z.string().trim().min(1).max(40)).max(12),
-  skills: z.array(z.string().trim().min(1).max(40)).max(12),
-  servicesOffered: z.array(z.string().trim().min(1).max(40)).max(12),
-  servicesNeeded: z.array(z.string().trim().min(1).max(40)).max(12),
+  bio: z.string().trim().max(400, "Please keep your bio under 400 characters.").optional().default(""),
+  availability: z.string().trim().optional().default("Flexible"),
+  contactMethod: z.enum(["chat", "phone"]).default("chat"),
+  phone: z.string().trim().max(30).optional().nullable(),
+  interests: z.array(z.string().trim().min(1).max(40)).max(12).optional().default([]),
+  skills: z.array(z.string().trim().min(1).max(40)).max(12).optional().default([]),
+  servicesOffered: z.array(z.string().trim().min(1).max(40)).max(12).optional().default([]),
+  servicesNeeded: z.array(z.string().trim().min(1).max(40)).max(12).optional().default([]),
 }).superRefine((value, ctx) => {
-  if (value.contactMethod === "phone" && value.phone.replace(/\D/g, "").length < 6) {
+  if (value.contactMethod === "phone" && (!value.phone || value.phone.replace(/\D/g, "").length < 6)) {
     ctx.addIssue({
       code: "custom",
       path: ["phone"],
-      message: "Add a phone number, or choose chat as your contact method.",
+      message: "Add a phone number with at least 6 digits, or choose chat as your contact method.",
     });
   }
 });

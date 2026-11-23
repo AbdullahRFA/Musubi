@@ -210,8 +210,12 @@ export const Header = memo(function Header() {
                   className="flex items-center gap-1.5 p-0.5 rounded-md hover:bg-muted transition-colors"
                   title={t("nav.viewProfile")}
                 >
-                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground font-bold text-xs shadow-inner">
-                    {initials(session.fullName)}
+                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground font-bold text-xs shadow-inner overflow-hidden shrink-0">
+                    {session.avatarUrl ? (
+                      <img src={session.avatarUrl} alt={session.fullName} className="h-full w-full object-cover" />
+                    ) : (
+                      initials(session.fullName)
+                    )}
                   </div>
                   <span className="hidden lg:inline text-xs font-bold text-foreground max-w-[100px] truncate">
                     {session.fullName}
