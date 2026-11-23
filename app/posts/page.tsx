@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
-import { Sparkles, PlusCircle, Search, RefreshCcw } from "lucide-react";
+import { Sparkles, PlusCircle, RefreshCcw } from "lucide-react";
 import { usePosts } from "@/lib/services/postService";
 import { useSession } from "@/lib/services/authService";
 import { CATEGORIES, EXCHANGE_METHODS } from "@/lib/constants";
 import { PostCard } from "@/components/posts/PostCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 
 export default function PostsDirectoryPage() {
@@ -16,7 +15,6 @@ export default function PostsDirectoryPage() {
   const allPosts = usePosts();
   const { language, t } = useLanguage();
 
-  const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedType, setSelectedType] = useState<"all" | "offer" | "request">("all");
   const [selectedExchange, setSelectedExchange] = useState("all");
@@ -26,20 +24,11 @@ export default function PostsDirectoryPage() {
       if (selectedCategory !== "all" && post.category !== selectedCategory) return false;
       if (selectedType !== "all" && post.postType !== selectedType) return false;
       if (selectedExchange !== "all" && post.exchangeMethod !== selectedExchange) return false;
-      if (query.trim()) {
-        const q = query.toLowerCase();
-        const matchesTitle = post.title.toLowerCase().includes(q);
-        const matchesDesc = post.description.toLowerCase().includes(q);
-        const matchesSkill = post.skill.toLowerCase().includes(q);
-        const matchesLocation = post.location.toLowerCase().includes(q);
-        if (!matchesTitle && !matchesDesc && !matchesSkill && !matchesLocation) return false;
-      }
       return true;
     });
-  }, [allPosts, query, selectedCategory, selectedType, selectedExchange]);
+  }, [allPosts, selectedCategory, selectedType, selectedExchange]);
 
   const resetFilters = () => {
-    setQuery("");
     setSelectedCategory("all");
     setSelectedType("all");
     setSelectedExchange("all");
@@ -104,33 +93,22 @@ export default function PostsDirectoryPage() {
       )}
 
       {/* Filter Toolbar */}
-      <div className="rounded-lg border-2 border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="relative w-full flex-1">
-            <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t("postsPage.searchPlaceholder", "Filter by keyword, skill, title, or place...")}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-11"
-            />
-          </div>
-
-          {(query || selectedCategory !== "all" || selectedType !== "all" || selectedExchange !== "all") && (
+      <div className="rounded-lg border-2 border-border bg-card p-4 sm:p-6 space-y-3 shadow-sm">
+        {(selectedCategory !== "all" || selectedType !== "all" || selectedExchange !== "all") && (
+          <div className="flex justify-end">
             <Button
               variant="ghost"
               size="sm"
               onClick={resetFilters}
-              className="text-muted-foreground hover:text-foreground gap-1.5 shrink-0"
+              className="text-muted-foreground hover:text-foreground gap-1.5 shrink-0 h-8 text-xs"
             >
-              <RefreshCcw className="h-4 w-4" />
+              <RefreshCcw className="h-3.5 w-3.5" />
               <span>{t("postsPage.resetFilters", "Clear all filters")}</span>
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-border/60">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Post Type Selector */}
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">
@@ -212,7 +190,7 @@ export default function PostsDirectoryPage() {
           <p className="text-sm text-muted-foreground">
             {t(
               "postsPage.noPostsDesc",
-              "Try adjusting your search keywords, or check back soon as neighbors add new posts."
+              "Try adjusting your filters, or check back soon as neighbors add new posts."
             )}
           </p>
           <Button variant="outline" onClick={resetFilters}>

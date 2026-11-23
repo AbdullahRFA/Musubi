@@ -8,16 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   UserPlus,
   AlertCircle,
-  MapPin,
-  Check,
-  Search,
-  Sparkles,
   ArrowRight,
   HeartHandshake,
 } from "lucide-react";
 import { registerSchema, type RegisterValues } from "@/lib/validators";
 import { signUp } from "@/lib/services/authService";
-import { POPULAR_NEIGHBORHOODS, detectGeneration } from "@/lib/constants";
+import { detectGeneration } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -27,14 +23,9 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Neighborhood search and auto-suggestion state
-  const [neighborhoodInput, setNeighborhoodInput] = useState("");
-  const [isNeighborhoodOpen, setIsNeighborhoodOpen] = useState(false);
-
   const {
     register,
     handleSubmit,
-    setValue,
     watch,
     formState: { errors },
   } = useForm<RegisterValues>({
@@ -44,12 +35,10 @@ export default function RegisterPage() {
       email: "",
       password: "",
       age: undefined as any,
-      neighborhood: "",
     },
   });
 
   const watchedAge = watch("age");
-  const watchedNeighborhood = watch("neighborhood");
 
   // Dynamic automatic age group detection
   const detectedGroup = useMemo(() => {
@@ -57,21 +46,6 @@ export default function RegisterPage() {
     if (!numericAge || numericAge < 13 || numericAge > 120) return null;
     return detectGeneration(numericAge);
   }, [watchedAge]);
-
-  // Dynamic neighborhood search suggestions
-  const filteredNeighborhoods = useMemo(() => {
-    if (!neighborhoodInput.trim()) return POPULAR_NEIGHBORHOODS.slice(0, 6);
-    const q = neighborhoodInput.toLowerCase().trim();
-    return POPULAR_NEIGHBORHOODS.filter((place) =>
-      place.toLowerCase().includes(q)
-    );
-  }, [neighborhoodInput]);
-
-  const selectNeighborhood = (name: string) => {
-    setValue("neighborhood", name, { shouldValidate: true });
-    setNeighborhoodInput(name);
-    setIsNeighborhoodOpen(false);
-  };
 
   const onSubmit = async (values: RegisterValues) => {
     setError(null);
@@ -82,7 +56,6 @@ export default function RegisterPage() {
         email: values.email,
         password: values.password,
         age: values.age,
-        neighborhood: values.neighborhood,
       });
       // Redirect directly to onboarding page per requirements
       router.push("/onboarding");
@@ -219,96 +192,6 @@ export default function RegisterPage() {
                   Enter your age (60+ is automatically Older Generation, under 60 is Younger Generation).
                 </p>
               )}
-            </div>
-
-            {/* Dynamic Neighborhood Search */}
-            <div className="space-y-1.5 pt-1 relative">
-              <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-primary" />
-                <span>Your Neighborhood</span>
-                <span className="text-muted-foreground font-normal text-[11px]">(Optional — choose or search)</span>
-              </label>
-
-              <div className="relative">
-                <Input
-                  value={neighborhoodInput}
-                  onChange={(e) => {
-                    setNeighborhoodInput(e.target.value);
-                    setValue("neighborhood", e.target.value);
-                    setIsNeighborhoodOpen(true);
-                  }}
-                  onFocus={() => setIsNeighborhoodOpen(true)}
-                  onBlur={() => setTimeout(() => setIsNeighborhoodOpen(false), 250)}
-                  placeholder="Type to search e.g. Hamamachi, Peace Park, Dejima..."
-                  className="h-10 text-sm pl-9 pr-4"
-                />
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-              </div>
-
-              {/* Suggestions Dropdown */}
-              {isNeighborhoodOpen && (
-                <div className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border-2 border-border bg-white p-1.5 shadow-2xl">
-                  {filteredNeighborhoods.length > 0 ? (
-                    filteredNeighborhoods.map((name) => (
-                      <button
-                        key={name}
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          selectNeighborhood(name);
-                        }}
-                        className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs rounded-lg font-medium transition-colors hover:bg-primary/10 ${
-                          watchedNeighborhood === name
-                            ? "bg-primary/15 text-primary font-bold"
-                            : "text-foreground"
-                        }`}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-                          <span>{name}</span>
-                        </span>
-                        {watchedNeighborhood === name && (
-                          <Check className="h-3.5 w-3.5 text-primary" />
-                        )}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="p-2 text-center text-xs text-muted-foreground">
-                      No matching predefined places. Custom neighborhood &quot;{neighborhoodInput}&quot; will be used.
-                    </div>
-                  )}
-                  {neighborhoodInput.trim() && !filteredNeighborhoods.includes(neighborhoodInput.trim()) && (
-                    <button
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        selectNeighborhood(neighborhoodInput.trim());
-                      }}
-                      className="flex w-full items-center gap-1.5 border-t border-border px-3 py-2 text-left text-xs font-bold text-primary hover:bg-primary/10 rounded-md mt-1"
-                    >
-                      <span>Use custom: &quot;{neighborhoodInput.trim()}&quot;</span>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Quick Suggestion Pills */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {POPULAR_NEIGHBORHOODS.slice(0, 4).map((place) => (
-                  <button
-                    key={place}
-                    type="button"
-                    onClick={() => selectNeighborhood(place)}
-                    className={`text-[11px] px-2.5 py-1 rounded-full border transition-all ${
-                      watchedNeighborhood === place
-                        ? "bg-primary text-white border-primary font-bold"
-                        : "bg-muted/50 hover:bg-muted text-muted-foreground border-border"
-                    }`}
-                  >
-                    {place.split(",")[0]}
-                  </button>
-                ))}
-              </div>
             </div>
           </CardContent>
 
