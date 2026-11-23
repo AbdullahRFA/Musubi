@@ -233,6 +233,9 @@ CREATE POLICY "Participants can update requests" ON public.service_requests
 CREATE POLICY "Participants can view conversations" ON public.conversations
     FOR SELECT USING (auth.uid() = ANY(participant_ids));
 
+CREATE POLICY "Participants can create conversations" ON public.conversations
+    FOR INSERT WITH CHECK (auth.uid() = ANY(participant_ids));
+
 CREATE POLICY "Participants can view messages" ON public.messages
     FOR SELECT USING (
         EXISTS (

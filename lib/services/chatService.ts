@@ -1,20 +1,191 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store/useAppStore";
-import type { Message } from "@/lib/types";
-import { createId } from "@/lib/utils";
+import type { Conversation, Message } from "@/lib/types";
 import { pushNotification } from "@/lib/services/notificationService";
 import { hiddenFrom, requireUser, ServiceError, userById } from "@/lib/services/shared";
+import { createClient } from "@/lib/supabase/client";
+import { rowToConversation, rowToRequest } from "@/lib/services/requestService";
+import { rowToProfile } from "@/lib/services/authService";
+import { rowToPost } from "@/lib/services/postService";
 
-const CANNED_REPLIES = [
-  "Thank you for the message. That time works for me.",
-  "I am happy to help. Shall we meet in a public place?",
-  "That sounds good. I can bring what we need.",
-  "Thanks for explaining. I will be there.",
-  "I appreciate your patience. Let us confirm the place.",
-];
+export function rowToMessage(row: any): Message {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    senderId: row.sender_id,
+    body: row.body,
+    createdAt: row.created_at ?? new Date().toISOString(),
+  };
+}
 
+/**
+ * Fetch conversations and recent messages for the current user from Supabase
+ */
+export async function fetchConversations(): Promise<Conversation[]> {
+  const user = useAppStore.getState().users.find((u) => u.id === useAppStore.getState().sessionUserId);
+  if (!user) return [];
+
+  const supabase = createClient();
+
+  // 1. Fetch conversations where user is a participant
+  const { data: convRows, error: convErr } = await supabase
+    .from("conversations")
+    .select("*")
+    .contains("participant_ids", [user.id])
+    .order("created_at", { ascending: false });
+
+  if (convErr || !convRows) return [];
+  const conversations = convRows.map(rowToConversation);
+
+  // 2. Fetch associated service requests
+  const reqIds = conversations.map((c) => c.requestId).filter(Boolean);
+  if (reqIds.length > 0) {
+    const { data: reqRows } = await supabase
+      .from("service_requests")
+      .select("*")
+      .in("id", reqIds);
+
+    if (reqRows) {
+      const requests = reqRows.map(rowToRequest);
+      useAppStore.setState((state) => {
+        const remoteIds = new Set(requests.map((r) => r.id));
+        const kept = state.requests.filter((r) => !remoteIds.has(r.id));
+        return { requests: [...requests, ...kept] };
+      });
+    }
+  }
+
+  // 3. Fetch messages for all conversations
+  const convIds = conversations.map((c) => c.id);
+  if (convIds.length > 0) {
+    const { data: msgRows } = await supabase
+      .from("messages")
+      .select("*")
+      .in("conversation_id", convIds)
+      .order("created_at", { ascending: true });
+
+    if (msgRows) {
+      const messages = msgRows.map(rowToMessage);
+      useAppStore.setState((state) => {
+        const remoteIds = new Set(messages.map((m) => m.id));
+        const kept = state.messages.filter((m) => !remoteIds.has(m.id));
+        return { messages: [...messages, ...kept] };
+      });
+    }
+  }
+
+  // 4. Fetch missing participants' profiles
+  const allParticipantIds = Array.from(new Set(conversations.flatMap((c) => c.participantIds)));
+  const cachedUserIds = new Set(useAppStore.getState().users.map((u) => u.id));
+  const missingUserIds = allParticipantIds.filter((id) => !cachedUserIds.has(id));
+
+  if (missingUserIds.length > 0) {
+    const { data: userRows } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", missingUserIds);
+
+    if (userRows) {
+      const users = userRows.map(rowToProfile);
+      useAppStore.setState((state) => ({ users: [...state.users, ...users] }));
+    }
+  }
+
+  useAppStore.setState((state) => {
+    const remoteIds = new Set(conversations.map((c) => c.id));
+    const kept = state.conversations.filter((c) => !remoteIds.has(c.id));
+    return { conversations: [...conversations, ...kept] };
+  });
+
+  return conversations;
+}
+
+/**
+ * Fetch full thread data for a specific conversation
+ */
+export async function fetchConversationThread(conversationId: string): Promise<void> {
+  const supabase = createClient();
+
+  // 1. Fetch conversation
+  const { data: convData } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("id", conversationId)
+    .single();
+
+  if (!convData) return;
+  const conversation = rowToConversation(convData);
+
+  // 2. Fetch messages
+  const { data: msgRows } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+
+  const messages = (msgRows || []).map(rowToMessage);
+
+  // 3. Fetch request & post if not in store
+  const { data: reqData } = await supabase
+    .from("service_requests")
+    .select("*")
+    .eq("id", conversation.requestId)
+    .single();
+
+  const request = reqData ? rowToRequest(reqData) : null;
+
+  if (request?.postId) {
+    const { data: postData } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("id", request.postId)
+      .single();
+
+    if (postData) {
+      const post = rowToPost(postData);
+      useAppStore.setState((state) => ({
+        posts: state.posts.some((p) => p.id === post.id)
+          ? state.posts.map((p) => (p.id === post.id ? post : p))
+          : [post, ...state.posts],
+      }));
+    }
+  }
+
+  // 4. Fetch profiles of participants
+  const { data: userRows } = await supabase
+    .from("profiles")
+    .select("*")
+    .in("id", conversation.participantIds);
+
+  const users = (userRows || []).map(rowToProfile);
+
+  useAppStore.setState((state) => {
+    const remoteMsgIds = new Set(messages.map((m) => m.id));
+    const keptMsgs = state.messages.filter((m) => !remoteMsgIds.has(m.id));
+
+    const userMap = new Map(state.users.map((u) => [u.id, u]));
+    users.forEach((u) => userMap.set(u.id, u));
+
+    return {
+      conversations: state.conversations.some((c) => c.id === conversation.id)
+        ? state.conversations.map((c) => (c.id === conversation.id ? conversation : c))
+        : [conversation, ...state.conversations],
+      requests: request
+        ? state.requests.some((r) => r.id === request.id)
+          ? state.requests.map((r) => (r.id === request.id ? request : r))
+          : [request, ...state.requests]
+        : state.requests,
+      messages: [...keptMsgs, ...messages],
+      users: Array.from(userMap.values()),
+    };
+  });
+}
+
+/**
+ * Hook to retrieve user conversations list, auto-fetching on mount
+ */
 export function useConversations() {
   const conversations = useAppStore((state) => state.conversations);
   const messages = useAppStore((state) => state.messages);
@@ -23,6 +194,12 @@ export function useConversations() {
   const posts = useAppStore((state) => state.posts);
   const blocks = useAppStore((state) => state.blocks);
   const userId = useAppStore((state) => state.sessionUserId);
+
+  useEffect(() => {
+    if (userId) {
+      fetchConversations();
+    }
+  }, [userId]);
 
   return useMemo(() => {
     if (!userId) return [];
@@ -49,6 +226,9 @@ export function useConversations() {
   }, [blocks, conversations, messages, posts, requests, userId, users]);
 }
 
+/**
+ * Hook to retrieve conversation thread messages and subscribe to Realtime updates
+ */
 export function useThread(conversationId: string) {
   const conversations = useAppStore((state) => state.conversations);
   const messages = useAppStore((state) => state.messages);
@@ -57,6 +237,44 @@ export function useThread(conversationId: string) {
   const posts = useAppStore((state) => state.posts);
   const safetyAck = useAppStore((state) => state.safetyAck);
   const userId = useAppStore((state) => state.sessionUserId);
+
+  // 1. Initial fetch of conversation & thread
+  useEffect(() => {
+    if (conversationId) {
+      fetchConversationThread(conversationId);
+    }
+  }, [conversationId]);
+
+  // 2. Supabase Realtime channel subscription for instant live messaging
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`chat_${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMsg = rowToMessage(payload.new);
+          useAppStore.setState((state) => ({
+            messages: state.messages.some((m) => m.id === newMsg.id)
+              ? state.messages
+              : [...state.messages, newMsg],
+          }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId]);
 
   return useMemo(() => {
     const conversation = conversations.find((item) => item.id === conversationId) ?? null;
@@ -72,6 +290,7 @@ export function useThread(conversationId: string) {
     const thread = messages
       .filter((message) => message.conversationId === conversation.id)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
     return {
       conversation,
       messages: thread,
@@ -83,7 +302,10 @@ export function useThread(conversationId: string) {
   }, [conversationId, conversations, messages, posts, requests, safetyAck, userId, users]);
 }
 
-export async function acknowledgeSafety(conversationId: string) {
+/**
+ * Records safety acknowledgment for a conversation
+ */
+export async function acknowledgeSafety(conversationId: string): Promise<void> {
   const me = requireUser();
   useAppStore.setState((state) => {
     const current = state.safetyAck[conversationId] ?? [];
@@ -92,35 +314,63 @@ export async function acknowledgeSafety(conversationId: string) {
   });
 }
 
-export async function sendMessage(conversationId: string, body: string) {
+/**
+ * Sends a new message in the conversation via Supabase PostgreSQL
+ */
+export async function sendMessage(conversationId: string, body: string): Promise<Message> {
   const me = requireUser();
   const text = body.trim();
   if (!text) throw new ServiceError("Write a short message before sending.");
   if (text.length > 500) throw new ServiceError("Please keep the message under 500 characters.");
+
   const state = useAppStore.getState();
   const conversation = state.conversations.find((item) => item.id === conversationId);
   if (!conversation || !conversation.participantIds.includes(me.id)) {
     throw new ServiceError("This conversation is not available.");
   }
+
   const request = state.requests.find((item) => item.id === conversation.requestId);
   if (!request || (request.status !== "accepted" && request.status !== "completed")) {
     throw new ServiceError("Chat opens after a request is accepted.");
   }
+
   if (!(state.safetyAck[conversationId] ?? []).includes(me.id)) {
     throw new ServiceError("Please read the safety tips before sending a message.");
   }
+
   const otherId = conversation.participantIds.find((id) => id !== me.id);
   if (!otherId || hiddenFrom(state.blocks, me.id, otherId)) {
     throw new ServiceError("This conversation is not available.");
   }
-  const message: Message = {
-    id: createId("m"),
-    conversationId,
-    senderId: me.id,
+
+  const supabase = createClient();
+  const newRow = {
+    conversation_id: conversationId,
+    sender_id: me.id,
     body: text,
-    createdAt: new Date().toISOString(),
   };
-  useAppStore.setState((current) => ({ messages: [...current.messages, message] }));
+
+  const { data, error } = await supabase
+    .from("messages")
+    .insert(newRow)
+    .select()
+    .single();
+
+  if (error || !data) {
+    console.error("Failed to insert message:", error);
+    throw new ServiceError(error?.message || "Failed to send message.");
+  }
+
+  const message = rowToMessage(data);
+
+  // Optimistically append to local store
+  useAppStore.setState((current) => ({
+    messages: current.messages.some((m) => m.id === message.id)
+      ? current.messages
+      : [...current.messages, message],
+  }));
+
+  // Dispatches notification to recipient
   pushNotification({
     userId: otherId,
     type: "message",
@@ -128,30 +378,6 @@ export async function sendMessage(conversationId: string, body: string) {
     body: `${me.fullName}: ${text.slice(0, 80)}`,
     href: `/chat/${conversationId}`,
   });
-
-  const delay = 1000 + Math.floor(Math.random() * 1000);
-  window.setTimeout(() => {
-    const latest = useAppStore.getState();
-    const stillThere = latest.conversations.some((item) => item.id === conversationId);
-    if (!stillThere) return;
-    const reply: Message = {
-      id: createId("m"),
-      conversationId,
-      senderId: otherId,
-      body: CANNED_REPLIES[Math.floor(Math.random() * CANNED_REPLIES.length)],
-      createdAt: new Date().toISOString(),
-      canned: true,
-    };
-    useAppStore.setState((current) => ({ messages: [...current.messages, reply] }));
-    const other = userById(latest.users, otherId);
-    pushNotification({
-      userId: me.id,
-      type: "message",
-      title: "New message",
-      body: `${other?.fullName ?? "Your contact"} replied.`,
-      href: `/chat/${conversationId}`,
-    });
-  }, delay);
 
   return message;
 }
