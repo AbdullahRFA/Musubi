@@ -260,6 +260,13 @@ CREATE POLICY "Users can view own notifications" ON public.notifications
 CREATE POLICY "Users can update own notifications" ON public.notifications
     FOR UPDATE USING (auth.uid() = user_id);
 
+-- Activities: Participants can view and create completed activities
+CREATE POLICY "Participants can view activities" ON public.activities
+    FOR SELECT USING (auth.uid() = ANY(participant_ids));
+
+CREATE POLICY "Participants can insert activities" ON public.activities
+    FOR INSERT WITH CHECK (auth.uid() = ANY(participant_ids));
+
 -- Reviews: Anyone can view, participants of completed activity can insert
 CREATE POLICY "Reviews viewable by everyone" ON public.reviews
     FOR SELECT USING (true);

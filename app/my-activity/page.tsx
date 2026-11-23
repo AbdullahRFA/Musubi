@@ -20,6 +20,7 @@ import { useMyActivities } from "@/lib/services/reviewService";
 import { useTransactions } from "@/lib/services/transactionService";
 import { useSession } from "@/lib/services/authService";
 import { useUsers } from "@/lib/services/demoService";
+import { useAppStore } from "@/lib/store/useAppStore";
 import { PostCard } from "@/components/posts/PostCard";
 import { PostStatusBadge, RequestStatusBadge, TransactionStatusBadge } from "@/components/common/StatusBadge";
 import { formatWhen, formatDay, money } from "@/lib/utils";
@@ -41,6 +42,7 @@ function ActivityContent() {
   const myActivities = useMyActivities();
   const transactions = useTransactions();
   const allUsers = useUsers();
+  const conversations = useAppStore((state) => state.conversations);
 
   const myPosts = allPosts.filter((p) => p.authorId === session?.id);
   const inProgressRequests = [...incoming, ...outgoing].filter((r) => r.status === "accepted");
@@ -170,6 +172,8 @@ function ActivityContent() {
             <div className="space-y-4">
               {inProgressRequests.map((req) => {
                 const other = getUser(req.requesterId === session?.id ? req.ownerId : req.requesterId);
+                const conversation = conversations.find((c) => c.requestId === req.id);
+                const chatHref = conversation ? `/chat/${conversation.id}` : "/chat";
                 return (
                   <Card key={req.id} className="p-5 border-2 border-secondary bg-secondary/5 space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -183,7 +187,7 @@ function ActivityContent() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <Link href="/chat">
+                        <Link href={chatHref}>
                           <Button size="sm" variant="default" className="gap-1.5 font-bold">
                             <MessageSquare className="h-4 w-4" />
                             <span>Open Chat</span>

@@ -24,22 +24,65 @@ export function rowToMessage(row: any): Message {
  * Fetch conversations and recent messages for the current user from Supabase
  */
 export async function fetchConversations(): Promise<Conversation[]> {
-  const user = useAppStore.getState().users.find((u) => u.id === useAppStore.getState().sessionUserId);
-  if (!user) return [];
-
   const supabase = createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  const currentUserId = authUser?.id || useAppStore.getState().sessionUserId;
+  if (!currentUserId) return [];
 
   // 1. Fetch conversations where user is a participant
-  const { data: convRows, error: convErr } = await supabase
+  let { data: convRows, error: convErr } = await supabase
     .from("conversations")
     .select("*")
-    .contains("participant_ids", [user.id])
+    .contains("participant_ids", [currentUserId])
     .order("created_at", { ascending: false });
 
-  if (convErr || !convRows) return [];
+  if (convErr) {
+    console.error("fetchConversations error:", convErr);
+  }
+
+  // 2. Self-heal: Ensure accepted service requests have a corresponding conversation record
+  const { data: acceptedReqs } = await supabase
+    .from("service_requests")
+    .select("*")
+    .in("status", ["accepted", "completed"])
+    .or(`requester_id.eq.${currentUserId},owner_id.eq.${currentUserId}`);
+
+  if (acceptedReqs && acceptedReqs.length > 0) {
+    const existingReqIds = new Set((convRows || []).map((c) => c.request_id));
+    for (const req of acceptedReqs) {
+      if (!existingReqIds.has(req.id)) {
+        const { data: newConv, error: insertErr } = await supabase
+          .from("conversations")
+          .insert({
+            request_id: req.id,
+            participant_ids: [req.requester_id, req.owner_id],
+          })
+          .select()
+          .single();
+
+        if (newConv) {
+          convRows = [newConv, ...(convRows || [])];
+        } else if (insertErr) {
+          console.warn("Could not insert conversation into Supabase (check RLS policy):", insertErr);
+          // Fallback to client-side conversation object so chat still works
+          const fallbackConv = {
+            id: req.id, // stable id based on request
+            request_id: req.id,
+            participant_ids: [req.requester_id, req.owner_id],
+            created_at: req.updated_at || new Date().toISOString(),
+          };
+          convRows = [fallbackConv, ...(convRows || [])];
+        }
+      }
+    }
+  }
+
+  if (!convRows || convRows.length === 0) return [];
   const conversations = convRows.map(rowToConversation);
 
-  // 2. Fetch associated service requests
+  // 3. Fetch associated service requests
   const reqIds = conversations.map((c) => c.requestId).filter(Boolean);
   if (reqIds.length > 0) {
     const { data: reqRows } = await supabase
@@ -54,6 +97,24 @@ export async function fetchConversations(): Promise<Conversation[]> {
         const kept = state.requests.filter((r) => !remoteIds.has(r.id));
         return { requests: [...requests, ...kept] };
       });
+
+      // Also fetch associated posts
+      const postIds = requests.map((r) => r.postId).filter(Boolean) as string[];
+      if (postIds.length > 0) {
+        const { data: postRows } = await supabase
+          .from("posts")
+          .select("*")
+          .in("id", postIds);
+
+        if (postRows) {
+          const posts = postRows.map(rowToPost);
+          useAppStore.setState((state) => {
+            const remotePostIds = new Set(posts.map((p) => p.id));
+            const keptPosts = state.posts.filter((p) => !remotePostIds.has(p.id));
+            return { posts: [...posts, ...keptPosts] };
+          });
+        }
+      }
     }
   }
 
@@ -115,8 +176,46 @@ export async function fetchConversationThread(conversationId: string): Promise<v
     .eq("id", conversationId)
     .single();
 
-  if (!convData) return;
-  const conversation = rowToConversation(convData);
+  let conversation: Conversation;
+  if (convData) {
+    conversation = rowToConversation(convData);
+  } else {
+    // Resilient fallback: check if conversationId is a requestId or if conversation in local store
+    const localConv = useAppStore.getState().conversations.find((c) => c.id === conversationId);
+    if (localConv) {
+      conversation = localConv;
+    } else {
+      const { data: reqData } = await supabase
+        .from("service_requests")
+        .select("*")
+        .eq("id", conversationId)
+        .single();
+
+      if (reqData) {
+        const { data: newConv } = await supabase
+          .from("conversations")
+          .insert({
+            request_id: reqData.id,
+            participant_ids: [reqData.requester_id, reqData.owner_id],
+          })
+          .select()
+          .single();
+
+        if (newConv) {
+          conversation = rowToConversation(newConv);
+        } else {
+          conversation = {
+            id: reqData.id,
+            requestId: reqData.id,
+            participantIds: [reqData.requester_id, reqData.owner_id],
+            createdAt: reqData.created_at || new Date().toISOString(),
+          };
+        }
+      } else {
+        return;
+      }
+    }
+  }
 
   // 2. Fetch messages
   const { data: msgRows } = await supabase
@@ -212,16 +311,39 @@ export function useConversations() {
           .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
         const request = requests.find((item) => item.id === conversation.requestId) ?? null;
         const post = request?.postId ? posts.find((item) => item.id === request.postId) ?? null : null;
+        const otherProfile = userById(users, otherId) || {
+          id: otherId,
+          fullName: "Neighbor",
+          email: "",
+          avatarUrl: null,
+          age: null,
+          ageGroup: null,
+          location: "",
+          neighborhoods: [],
+          lat: null,
+          lng: null,
+          bio: "",
+          interests: [],
+          skills: [],
+          servicesOffered: [],
+          servicesNeeded: [],
+          availability: "Flexible",
+          contactMethod: "chat" as const,
+          phone: null,
+          userGroup: "yg" as const,
+          createdAt: conversation.createdAt,
+        };
+
         return {
           conversation,
-          other: userById(users, otherId),
+          other: otherProfile,
           otherId,
           last: thread[thread.length - 1] ?? null,
           request,
           post,
         };
       })
-      .filter((item) => item.other && !hiddenFrom(blocks, userId, item.otherId))
+      .filter((item) => !hiddenFrom(blocks, userId, item.otherId))
       .sort((a, b) => (b.last?.createdAt ?? b.conversation.createdAt).localeCompare(a.last?.createdAt ?? a.conversation.createdAt));
   }, [blocks, conversations, messages, posts, requests, userId, users]);
 }
