@@ -261,7 +261,9 @@ CREATE POLICY "Users can update own notifications" ON public.notifications
     FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert notifications" ON public.notifications
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    FOR INSERT WITH CHECK (true);
+
+ALTER TABLE public.notifications REPLICA IDENTITY FULL;
 
 -- Activities: Participants can view and create completed activities
 CREATE POLICY "Participants can view activities" ON public.activities

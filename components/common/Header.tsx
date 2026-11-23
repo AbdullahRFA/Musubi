@@ -14,7 +14,7 @@ import {
   FileCheck2,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/services/authService";
-import { useUnreadCount } from "@/lib/services/notificationService";
+import { useUnreadCount, useUnreadMessageCount } from "@/lib/services/notificationService";
 import { Button } from "@/components/ui/button";
 import { initials } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -24,6 +24,7 @@ export const Header = memo(function Header() {
   const router = useRouter();
   const session = useSession();
   const unreadCount = useUnreadCount();
+  const unreadMessageCount = useUnreadMessageCount();
   const { language, setLanguage, t } = useLanguage();
 
   const [fontSize, setFontSize] = useState<"standard" | "large">("standard");
@@ -187,6 +188,11 @@ export const Header = memo(function Header() {
                 aria-label={t("nav.messages")}
               >
                 <MessageSquare className="h-4 w-4" />
+                {unreadMessageCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white shadow">
+                    {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+                  </span>
+                )}
               </Link>
 
               {/* Notification Bell */}

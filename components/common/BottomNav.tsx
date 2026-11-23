@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Compass, PlusCircle, MessageSquare, User } from "lucide-react";
 import { useSession } from "@/lib/services/authService";
+import { useUnreadMessageCount } from "@/lib/services/notificationService";
 import { useLanguage } from "@/lib/i18n";
 
 export function BottomNav() {
   const pathname = usePathname();
   const session = useSession();
   const { t } = useLanguage();
+  const unreadMessages = useUnreadMessageCount();
 
   // Bottom navigation is shown exclusively to authenticated users on mobile viewports
   if (!session) return null;
@@ -67,7 +69,7 @@ export function BottomNav() {
               }`}
             >
               <div
-                className={`flex items-center justify-center rounded-full p-0.5 ${
+                className={`flex items-center justify-center rounded-full p-0.5 relative ${
                   item.highlight
                     ? "bg-primary text-white shadow-xs -mt-2 p-1.5 border border-card"
                     : item.isActive
@@ -76,6 +78,11 @@ export function BottomNav() {
                 }`}
               >
                 <Icon className={item.highlight ? "h-5 w-5" : "h-4 w-4"} />
+                {item.href === "/chat" && unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-white shadow">
+                    {unreadMessages > 9 ? "9+" : unreadMessages}
+                  </span>
+                )}
               </div>
               <span className="tracking-tight mt-0.5 text-[10px] truncate max-w-[56px] text-center">
                 {item.label}

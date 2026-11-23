@@ -3,24 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, MessageSquare, ArrowRight, X } from "lucide-react";
-import { useAppStore } from "@/lib/store/useAppStore";
-import { createClient } from "@/lib/supabase/client";
 import {
-  rowToNotification,
-  playNotificationSound,
+  useNotifications,
   markNotificationRead,
+  playNotificationSound,
 } from "@/lib/services/notificationService";
 import type { Notification } from "@/lib/types";
 
 export function NotificationToast() {
-  const sessionUserId = useAppStore((state) => state.sessionUserId);
-  const session = useAppStore((state) =>
-    state.users.find((u) => u.id === state.sessionUserId)
-  );
-  const userId = session?.id || sessionUserId;
+  const notifications = useNotifications();
   const [activeToast, setActiveToast] = useState<Notification | null>(null);
+  const [lastShownId, setLastShownId] = useState<string | null>(null);
 
-  // Request browser notification permission once
+  // Request browser desktop notification permission once on mount
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -29,45 +24,26 @@ export function NotificationToast() {
     }
   }, []);
 
-  // Subscribe to real-time notifications for the logged-in user
+  // Show toast when a new unread notification arrives
   useEffect(() => {
-    if (!userId) return;
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`user_notifications_${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const newNotif = rowToNotification(payload.new);
-
-          // Update Zustand store so the bell count updates in header
-          useAppStore.setState((state) => ({
-            notifications: [
-              newNotif,
-              ...state.notifications.filter((n) => n.id !== newNotif.id),
-            ],
-          }));
-
-          // Play subtle audio chime & show in-app banner toast
+    if (notifications.length > 0) {
+      const newest = notifications[0];
+      if (!newest.read && newest.id !== lastShownId) {
+        // Only trigger toast for recently created notifications (within last 30s)
+        const ageInMs = Date.now() - new Date(newest.createdAt).getTime();
+        if (ageInMs < 30000) {
+          setActiveToast(newest);
+          setLastShownId(newest.id);
           playNotificationSound();
-          setActiveToast(newNotif);
 
-          // Trigger native browser notification if granted
           if (
             typeof window !== "undefined" &&
             "Notification" in window &&
             Notification.permission === "granted"
           ) {
             try {
-              new Notification(newNotif.title, {
-                body: newNotif.body,
+              new Notification(newest.title, {
+                body: newest.body,
                 icon: "/favicon.ico",
               });
             } catch (e) {
@@ -75,13 +51,9 @@ export function NotificationToast() {
             }
           }
         }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
+      }
+    }
+  }, [notifications, lastShownId]);
 
   // Auto-dismiss toast after 6 seconds
   useEffect(() => {
@@ -98,7 +70,7 @@ export function NotificationToast() {
 
   return (
     <div className="fixed top-20 right-4 z-50 max-w-sm w-full animate-in fade-in slide-in-from-top-4 duration-300">
-      <div className="bg-card border-2 border-primary/60 shadow-xl rounded-xl p-4 text-foreground flex items-start gap-3 relative">
+      <div className="bg-card border-2 border-primary shadow-xl rounded-xl p-4 text-foreground flex items-start gap-3 relative">
         <div className="p-2 bg-primary/10 text-primary rounded-lg shrink-0 mt-0.5">
           {isMessage ? <MessageSquare className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
         </div>
