@@ -199,11 +199,24 @@ export async function createPost(input: PostInput): Promise<Post> {
     template_id: input.templateId ?? null,
   };
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("posts")
     .insert(newPostData)
     .select()
     .single();
+
+  // If the template table hasn't been seeded in Supabase yet, retry with template_id: null
+  // so creating quick posts NEVER fails on a foreign key constraint.
+  if (error && error.message.includes("posts_template_id_fkey")) {
+    const fallbackData = { ...newPostData, template_id: null };
+    const retry = await supabase
+      .from("posts")
+      .insert(fallbackData)
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error || !data) {
     console.error("Failed to insert post in Supabase:", error);
@@ -249,12 +262,24 @@ export async function updatePost(id: string, input: PostInput): Promise<Post> {
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("posts")
     .update(updateData)
     .eq("id", id)
     .select()
     .single();
+
+  if (error && error.message.includes("posts_template_id_fkey")) {
+    const fallbackData = { ...updateData, template_id: null };
+    const retry = await supabase
+      .from("posts")
+      .update(fallbackData)
+      .eq("id", id)
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error || !data) {
     throw new ServiceError(error?.message || "Failed to update post.");

@@ -280,6 +280,32 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 
 -- ==============================================================================
+-- SEED REQUIREMENT TEMPLATES (Quick-post presets)
+-- ==============================================================================
+INSERT INTO public.requirement_templates (id, category, title, description, suggested_exchange, skill)
+VALUES
+  ('tpl-cook-offer', 'Cooking', 'Traditional Japanese Cooking Lessons', 'I can share family recipes, dashi stock preparation, and seasonal home-style Japanese cooking.', 'exchange', 'Japanese Cooking'),
+  ('tpl-cook-request', 'Cooking', 'Learn Japanese Home Cooking', 'Looking for an experienced neighbor to teach me traditional home recipes and meal seasoning.', 'exchange', 'Cooking Lessons'),
+  ('tpl-tech-offer', 'Technology', 'Smartphone & Tablet Guidance', 'Patient, step-by-step assistance with smartphone setup, line messaging, camera tips, and apps.', 'free', 'Smartphone Guidance'),
+  ('tpl-tech-request', 'Technology', 'Looking for Smartphone Assistance', 'I would appreciate patient help learning video calls on Zoom and organizing photo albums on my phone.', 'free', 'Smartphone Assistance'),
+  ('tpl-craft-offer', 'Arts & Crafts', 'Traditional Origami Lessons', 'I can teach origami folding techniques from classic peace cranes to decorative seasonal crafts.', 'free', 'Origami'),
+  ('tpl-craft-request', 'Arts & Crafts', 'Learn Traditional Japanese Calligraphy', 'Eager to learn brush calligraphy (Shodo) basics and kanji stroke techniques from a master.', 'exchange', 'Calligraphy'),
+  ('tpl-garden-offer', 'Gardening', 'Balcony Plant Care & Gardening Wisdom', 'Experienced in small-space gardening, bonsai trimming, and vegetable care. Glad to share tips.', 'exchange', 'Plant Care'),
+  ('tpl-garden-request', 'Gardening', 'Help with Garden Weeding & Pruning', 'Need an energetic helping hand with seasonal garden cleaning, weeding, and moving flowerpots.', 'free', 'Garden Weeding'),
+  ('tpl-daily-offer', 'Daily Assistance', 'Grocery Pickup & Neighborhood Errands', 'I can pick up groceries, packages, or daily necessities during my regular supermarket runs.', 'free', 'Grocery Errands'),
+  ('tpl-daily-request', 'Daily Assistance', 'Grocery Shopping & Errand Support', 'Help buying heavy groceries and carrying bags home from the local market safely.', 'free', 'Grocery Shopping'),
+  ('tpl-companion-offer', 'Companionship', 'Afternoon Tea & Relaxed Conversation', 'Happy to sit down for a warm cup of green tea, listen to memories, and share pleasant conversation.', 'free', 'Friendly Conversation'),
+  ('tpl-companion-request', 'Companionship', 'Looking for a Walking Companion', 'Seeking a friendly walking partner for short, relaxed morning strolls along pleasant neighborhood streets.', 'free', 'Walking Companion'),
+  ('tpl-community-offer', 'Community & Local Activities', 'Neighborhood Walking Tour & Cultural History', 'I love sharing the history, local shrines, and hidden spots of our neighborhood with interested neighbors.', 'free', 'Local History & Culture'),
+  ('tpl-community-request', 'Community & Local Activities', 'Join Neighborhood Events & Group Activities', 'Looking for friendly neighbors to join local festivals, community gardening, or neighborhood group activities together.', 'free', 'Community Events')
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  suggested_exchange = EXCLUDED.suggested_exchange,
+  skill = EXCLUDED.skill;
+
+
+-- ==============================================================================
 -- AUTOMATIC PROFILE CREATION TRIGGER
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
