@@ -16,11 +16,176 @@ import {
   CheckCircle2,
   Smartphone,
   Users,
+  ShieldCheck,
+  MapPin,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/services/authService";
 import { HeroBackgroundVideo } from "@/components/home/HeroBackgroundVideo";
 import { useLanguage } from "@/lib/i18n";
+
+/* -------------------------------------------------------------------------- */
+/* Static content definitions (text is resolved through i18n at render time)  */
+/* -------------------------------------------------------------------------- */
+
+interface PhilosophyCard {
+  icon: LucideIcon;
+  iconClass: string;
+  tagClass: string;
+  title: string;
+  desc: string;
+  tag: string;
+}
+
+const PHILOSOPHY: PhilosophyCard[] = [
+  {
+    icon: BookOpen,
+    iconClass: "bg-[#E7EEE4] text-primary",
+    tagClass: "text-primary",
+    title: "Knowledge Sharing",
+    desc: "Pass down traditional recipes, cultural crafts, calligraphy, gardening wisdom, and life stories, while younger members exchange modern skills, digital tools, and fresh viewpoints.",
+    tag: "Reciprocal learning",
+  },
+  {
+    icon: HandHelping,
+    iconClass: "bg-amber-100 text-amber-800",
+    tagClass: "text-amber-800",
+    title: "Mutual Support",
+    desc: "Help with everyday tasks such as smartphone settings, video calling, grocery errands, minor household chores, or seasonal preparation—provided with patience and neighborhood goodwill.",
+    tag: "Practical assistance",
+  },
+  {
+    icon: HeartHandshake,
+    iconClass: "bg-rose-100 text-rose-700",
+    tagClass: "text-rose-700",
+    title: "Companionship",
+    desc: "Build genuine intergenerational friendships through casual conversation over tea, peaceful neighborhood walks, listening, and sharing hobbies that alleviate social isolation.",
+    tag: "Social connection",
+  },
+];
+
+const STEPS: { icon: LucideIcon; title: string; desc: string; badge: string }[] = [
+  {
+    icon: PenLine,
+    title: "Create a Post",
+    desc: "Post a skill or service you would love to share, or write a friendly request for assistance you need.",
+    badge: "Easy quick-post format",
+  },
+  {
+    icon: Compass,
+    title: "Discover & Respond",
+    desc: "Explore listings in your neighborhood. Send a polite connection request with an introductory message.",
+    badge: "Filter by category & area",
+  },
+  {
+    icon: MessageSquare,
+    title: "Connect & Coordinate",
+    desc: "Chat securely within Tsunagu. Agree on the date, time, and comfortable public location for your exchange.",
+    badge: "In-app private messaging",
+  },
+  {
+    icon: CheckCircle2,
+    title: "Complete & Review",
+    desc: "Meet up, enjoy the mutual exchange, confirm completion, and leave warm, encouraging feedback for each other.",
+    badge: "Build community trust",
+  },
+];
+
+const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: string; tags: string[] }[] = [
+  {
+    icon: HandHelping,
+    iconClass: "bg-[#E7EEE4] text-primary",
+    title: "Daily Assistance",
+    desc: "Practical help with grocery runs, errands, light parcel carrying, and daily neighborhood tasks.",
+    tags: ["Grocery Runs", "Errands", "Neighborhood Help"],
+  },
+  {
+    icon: Smartphone,
+    iconClass: "bg-blue-50 text-blue-700",
+    title: "Technology Help",
+    desc: "Patient guidance on smartphone navigation, video calls with family, email setup, and digital devices.",
+    tags: ["Smartphones", "Video Calls", "Digital Apps"],
+  },
+  {
+    icon: HeartHandshake,
+    iconClass: "bg-rose-50 text-rose-700",
+    title: "Companionship",
+    desc: "Warm and friendly conversation over tea, park strolls, reminiscing, and sharing joyful moments.",
+    tags: ["Tea Chats", "Walking", "Shared Hobbies"],
+  },
+  {
+    icon: BookOpen,
+    iconClass: "bg-amber-50 text-amber-800",
+    title: "Learning & Skills",
+    desc: "Traditional home cooking, calligraphy, origami, language practice, history, and craft techniques.",
+    tags: ["Home Cooking", "Handicrafts", "Languages"],
+  },
+  {
+    icon: Flower2,
+    iconClass: "bg-emerald-50 text-emerald-800",
+    title: "Home Assistance",
+    desc: "Balcony gardening tips, plant watering during trips, book organization, and seasonal home tidying.",
+    tags: ["Gardening", "Plant Care", "Home Organization"],
+  },
+  {
+    icon: Users,
+    iconClass: "bg-violet-50 text-violet-700",
+    title: "Community & Local Activities",
+    desc: "Join neighborhood events, cultural activities, community gardening, and local group activities to build friendships and stay connected.",
+    tags: ["Local Events", "Cultural Activities", "Community Groups"],
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Small presentational helpers                                               */
+/* -------------------------------------------------------------------------- */
+
+/** Highlighted phrase with a coloured underline bar used in the hero headline. */
+function Highlight({ children, tone }: { children: React.ReactNode; tone: "amber" | "emerald" }) {
+  const styles =
+    tone === "amber"
+      ? { text: "text-amber-300", bar: "bg-[#E5B55E]" }
+      : { text: "text-emerald-300", bar: "bg-[#66C2A5]" };
+  return (
+    <span className={`relative inline-block ${styles.text} drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]`}>
+      <span>{children}</span>
+      <span
+        className={`absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[4px] sm:h-[6px] ${styles.bar} rounded-full shadow-md`}
+        aria-hidden="true"
+      />
+    </span>
+  );
+}
+
+function SectionHeading({
+  badge,
+  title,
+  subtitle,
+}: {
+  badge?: string;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="text-center max-w-3xl mx-auto space-y-3 animate-fade-up">
+      {badge && (
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>{badge}</span>
+        </div>
+      )}
+      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground text-balance">
+        {title}
+      </h2>
+      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed text-balance">{subtitle}</p>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Page                                                                       */
+/* -------------------------------------------------------------------------- */
 
 export default function HomePage() {
   const router = useRouter();
@@ -34,7 +199,6 @@ export default function HomePage() {
     }
   }, [session, router]);
 
-  // While redirecting logged-in user
   if (session) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center p-8">
@@ -46,501 +210,243 @@ export default function HomePage() {
     );
   }
 
+  const trustPoints = [
+    { icon: ShieldCheck, label: t("hero.trust.0", language === "ja" ? "安全第一" : "Safety first") },
+    { icon: MapPin, label: t("hero.trust.1", language === "ja" ? "地域密着" : "Local neighbours") },
+    { icon: Users, label: t("hero.trust.2", language === "ja" ? "全世代歓迎" : "All ages welcome") },
+  ];
+
   return (
-    <div className="flex flex-col min-h-full space-y-8 sm:space-y-12 pb-6 sm:pb-8">
-      {/* ========================================================================= */}
-      {/* 2. HERO SECTION — FULL BACKGROUND VIDEO SLIDER (DSi-INSPIRED)             */}
-      {/* ========================================================================= */}
+    <div className="flex flex-col pb-12 sm:pb-16">
+      {/* ================================================================== */}
+      {/* HERO                                                               */}
+      {/* ================================================================== */}
       <HeroBackgroundVideo>
-        <div className="max-w-4xl space-y-6 sm:space-y-8 text-left">
-          {/* Top Pill Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 backdrop-blur-md px-4 py-1.5 text-xs sm:text-sm font-semibold text-white shadow-sm">
+        <div className="max-w-4xl space-y-5 sm:space-y-8 text-left">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 backdrop-blur-md px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-white shadow-sm animate-fade-up">
             <Sparkles className="h-4 w-4 text-amber-300 shrink-0" />
             <span>{t("hero.badge", "Community Skill & Knowledge Exchange")}</span>
           </div>
 
-          {/* Large Bold High-Contrast Headline */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-[4rem] xl:text-[4.25rem] font-black tracking-tight text-white leading-[1.14] sm:leading-[1.1] [text-shadow:_0_2px_14px_rgba(0,0,0,0.85)]">
+          <h1
+            className="text-[2rem] min-[400px]:text-4xl sm:text-5xl md:text-6xl xl:text-[4.25rem] font-black tracking-tight text-white leading-[1.15] sm:leading-[1.1] [text-shadow:_0_2px_14px_rgba(0,0,0,0.85)] text-balance animate-fade-up [animation-delay:100ms]"
+          >
             {language === "ja" ? (
               <>
-                <span className="relative inline-block text-amber-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                  <span>過去の知恵</span>
-                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#E5B55E] rounded-full shadow-md" />
-                </span>
+                <Highlight tone="amber">過去の知恵</Highlight>
                 <span>と、</span>
                 <br className="hidden sm:inline" />{" "}
-                <span className="relative inline-block text-emerald-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                  <span>現在のエネルギー</span>
-                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#66C2A5] rounded-full shadow-md" />
-                </span>
+                <Highlight tone="emerald">現在のエネルギー</Highlight>
                 <span>をつなぐ。</span>
               </>
             ) : (
               <>
-                Connecting the{" "}
-                <span className="relative inline-block text-amber-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                  <span>wisdom of the</span>
-                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#E5B55E] rounded-full shadow-md" />
-                </span>
-                <br className="hidden sm:inline" />{" "}
-                <span className="relative inline-block text-amber-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                  <span>past</span>
-                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#E5B55E] rounded-full shadow-md" />
-                </span>{" "}
-                with the{" "}
-                <span className="relative inline-block text-emerald-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                  <span>energy of today.</span>
-                  <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[5px] sm:h-[7px] bg-[#66C2A5] rounded-full shadow-md" />
-                </span>
+                Connecting the <Highlight tone="amber">wisdom of the past</Highlight>
+                <br className="hidden sm:inline" /> with the <Highlight tone="emerald">energy of today.</Highlight>
               </>
             )}
           </h1>
 
-          {/* Supporting Text */}
-          <p className="text-base sm:text-lg md:text-xl text-white font-medium leading-relaxed max-w-2xl [text-shadow:_0_1px_8px_rgba(0,0,0,0.85)]">
+          <p className="text-base sm:text-lg md:text-xl text-white/95 font-medium leading-relaxed max-w-2xl [text-shadow:_0_1px_8px_rgba(0,0,0,0.85)] animate-fade-up [animation-delay:200ms]">
             {t(
               "hero.subtitle",
               "Tsunagu Generations brings older and younger generations together to share knowledge, exchange practical help, and build meaningful companionship."
             )}
           </p>
 
-          {/* Prominent CTA Buttons */}
-          <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 max-w-md sm:max-w-none">
+          <div className="pt-1 sm:pt-2 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center gap-3 animate-fade-up [animation-delay:300ms]">
             <Button
               asChild
               size="lg"
-              className="bg-[#315B4B] hover:bg-[#234336] text-white font-bold text-sm sm:text-base px-8 py-4 h-13 rounded-xl shadow-xl gap-2 cursor-pointer transition-all hover:scale-[1.02] border border-emerald-400/30"
+              className="group bg-[#315B4B] hover:bg-[#234336] text-white font-bold text-sm sm:text-base px-6 sm:px-8 rounded-xl shadow-xl border border-emerald-400/30 hover:-translate-y-0.5 hover:shadow-2xl"
             >
               <Link href="/posts">
                 <span>{t("hero.exploreBtn", "Explore Community Posts")}</span>
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
             </Button>
             <Button
               asChild
               variant="outline"
               size="lg"
-              className="bg-white/10 hover:bg-white/20 border-white/35 text-white font-bold text-sm sm:text-base px-8 py-4 h-13 rounded-xl backdrop-blur-md transition-all cursor-pointer hover:border-white shadow-lg"
+              className="bg-white/10 hover:bg-white/20 border-white/40 hover:border-white text-white hover:text-white font-bold text-sm sm:text-base px-6 sm:px-8 rounded-xl backdrop-blur-md shadow-lg hover:-translate-y-0.5"
             >
-              <Link href="/register">
-                <span>{t("hero.joinBtn", "Join Our Community")}</span>
-              </Link>
+              <Link href="/register">{t("hero.joinBtn", "Join Our Community")}</Link>
             </Button>
           </div>
+
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-1 text-xs sm:text-sm text-white/90 font-semibold animate-fade-up [animation-delay:400ms]">
+            {trustPoints.map(({ icon: Icon, label }) => (
+              <li key={label} className="inline-flex items-center gap-1.5 [text-shadow:_0_1px_6px_rgba(0,0,0,0.8)]">
+                <Icon className="h-4 w-4 text-emerald-300" />
+                {label}
+              </li>
+            ))}
+          </ul>
         </div>
       </HeroBackgroundVideo>
 
-      {/* ========================================================================= */}
-      {/* 3. ABOUT OUR PLATFORM SECTION                                             */}
-      {/* ========================================================================= */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-            <span>{t("about.badge", "Our Core Philosophy")}</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
-            {t("about.title", "Everyone Can Teach, Everyone Can Learn")}
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            {t(
-              "about.subtitle",
-              "Tsunagu Generations is founded on reciprocal community exchange. No user is locked into a permanent provider or receiver role—each generation brings valuable experience, curiosity, and care."
+      {/* ================================================================== */}
+      {/* PHILOSOPHY                                                         */}
+      {/* ================================================================== */}
+      <section id="explore" className="page-container py-14 sm:py-20 space-y-10 scroll-mt-20">
+        <SectionHeading
+          badge={t("about.badge", "Our Core Philosophy")}
+          title={t("about.title", "Everyone Can Teach, Everyone Can Learn")}
+          subtitle={t(
+            "about.subtitle",
+            "Tsunagu Generations is founded on reciprocal community exchange. No user is locked into a permanent provider or receiver role—each generation brings valuable experience, curiosity, and care."
+          )}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+          {PHILOSOPHY.map((card, i) => {
+            const Icon = card.icon;
+            return (
+              <article
+                key={card.title}
+                className="card-hover group rounded-2xl border-2 border-border bg-card p-6 sm:p-8 shadow-xs flex flex-col justify-between gap-5 animate-fade-up"
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <div className="space-y-4">
+                  <div
+                    className={`h-12 w-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 ${card.iconClass}`}
+                  >
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-black text-foreground">{t(`about.cards.${i}.title`, card.title)}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`about.cards.${i}.desc`, card.desc)}</p>
+                </div>
+                <div className={`pt-3 border-t border-border/60 text-xs font-bold flex items-center gap-1 ${card.tagClass}`}>
+                  <span>{t(`about.cards.${i}.tag`, card.tag)}</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ================================================================== */}
+      {/* HOW IT WORKS                                                       */}
+      {/* ================================================================== */}
+      <section className="relative bg-[#FAF9F5] border-y border-border py-14 sm:py-20 overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-60 pointer-events-none bg-[radial-gradient(circle_at_10%_20%,rgba(154,52,18,0.06),transparent_40%),radial-gradient(circle_at_90%_80%,rgba(63,79,58,0.08),transparent_40%)]"
+          aria-hidden="true"
+        />
+        <div className="relative page-container space-y-10 sm:space-y-12">
+          <SectionHeading
+            title={t("howItWorks.title", "How Tsunagu Works")}
+            subtitle={t(
+              "howItWorks.subtitle",
+              "A simple, respectful four-step process designed to make connecting effortless and safe for all ages."
             )}
-          </p>
-        </div>
+          />
 
-        {/* 3 Information Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Knowledge Sharing */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 sm:p-8 shadow-xs hover:border-primary/60 transition-all flex flex-col justify-between space-y-4">
-            <div className="space-y-4">
-              <div className="h-12 w-12 rounded-xl bg-[#E7EEE4] text-primary flex items-center justify-center">
-                <BookOpen className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-black text-foreground">
-                {t("about.cards.0.title", "Knowledge Sharing")}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {t(
-                  "about.cards.0.desc",
-                  "Pass down traditional recipes, cultural crafts, calligraphy, gardening wisdom, and life stories, while younger members exchange modern skills, digital tools, and fresh viewpoints."
-                )}
-              </p>
-            </div>
-            <div className="pt-2 border-t border-border/60 text-xs font-bold text-primary flex items-center gap-1">
-              <span>{t("about.cards.0.tag", "Reciprocal learning")}</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </div>
-
-          {/* Card 2: Mutual Support */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 sm:p-8 shadow-xs hover:border-primary/60 transition-all flex flex-col justify-between space-y-4">
-            <div className="space-y-4">
-              <div className="h-12 w-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-                <HandHelping className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-black text-foreground">
-                {t("about.cards.1.title", "Mutual Support")}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {t(
-                  "about.cards.1.desc",
-                  "Help with everyday tasks such as smartphone settings, video calling, grocery errands, minor household chores, or seasonal preparation—provided with patience and neighborhood goodwill."
-                )}
-              </p>
-            </div>
-            <div className="pt-2 border-t border-border/60 text-xs font-bold text-amber-800 flex items-center gap-1">
-              <span>{t("about.cards.1.tag", "Practical assistance")}</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </div>
-
-          {/* Card 3: Companionship */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 sm:p-8 shadow-xs hover:border-primary/60 transition-all flex flex-col justify-between space-y-4">
-            <div className="space-y-4">
-              <div className="h-12 w-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center">
-                <HeartHandshake className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-black text-foreground">
-                {t("about.cards.2.title", "Companionship")}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {t(
-                  "about.cards.2.desc",
-                  "Build genuine intergenerational friendships through casual conversation over tea, peaceful neighborhood walks, listening, and sharing hobbies that alleviate social isolation."
-                )}
-              </p>
-            </div>
-            <div className="pt-2 border-t border-border/60 text-xs font-bold text-rose-700 flex items-center gap-1">
-              <span>{t("about.cards.2.tag", "Social connection")}</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </div>
+          <ol className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+            {/* Connecting line on large screens */}
+            <div
+              className="hidden lg:block absolute top-11 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-primary/10 via-primary/40 to-primary/10"
+              aria-hidden="true"
+            />
+            {STEPS.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <li
+                  key={step.title}
+                  className="card-hover group relative rounded-2xl border-2 border-border bg-card p-6 shadow-xs flex flex-col justify-between gap-4 animate-fade-up"
+                  style={{ animationDelay: `${i * 100}ms` }}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-3xl text-primary/30 font-mono transition-colors duration-300 group-hover:text-primary/60">
+                        0{i + 1}
+                      </span>
+                      <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-black text-foreground">{t(`howItWorks.steps.${i}.title`, step.title)}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{t(`howItWorks.steps.${i}.desc`, step.desc)}</p>
+                  </div>
+                  <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+                    <CheckCircle2 className="h-3 w-3 text-success" />
+                    {t(`howItWorks.steps.${i}.badge`, step.badge)}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 4. HOW TSUNAGU WORKS SECTION — 4-STEP PROCESS                             */}
-      {/* ========================================================================= */}
-      <section className="bg-[#FAF9F5] border-y-2 border-border py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
-              {t("howItWorks.title", "How Tsunagu Works")}
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              {t(
-                "howItWorks.subtitle",
-                "A simple, respectful four-step process designed to make connecting effortless and safe for all ages."
-              )}
-            </p>
-          </div>
+      {/* ================================================================== */}
+      {/* CATEGORIES                                                         */}
+      {/* ================================================================== */}
+      <section className="page-container py-14 sm:py-20 space-y-10">
+        <SectionHeading
+          title={t("categories.title", "Exchange Categories")}
+          subtitle={t("categories.subtitle", "Explore the diverse areas of mutual exchange supported across our community.")}
+        />
 
-          {/* 4 Steps: Horizontal on Desktop, Vertical / Stacked on Mobile */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Step 1 */}
-            <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs relative flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-black text-2xl text-primary/40 font-mono">01</span>
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <PenLine className="h-5 w-5" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          {CATEGORIES.map((cat, i) => {
+            const Icon = cat.icon;
+            return (
+              <Link
+                key={cat.title}
+                href="/posts"
+                className="card-hover group rounded-2xl border-2 border-border bg-card p-6 shadow-xs flex flex-col gap-4 animate-fade-up"
+                style={{ animationDelay: `${(i % 3) * 100}ms` }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div
+                    className={`h-12 w-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${cat.iconClass}`}
+                  >
+                    <Icon className="h-6 w-6" />
                   </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-primary" />
                 </div>
-                <h3 className="text-lg font-black text-foreground">
-                  {t("howItWorks.steps.0.title", "Create a Post")}
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {t(
-                    "howItWorks.steps.0.desc",
-                    "Post a skill or service you would love to share, or write a friendly request for assistance you need."
-                  )}
-                </p>
-              </div>
-              <div className="text-[11px] font-bold text-muted-foreground">
-                {t("howItWorks.steps.0.badge", "Easy quick-post format")}
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs relative flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-black text-2xl text-primary/40 font-mono">02</span>
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Compass className="h-5 w-5" />
-                  </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-black text-foreground transition-colors group-hover:text-primary">
+                    {t(`categories.items.${i}.title`, cat.title)}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                    {t(`categories.items.${i}.desc`, cat.desc)}
+                  </p>
                 </div>
-                <h3 className="text-lg font-black text-foreground">
-                  {t("howItWorks.steps.1.title", "Discover & Respond")}
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {t(
-                    "howItWorks.steps.1.desc",
-                    "Explore listings in your neighborhood. Send a polite connection request with an introductory message."
-                  )}
-                </p>
-              </div>
-              <div className="text-[11px] font-bold text-muted-foreground">
-                {t("howItWorks.steps.1.badge", "Filter by category & area")}
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs relative flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-black text-2xl text-primary/40 font-mono">03</span>
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <MessageSquare className="h-5 w-5" />
-                  </div>
+                <div className="flex flex-wrap gap-1.5 pt-3 border-t border-border/60">
+                  {cat.tags.map((tag, j) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground"
+                    >
+                      {t(`categories.items.${i}.tags.${j}`, tag)}
+                    </span>
+                  ))}
                 </div>
-                <h3 className="text-lg font-black text-foreground">
-                  {t("howItWorks.steps.2.title", "Connect & Coordinate")}
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {t(
-                    "howItWorks.steps.2.desc",
-                    "Chat securely within Tsunagu. Agree on the date, time, and comfortable public location for your exchange."
-                  )}
-                </p>
-              </div>
-              <div className="text-[11px] font-bold text-muted-foreground">
-                {t("howItWorks.steps.2.badge", "In-app private messaging")}
-              </div>
-            </div>
-
-            {/* Step 4 */}
-            <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs relative flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-black text-2xl text-primary/40 font-mono">04</span>
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                </div>
-                <h3 className="text-lg font-black text-foreground">
-                  {t("howItWorks.steps.3.title", "Complete & Review")}
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {t(
-                    "howItWorks.steps.3.desc",
-                    "Meet up, enjoy the mutual exchange, confirm completion, and leave warm, encouraging feedback for each other."
-                  )}
-                </p>
-              </div>
-              <div className="text-[11px] font-bold text-muted-foreground">
-                {t("howItWorks.steps.3.badge", "Build community trust")}
-              </div>
-            </div>
-          </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 5. EXCHANGE CATEGORIES SECTION — 6 INFORMATIONAL CARDS (3x2 GRID)         */}
-      {/* ========================================================================= */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
-          <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
-            {t("categories.title", "Exchange Categories")}
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            {t(
-              "categories.subtitle",
-              "Explore the diverse areas of mutual exchange supported across our community."
-            )}
-          </p>
-        </div>
+      {/* ================================================================== */}
+      {/* FINAL CTA                                                          */}
+      {/* ================================================================== */}
+      <section className="page-container">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#234336] via-[#2F5344] to-[#1c332a] text-white px-6 py-12 sm:px-12 sm:py-16 text-center shadow-lift">
+          {/* Decorative orbs */}
+          <div className="absolute -top-20 -left-20 h-64 w-64 rounded-full bg-amber-400/15 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-emerald-300/15 blur-3xl" aria-hidden="true" />
 
-        {/* 6 Informational Category Cards in a clean 3x2 Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* 1. Daily Assistance */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
-            <div className="h-11 w-11 rounded-xl bg-[#E7EEE4] text-primary flex items-center justify-center">
-              <HandHelping className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-foreground">
-                {t("categories.items.0.title", "Daily Assistance")}
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                {t(
-                  "categories.items.0.desc",
-                  "Practical help with grocery runs, errands, light parcel carrying, and daily neighborhood tasks."
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.0.tags.0", "Grocery Runs")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.0.tags.1", "Errands")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.0.tags.2", "Neighborhood Help")}
-              </span>
-            </div>
-          </div>
-
-          {/* 2. Technology Help */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
-            <div className="h-11 w-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-              <Smartphone className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-foreground">
-                {t("categories.items.1.title", "Technology Help")}
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                {t(
-                  "categories.items.1.desc",
-                  "Patient guidance on smartphone navigation, video calls with family, email setup, and digital devices."
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.1.tags.0", "Smartphones")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.1.tags.1", "Video Calls")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.1.tags.2", "Digital Apps")}
-              </span>
-            </div>
-          </div>
-
-          {/* 3. Companionship */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
-            <div className="h-11 w-11 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center">
-              <HeartHandshake className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-foreground">
-                {t("categories.items.2.title", "Companionship")}
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                {t(
-                  "categories.items.2.desc",
-                  "Warm and friendly conversation over tea, park strolls, reminiscing, and sharing joyful moments."
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.2.tags.0", "Tea Chats")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.2.tags.1", "Walking")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.2.tags.2", "Shared Hobbies")}
-              </span>
-            </div>
-          </div>
-
-          {/* 4. Learning & Skills */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
-            <div className="h-11 w-11 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center">
-              <BookOpen className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-foreground">
-                {t("categories.items.3.title", "Learning & Skills")}
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                {t(
-                  "categories.items.3.desc",
-                  "Traditional home cooking, calligraphy, origami, language practice, history, and craft techniques."
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.3.tags.0", "Home Cooking")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.3.tags.1", "Handicrafts")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.3.tags.2", "Languages")}
-              </span>
-            </div>
-          </div>
-
-          {/* 5. Home Assistance */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
-            <div className="h-11 w-11 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center">
-              <Flower2 className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-foreground">
-                {t("categories.items.4.title", "Home Assistance")}
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                {t(
-                  "categories.items.4.desc",
-                  "Balcony gardening tips, plant watering during trips, book organization, and seasonal home tidying."
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.4.tags.0", "Gardening")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.4.tags.1", "Plant Care")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.4.tags.2", "Home Organization")}
-              </span>
-            </div>
-          </div>
-
-          {/* 6. Community & Local Activities */}
-          <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-xs hover:border-primary/60 transition-all space-y-4">
-            <div className="h-11 w-11 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center">
-              <Users className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-foreground">
-                {t("categories.items.5.title", "Community & Local Activities")}
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                {t(
-                  "categories.items.5.desc",
-                  "Join neighborhood events, cultural activities, community gardening, and local group activities to build friendships and stay connected."
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/60">
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.5.tags.0", "Local Events")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.5.tags.1", "Cultural Activities")}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                {t("categories.items.5.tags.2", "Community Groups")}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 6. FINAL CALL TO ACTION — FULL-WIDTH NATURAL CARD MATCHING GRID           */}
-      {/* ========================================================================= */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border-2 border-border bg-gradient-to-r from-[#234336] via-[#2F5344] to-[#234336] text-white p-6 sm:p-10 text-center space-y-4 shadow-sm relative overflow-hidden">
-          <div className="max-w-2xl mx-auto space-y-2">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-snug">
+          <div className="relative max-w-2xl mx-auto space-y-4">
+            <HeartHandshake className="h-10 w-10 mx-auto text-amber-300 animate-float" />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight text-balance">
               {t("cta.title", "Everyone has something to share. Everyone has something to gain.")}
             </h2>
-            <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
+            <p className="text-sm sm:text-base text-white/85 leading-relaxed">
               {t(
                 "cta.subtitle",
                 "Join your local Tsunagu community today. Whether you wish to share wisdom, lend an everyday hand, or connect with a neighbor, there is a place for you."
@@ -548,16 +454,24 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="pt-2 flex items-center justify-center">
+          <div className="relative pt-7 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center justify-center gap-3">
             <Button
               asChild
               size="lg"
-              className="bg-amber-400 hover:bg-amber-300 text-stone-900 font-black text-xs sm:text-sm px-8 py-3.5 h-12 rounded-xl shadow-md transition-all cursor-pointer gap-2"
+              className="group bg-amber-400 hover:bg-amber-300 text-stone-900 font-black rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-xl"
             >
-              <Link href="/posts">
+              <Link href="/register">
                 <span>{t("cta.getStarted", "Get Started")}</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="bg-transparent border-white/40 hover:border-white hover:bg-white/10 text-white hover:text-white font-bold rounded-xl"
+            >
+              <Link href="/about">{t("footer.howItWorks", "How It Works")}</Link>
             </Button>
           </div>
         </div>
