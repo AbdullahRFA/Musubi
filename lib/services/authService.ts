@@ -86,7 +86,32 @@ export function useSession(): Profile | null {
   const userId = useAppStore((state) => state.sessionUserId);
   const users = useAppStore((state) => state.users);
   if (!userId) return null;
-  return users.find((user) => user.id === userId) ?? null;
+  const found = users.find((user) => user.id === userId);
+  if (found) return found;
+
+  // Fallback profile until full profile row loads from Supabase
+  return {
+    id: userId,
+    email: "",
+    fullName: "User",
+    avatarUrl: null,
+    age: null,
+    ageGroup: null,
+    location: "",
+    neighborhoods: [],
+    lat: null,
+    lng: null,
+    bio: "",
+    interests: [],
+    skills: [],
+    servicesOffered: [],
+    servicesNeeded: [],
+    availability: "Flexible",
+    contactMethod: "chat",
+    phone: null,
+    userGroup: "yg",
+    createdAt: new Date().toISOString(),
+  };
 }
 
 /**

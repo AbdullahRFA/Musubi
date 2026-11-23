@@ -208,18 +208,55 @@ export async function respondToPost(postId: string, message: string): Promise<Se
 
   if (!post) throw new ServiceError("We could not find that post.");
   if (hiddenFrom(state.blocks, me.id, post.authorId)) throw new ServiceError("This post is not available.");
-  if (post.authorId === me.id) throw new ServiceError("You cannot respond to your own post.");
   if (post.status !== "open") throw new ServiceError("This post is not open for new responses.");
 
+  const supabase = createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  const authUser = authData?.user;
+  const requesterId = authUser?.id || me.id;
+
+  if (post.authorId === requesterId || post.authorId === me.id) {
+    throw new ServiceError("You cannot respond to your own post.");
+  }
+
   const duplicate = state.requests.some(
-    (request) => request.postId === postId && request.requesterId === me.id && request.status !== "cancelled",
+    (request) =>
+      request.postId === postId &&
+      (request.requesterId === requesterId || request.requesterId === me.id) &&
+      request.status !== "cancelled",
   );
   if (duplicate) throw new ServiceError("You already responded to this post.");
 
-  const supabase = createClient();
+  // If this is a mock seed post (not in Supabase DB), save to local store gracefully
+  const isMockPost = !postId.includes("-") || post.authorId.startsWith("u");
+  if (isMockPost) {
+    const localRequest: ServiceRequest = {
+      id: "req-" + Date.now(),
+      postId,
+      requesterId,
+      ownerId: post.authorId,
+      message: message.trim(),
+      status: "pending",
+      direct: false,
+      requesterDone: false,
+      ownerDone: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    useAppStore.setState((current) => ({ requests: [localRequest, ...current.requests] }));
+    pushNotification({
+      userId: post.authorId,
+      type: "request_new",
+      title: "New service request",
+      body: `${me.fullName} responded to “${post.title}”.`,
+      href: "/requests",
+    });
+    return localRequest;
+  }
+
   const newRow = {
     post_id: postId,
-    requester_id: me.id,
+    requester_id: requesterId,
     owner_id: post.authorId,
     message: message.trim(),
     status: "pending",
@@ -260,9 +297,16 @@ export async function createDirectRequest(targetUserId: string, message: string)
   const me = requireUser();
   const state = useAppStore.getState();
 
-  if (targetUserId === me.id) throw new ServiceError("You cannot send a request to yourself.");
+  const supabase = createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  const authUser = authData?.user;
+  const requesterId = authUser?.id || me.id;
+
+  if (targetUserId === requesterId || targetUserId === me.id) {
+    throw new ServiceError("You cannot send a request to yourself.");
+  }
   const target = userById(state.users, targetUserId);
-  if (!target || hiddenFrom(state.blocks, me.id, targetUserId)) {
+  if (!target || hiddenFrom(state.blocks, requesterId, targetUserId)) {
     throw new ServiceError("That person is not available.");
   }
 
@@ -270,15 +314,40 @@ export async function createDirectRequest(targetUserId: string, message: string)
     (request) =>
       request.direct &&
       request.status === "pending" &&
-      request.requesterId === me.id &&
+      (request.requesterId === requesterId || request.requesterId === me.id) &&
       request.ownerId === targetUserId,
   );
   if (existing) throw new ServiceError("You already have a pending request with this person.");
 
-  const supabase = createClient();
+  const isMockUser = targetUserId.startsWith("u");
+  if (isMockUser) {
+    const localRequest: ServiceRequest = {
+      id: "req-" + Date.now(),
+      postId: null,
+      requesterId,
+      ownerId: targetUserId,
+      message: message.trim() || "I would like to connect and exchange a skill or a service.",
+      status: "pending",
+      direct: true,
+      requesterDone: false,
+      ownerDone: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    useAppStore.setState((current) => ({ requests: [localRequest, ...current.requests] }));
+    pushNotification({
+      userId: targetUserId,
+      type: "request_new",
+      title: "New contact request",
+      body: `${me.fullName} sent you a service request.`,
+      href: "/requests",
+    });
+    return localRequest;
+  }
+
   const newRow = {
     post_id: null,
-    requester_id: me.id,
+    requester_id: requesterId,
     owner_id: targetUserId,
     message: message.trim() || "I would like to connect and exchange a skill or a service.",
     status: "pending",
