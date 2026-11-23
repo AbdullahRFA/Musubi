@@ -7,15 +7,28 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LogIn, Sparkles, AlertCircle } from "lucide-react";
 import { loginSchema, type LoginValues } from "@/lib/validators";
-import { signIn } from "@/lib/services/authService";
+import { signIn, signInWithGoogle } from "@/lib/services/authService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { GoogleIcon } from "@/components/common/GoogleIcon";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      setError(err?.message || "Failed to sign in with Google.");
+      setGoogleLoading(false);
+    }
+  };
 
   const {
     register,
@@ -72,6 +85,29 @@ export default function LoginPage() {
                 <span>{error}</span>
               </div>
             )}
+
+            {/* Google Sign-in */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading || loading}
+              className="w-full flex items-center justify-center gap-3 h-11 text-sm font-semibold border-2 border-border hover:bg-muted"
+            >
+              <GoogleIcon />
+              <span>{googleLoading ? "Connecting to Google..." : "Continue with Google"}</span>
+            </Button>
+
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground font-semibold">
+                  Or continue with email
+                </span>
+              </div>
+            </div>
 
             <div className="space-y-1.5">
               <label className="text-base font-semibold text-foreground">Email address</label>

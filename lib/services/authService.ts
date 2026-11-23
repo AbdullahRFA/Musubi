@@ -247,6 +247,31 @@ export async function signUp(input: {
 }
 
 /**
+ * Sign in / Sign up with Google OAuth
+ */
+export async function signInWithGoogle(): Promise<void> {
+  const supabase = createClient();
+  const redirectTo = typeof window !== "undefined"
+    ? `${window.location.origin}/auth/callback`
+    : undefined;
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
+    },
+  });
+
+  if (error) {
+    throw new ServiceError(error.message || "Failed to start Google sign-in.");
+  }
+}
+
+/**
  * Sign out of Supabase
  */
 export async function signOut(): Promise<void> {
