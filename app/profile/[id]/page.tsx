@@ -11,6 +11,7 @@ import {
   Flag,
   UserX,
   Edit,
+  KeyRound,
   Star,
   CheckCircle2,
   Calendar,
@@ -113,12 +114,20 @@ export default function PublicProfilePage() {
 
             <div className="flex flex-wrap items-center gap-2">
               {isMe ? (
-                <Button asChild variant="outline" className="gap-2 font-bold">
-                  <Link href="/profile/edit">
-                    <Edit className="h-4 w-4" />
-                    Edit Profile
-                  </Link>
-                </Button>
+                <>
+                  <Button asChild variant="outline" className="gap-2 font-bold">
+                    <Link href="/profile/edit">
+                      <Edit className="h-4 w-4" />
+                      Edit Profile
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="gap-2 font-semibold">
+                    <Link href="/change-password">
+                      <KeyRound className="h-4 w-4" />
+                      Change Password
+                    </Link>
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button
