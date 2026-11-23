@@ -2,17 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  Inbox,
-  Send,
-  CheckCircle2,
-  XCircle,
-  MessageSquare,
-  Compass,
-  Clock,
-  ArrowRight,
-  AlertCircle,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Inbox, Send, CheckCircle2, XCircle, MessageSquare, Clock, AlertCircle } from "lucide-react";
 import {
   useMyRequests,
   acceptRequest,
@@ -20,19 +11,19 @@ import {
   cancelRequest,
   confirmCompletion,
 } from "@/lib/services/requestService";
-import { useSession } from "@/lib/services/authService";
 import { usePosts } from "@/lib/services/postService";
 import { useUsers } from "@/lib/services/demoService";
 import { RequestStatusBadge } from "@/components/common/StatusBadge";
 import { groupShort } from "@/lib/constants";
 import { formatWhen, initials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useAppStore } from "@/lib/store/useAppStore";
 import { AuthGuard } from "@/components/common/AuthGuard";
 import { SafetyBanner } from "@/components/common/SafetyBanner";
 
 export default function RequestsPage() {
-  const session = useSession();
+  const router = useRouter();
+  const conversations = useAppStore((state) => state.conversations);
   const { incoming, outgoing } = useMyRequests();
   const allPosts = usePosts();
   const allUsers = useUsers();
@@ -94,7 +85,7 @@ export default function RequestsPage() {
     try {
       const res = await confirmCompletion(requestId);
       if (res.completed && res.activityId) {
-        window.location.href = `/feedback/${res.activityId}`;
+        router.push(`/feedback/${res.activityId}`);
       }
     } catch (err: any) {
       setActionError(err?.message || "Failed to update completion.");
@@ -103,298 +94,227 @@ export default function RequestsPage() {
     }
   };
 
+  const conversationHref = (requestId: string) => {
+    const convo = conversations.find((c) => c.requestId === requestId);
+    return convo ? `/chat/${convo.id}` : "/chat";
+  };
+
+  const tabs = [
+    { id: "incoming" as const, label: "Incoming for Me", short: "Incoming", icon: Inbox, count: incoming.length, active: "border-primary text-primary" },
+    { id: "outgoing" as const, label: "Sent by Me", short: "Sent", icon: Send, count: outgoing.length, active: "border-secondary text-secondary" },
+  ];
+
+  const list = activeTab === "incoming" ? incoming : outgoing;
+
   return (
     <AuthGuard>
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Header */}
-        <div className="border-b-2 border-border pb-6 space-y-1">
-          <h1 className="text-3xl font-extrabold text-foreground">Service Requests</h1>
-          <p className="text-base text-muted-foreground">
-            Manage pending responses and connection requests. Once accepted, exchanges move to{" "}
-            <Link href="/my-activity?tab=inprogress" className="text-primary font-bold hover:underline">
-              In Progress
-            </Link>{" "}
-            and unlock private chat.
-          </p>
-        </div>
+      <div className="pb-12 sm:pb-16">
+        <section className="border-b border-border bg-gradient-to-b from-card to-background">
+          <div className="page-container max-w-5xl pt-8 sm:pt-12 space-y-5">
+            <div className="space-y-1 animate-fade-up">
+              <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">Service Requests</h1>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
+                Manage pending responses and connection requests. Once accepted, exchanges move to{" "}
+                <Link href="/my-activity?tab=inprogress" className="text-primary font-bold hover:underline underline-offset-4">
+                  In Progress
+                </Link>{" "}
+                and unlock private chat.
+              </p>
+            </div>
 
-        <SafetyBanner />
-
-        {actionError && (
-          <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-4 text-sm text-destructive font-medium border border-destructive/20">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <span>{actionError}</span>
+            <div role="tablist" aria-label="Request direction" className="flex gap-6">
+              {tabs.map(({ id, label, short, icon: Icon, count, active }) => {
+                const selected = activeTab === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setActiveTab(id)}
+                    className={`flex items-center gap-2 pb-3 font-bold text-base sm:text-lg border-b-4 transition-colors duration-200 ${
+                      selected ? active : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="sm:hidden">{short}</span>
+                    <span className="hidden sm:inline">{label}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold tabular-nums">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        )}
+        </section>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b-2 border-border gap-6">
-          <button
-            type="button"
-            onClick={() => setActiveTab("incoming")}
-            className={`flex items-center gap-2 pb-3 font-bold text-lg border-b-4 transition-all -mb-[2px] ${
-              activeTab === "incoming"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Inbox className="h-5 w-5" />
-            <span>Incoming for Me ({incoming.length})</span>
-          </button>
+        <div className="page-container max-w-5xl pt-6 sm:pt-8 space-y-5">
+          <SafetyBanner />
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("outgoing")}
-            className={`flex items-center gap-2 pb-3 font-bold text-lg border-b-4 transition-all -mb-[2px] ${
-              activeTab === "outgoing"
-                ? "border-secondary text-secondary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Send className="h-5 w-5" />
-            <span>Sent by Me ({outgoing.length})</span>
-          </button>
-        </div>
+          {actionError && (
+            <div role="alert" className="flex items-start gap-2 rounded-lg bg-destructive/10 p-4 text-sm text-destructive font-medium border border-destructive/20 animate-in fade-in">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              {actionError}
+            </div>
+          )}
 
-        {/* INCOMING REQUESTS TAB */}
-        {activeTab === "incoming" && (
-          <div className="space-y-4">
-            {incoming.length === 0 ? (
-              <div className="rounded-lg border-2 border-dashed border-border bg-card p-12 text-center space-y-3">
-                <p className="text-base font-semibold text-foreground">No incoming requests right now.</p>
-                <p className="text-sm text-muted-foreground">
-                  When neighbors respond to your posts or send you a direct connection request, they will appear here.
-                </p>
+          <div key={activeTab} role="tabpanel" className="space-y-4 animate-fade-in">
+            {list.length === 0 ? (
+              <div className="rounded-2xl border-2 border-dashed border-border bg-card px-6 py-12 text-center space-y-3">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                  {activeTab === "incoming" ? (
+                    <Inbox className="h-7 w-7 text-muted-foreground" />
+                  ) : (
+                    <Send className="h-7 w-7 text-muted-foreground" />
+                  )}
+                </div>
+                {activeTab === "incoming" ? (
+                  <>
+                    <p className="text-base font-semibold text-foreground">No incoming requests right now.</p>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      When neighbors respond to your posts or send you a direct connection request, they will appear here.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-base font-semibold text-foreground">You haven&apos;t sent any requests yet.</p>
+                    <Button asChild>
+                      <Link href="/posts">Browse Community Posts</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             ) : (
-              incoming.map((req) => {
-                const requester = getUser(req.requesterId);
+              list.map((req) => {
+                const incomingReq = activeTab === "incoming";
+                const other = getUser(incomingReq ? req.requesterId : req.ownerId);
                 const post = getPost(req.postId);
                 const isBusy = loadingId === req.id;
+                const myDone = incomingReq ? req.ownerDone : req.requesterDone;
 
                 return (
-                  <Card key={req.id} className="border-2 border-border bg-card shadow-xs">
-                    <CardContent className="p-5 sm:p-6 space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-sm">
-                            {requester ? initials(requester.fullName) : "?"}
-                          </div>
-                          <div>
-                            <Link href={`/profile/${req.requesterId}`} className="font-bold text-foreground hover:text-primary transition-colors text-base">
-                              {requester?.fullName ?? "Community Member"}
-                            </Link>
-                            {requester && (
-                              <span className="ml-2 text-xs font-semibold text-primary">
-                                {groupShort(requester.userGroup)}
-                              </span>
+                  <article
+                    key={req.id}
+                    className="rounded-2xl border-2 border-border bg-card shadow-xs p-4 sm:p-6 space-y-4 transition-all duration-300 hover:shadow-soft hover:border-primary/20"
+                  >
+                    {/* Person + status */}
+                    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/70 pb-4">
+                      <Link href={`/profile/${other?.id ?? ""}`} className="group flex items-center gap-3 min-w-0">
+                        <div
+                          className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden transition-transform group-hover:scale-105 ${
+                            incomingReq ? "bg-secondary text-secondary-foreground" : "bg-primary/10 text-primary"
+                          }`}
+                        >
+                          {other?.avatarUrl ? (
+                            <img src={other.avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : other ? (
+                            initials(other.fullName)
+                          ) : (
+                            "?"
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs text-muted-foreground block">{incomingReq ? "From" : "Sent to"}</span>
+                          <span className="font-bold text-foreground group-hover:text-primary transition-colors truncate block">
+                            {other?.fullName ?? "Community Member"}
+                            {other && (
+                              <span className="ml-2 text-xs font-semibold text-primary">{groupShort(other.userGroup)}</span>
                             )}
-                            <div className="text-xs text-muted-foreground">
-                              Sent {formatWhen(req.createdAt)}
-                            </div>
-                          </div>
+                          </span>
+                          <span className="text-xs text-muted-foreground">Sent {formatWhen(req.createdAt)}</span>
                         </div>
+                      </Link>
+                      <RequestStatusBadge status={req.status} />
+                    </div>
 
-                        <RequestStatusBadge status={req.status} />
-                      </div>
+                    {/* Context */}
+                    {post ? (
+                      <p className="text-sm text-foreground">
+                        {incomingReq ? "Regarding post: " : "For post: "}
+                        <Link href={`/posts/${post.id}`} className="font-bold text-primary hover:underline underline-offset-4 break-words">
+                          “{post.title}”
+                        </Link>
+                      </p>
+                    ) : (
+                      <p className="text-sm font-semibold text-secondary">Direct connection request</p>
+                    )}
 
-                      {/* Associated Post or Direct */}
-                      <div className="text-sm">
-                        {post ? (
-                          <div className="text-foreground">
-                            Regarding post:{" "}
-                            <Link href={`/posts/${post.id}`} className="font-bold text-primary hover:underline">
-                              “{post.title}”
-                            </Link>
-                          </div>
-                        ) : (
-                          <div className="font-semibold text-secondary">Direct connection request</div>
-                        )}
-                      </div>
+                    {req.message && (
+                      <blockquote className="rounded-xl bg-muted/50 p-3.5 border-l-4 border-primary/40 text-sm text-foreground italic break-words">
+                        “{req.message}”
+                      </blockquote>
+                    )}
 
-                      {/* Message body */}
-                      {req.message && (
-                        <div className="rounded-md bg-muted/50 p-3.5 border border-border/80 text-sm text-foreground italic">
-                          “{req.message}”
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2">
-                        {req.status === "pending" && (
-                          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-                            <Button
-                              size="sm"
-                              onClick={() => handleAccept(req.id)}
-                              disabled={isBusy}
-                              className="font-bold bg-primary hover:bg-[#234336] text-white gap-1.5 w-full sm:w-auto text-xs h-8"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              <span>Accept</span>
+                    {/* Actions */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {req.status === "pending" &&
+                        (incomingReq ? (
+                          <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
+                            <Button size="sm" onClick={() => handleAccept(req.id)} disabled={isBusy} className="font-bold gap-1.5">
+                              {isBusy ? (
+                                <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="h-4 w-4" />
+                              )}
+                              Accept
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleReject(req.id)}
                               disabled={isBusy}
-                              className="text-muted-foreground hover:text-destructive w-full sm:w-auto text-xs h-8"
+                              className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/40"
                             >
-                              <XCircle className="h-3.5 w-3.5" />
-                              <span>Decline</span>
+                              <XCircle className="h-4 w-4" />
+                              Decline
                             </Button>
                           </div>
-                        )}
-
-                        {req.status === "accepted" && (
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                            <Link href="/chat" className="w-full sm:w-auto">
-                              <Button size="sm" variant="default" className="gap-1.5 font-bold w-full sm:w-auto text-xs h-8">
-                                <MessageSquare className="h-3.5 w-3.5" />
-                                <span>Go to Chat</span>
-                              </Button>
-                            </Link>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleConfirmDone(req.id)}
-                              disabled={isBusy || req.ownerDone}
-                              className={`gap-1.5 font-semibold w-full sm:w-auto text-xs h-8 ${
-                                req.ownerDone ? "text-success border-success" : ""
-                              }`}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              <span>
-                                {req.ownerDone ? "Waiting for other" : "Mark Completed"}
-                              </span>
-                            </Button>
-                          </div>
-                        )}
-
-                        {req.status === "completed" && (
-                          <span className="text-xs font-semibold text-secondary flex items-center gap-1">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Activity completed & archived
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        {/* OUTGOING REQUESTS TAB */}
-        {activeTab === "outgoing" && (
-          <div className="space-y-4">
-            {outgoing.length === 0 ? (
-              <div className="rounded-lg border-2 border-dashed border-border bg-card p-12 text-center space-y-3">
-                <p className="text-base font-semibold text-foreground">You haven&apos;t sent any requests yet.</p>
-                <Link href="/posts">
-                  <Button variant="default">Browse Community Posts</Button>
-                </Link>
-              </div>
-            ) : (
-              outgoing.map((req) => {
-                const owner = getUser(req.ownerId);
-                const post = getPost(req.postId);
-                const isBusy = loadingId === req.id;
-
-                return (
-                  <Card key={req.id} className="border-2 border-border bg-card shadow-xs">
-                    <CardContent className="p-5 sm:p-6 space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                            {owner ? initials(owner.fullName) : "?"}
-                          </div>
-                          <div>
-                            <span className="text-xs text-muted-foreground block">Sent to:</span>
-                            <Link href={`/profile/${req.ownerId}`} className="font-bold text-foreground hover:text-primary transition-colors text-base">
-                              {owner?.fullName ?? "Community Member"}
-                            </Link>
-                            <div className="text-xs text-muted-foreground">
-                              Sent {formatWhen(req.createdAt)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <RequestStatusBadge status={req.status} />
-                      </div>
-
-                      {post ? (
-                        <div className="text-sm text-foreground">
-                          For post:{" "}
-                          <Link href={`/posts/${post.id}`} className="font-bold text-primary hover:underline">
-                            “{post.title}”
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="text-sm font-semibold text-secondary">Direct connection request</div>
-                      )}
-
-                      {req.message && (
-                        <div className="rounded-md bg-muted/50 p-3.5 border border-border/80 text-sm text-foreground italic">
-                          “{req.message}”
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        {req.status === "pending" && (
+                        ) : (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleCancel(req.id)}
                             disabled={isBusy}
-                            className="text-muted-foreground hover:text-destructive text-xs"
+                            className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/40"
                           >
+                            <XCircle className="h-4 w-4" />
                             Cancel Request
                           </Button>
-                        )}
+                        ))}
 
-                        {req.status === "accepted" && (
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                            <Link href="/chat" className="w-full sm:w-auto">
-                              <Button size="sm" variant="default" className="gap-1.5 font-bold w-full sm:w-auto text-xs h-8">
-                                <MessageSquare className="h-3.5 w-3.5" />
-                                <span>Go to Chat</span>
-                              </Button>
+                      {req.status === "accepted" && (
+                        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
+                          <Button asChild size="sm" className="gap-1.5 font-bold">
+                            <Link href={conversationHref(req.id)}>
+                              <MessageSquare className="h-4 w-4" />
+                              Go to Chat
                             </Link>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleConfirmDone(req.id)}
+                            disabled={isBusy || myDone}
+                            className={`gap-1.5 font-semibold ${myDone ? "text-success border-success" : "hover:border-emerald-600 hover:text-emerald-700"}`}
+                          >
+                            {myDone ? <Clock className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                            {myDone ? (incomingReq ? "Waiting for other" : "Waiting for author") : "Mark Completed"}
+                          </Button>
+                        </div>
+                      )}
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleConfirmDone(req.id)}
-                              disabled={isBusy || req.requesterDone}
-                              className={`gap-1.5 font-semibold w-full sm:w-auto text-xs h-8 ${
-                                req.requesterDone ? "text-success border-success" : ""
-                              }`}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              <span>
-                                {req.requesterDone ? "Waiting for author" : "Mark Completed"}
-                              </span>
-                            </Button>
-                          </div>
-                        )}
-
-                        {req.status === "completed" && (
-                          <span className="text-xs font-semibold text-secondary flex items-center gap-1">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Activity completed & archived
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                      {req.status === "completed" && (
+                        <span className="text-sm font-semibold text-secondary flex items-center gap-1.5">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Activity completed & archived
+                        </span>
+                      )}
+                    </div>
+                  </article>
                 );
               })
             )}
           </div>
-        )}
+        </div>
       </div>
     </AuthGuard>
   );
