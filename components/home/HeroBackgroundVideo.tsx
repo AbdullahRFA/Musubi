@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, ChevronDown } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
 export interface HeroVideoItem {
@@ -39,7 +39,7 @@ interface HeroBackgroundVideoProps {
 }
 
 export function HeroBackgroundVideo({ children, className = "" }: HeroBackgroundVideoProps) {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
@@ -111,7 +111,7 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
 
   return (
     <section
-      className={`relative w-full min-h-[85vh] sm:min-h-[88vh] lg:min-h-[92vh] flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1C332A] via-[#243F34] to-[#14231D] text-white ${className}`}
+      className={`relative w-full min-h-[calc(100svh-3.5rem)] sm:min-h-[calc(100svh-4rem)] flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1C332A] via-[#243F34] to-[#14231D] text-white ${className}`}
       role="region"
       aria-label="Tsunagu Generations hero with full background video"
     >
@@ -128,7 +128,8 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
             muted={isMuted}
             playsInline
             loop={false}
-            preload="auto"
+            // Only fetch the active and upcoming clip; saves bandwidth on mobile
+            preload={idx === activeIndex || idx === (activeIndex + 1) % HERO_VIDEOS.length ? "auto" : "none"}
             onEnded={idx === activeIndex ? handleVideoEnded : undefined}
             onError={() => setHasError(true)}
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
@@ -146,11 +147,11 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
       />
 
       {/* 3. Subtle Light Overlay — Keeps Video Bright, Vibrant & Clear */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/20 to-black/10 z-10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-black/10 z-10 pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 z-10 pointer-events-none" />
 
       {/* 4. Top Decorative / Theme Tracker Bar */}
-      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 flex items-center justify-between">
+      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-5 sm:pt-8 flex items-center justify-between gap-3">
         <div className="inline-flex items-center gap-2 rounded-full bg-black/40 backdrop-blur-md border border-white/20 px-3.5 py-1.5 text-xs font-semibold text-white/95 shadow-sm">
           <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="font-mono text-amber-300">0{activeIndex + 1}</span>
@@ -165,7 +166,7 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
           <button
             type="button"
             onClick={toggleMute}
-            className="p-2 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md border border-white/20 text-white transition-colors cursor-pointer"
+            className="h-10 w-10 inline-flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 hover:scale-105 backdrop-blur-md border border-white/20 text-white transition-all duration-200"
             title={isMuted ? "Unmute video" : "Mute video"}
             aria-label={isMuted ? "Unmute video" : "Mute video"}
           >
@@ -174,7 +175,7 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
           <button
             type="button"
             onClick={togglePlay}
-            className="p-2 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md border border-white/20 text-white transition-colors cursor-pointer"
+            className="h-10 w-10 inline-flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 hover:scale-105 backdrop-blur-md border border-white/20 text-white transition-all duration-200"
             title={isPlaying ? "Pause background video" : "Play background video"}
             aria-label={isPlaying ? "Pause background video" : "Play background video"}
           >
@@ -184,14 +185,14 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
       </div>
 
       {/* 5. Main Hero Content Overlay (Injected as Children) */}
-      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 my-auto py-12 sm:py-16 lg:py-20">
+      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 my-auto py-10 sm:py-16 lg:py-20">
         {children}
       </div>
 
       {/* 6. Bottom Navigation Bar: Slide Indicators & Chapters */}
-      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-8 sm:pb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-white/15 pt-5">
+      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-6 sm:pb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-white/15 pt-5">
         {/* Caption */}
-        <div className="text-xs sm:text-sm text-white/80 font-medium">
+        <div key={activeIndex} className="text-xs sm:text-sm text-white/80 font-medium animate-fade-in">
           <span className="text-amber-300 font-bold mr-1.5">{t("hero.nowPlaying", "Now Playing:")}</span>
           <span>{currentTitle}</span>
         </div>
@@ -206,7 +207,7 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
               role="tab"
               aria-selected={idx === activeIndex}
               aria-label={`Slide ${idx + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+              className={`h-2 rounded-full transition-all duration-500 ease-smooth ${
                 idx === activeIndex
                   ? "w-8 sm:w-10 bg-amber-400 shadow-md"
                   : "w-2.5 sm:w-3 bg-white/40 hover:bg-white/80"
@@ -215,6 +216,15 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
           ))}
         </div>
       </div>
+
+      {/* Scroll cue (desktop only) */}
+      <a
+        href="#explore"
+        className="hidden lg:flex absolute bottom-24 left-1/2 -translate-x-1/2 z-20 h-10 w-10 items-center justify-center rounded-full border border-white/30 text-white/80 hover:text-white hover:border-white transition-colors animate-float"
+        aria-label="Scroll to content"
+      >
+        <ChevronDown className="h-5 w-5" />
+      </a>
     </section>
   );
 }

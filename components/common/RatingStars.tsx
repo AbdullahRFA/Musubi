@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Star } from "lucide-react";
 
 interface RatingStarsProps {
@@ -18,25 +21,32 @@ export function RatingStars({
   const starSizes = {
     sm: "h-4 w-4",
     md: "h-5 w-5",
-    lg: "h-7 w-7",
+    lg: "h-8 w-8 sm:h-9 sm:w-9",
   };
 
-  const currentScore = rating ?? 0;
+  const [hover, setHover] = useState<number | null>(null);
+  const currentScore = (interactive && hover) || rating || 0;
 
   return (
     <div className="flex items-center gap-1.5" aria-label={`Rating: ${rating ?? "No reviews"} out of 5`}>
-      <div className="flex items-center">
+      <div className="flex items-center" onMouseLeave={() => interactive && setHover(null)}>
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             type="button"
             disabled={!interactive}
             onClick={() => interactive && onRate?.(star)}
-            className={`transition-transform ${interactive ? "cursor-pointer hover:scale-110 p-1" : "cursor-default"}`}
+            onMouseEnter={() => interactive && setHover(star)}
+            onFocus={() => interactive && setHover(star)}
+            onBlur={() => interactive && setHover(null)}
+            aria-pressed={interactive ? star <= (rating ?? 0) : undefined}
+            className={`transition-transform duration-150 ${
+              interactive ? "cursor-pointer hover:scale-125 active:scale-95 p-1.5 rounded-full" : "cursor-default"
+            }`}
             aria-label={`${star} star${star > 1 ? "s" : ""}`}
           >
             <Star
-              className={`${starSizes[size]} ${
+              className={`${starSizes[size]} transition-colors duration-150 ${
                 star <= currentScore
                   ? "fill-amber-400 text-amber-500"
                   : "fill-transparent text-gray-300"

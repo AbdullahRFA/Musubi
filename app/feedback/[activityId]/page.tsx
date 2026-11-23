@@ -2,22 +2,27 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Star, HeartHandshake, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
+import { Star, HeartHandshake, CheckCircle2, AlertCircle, SearchX } from "lucide-react";
 import { useActivity, leaveReview } from "@/lib/services/reviewService";
 import { usePublicProfile } from "@/lib/services/profileService";
-import { useSession } from "@/lib/services/authService";
 import { RatingStars } from "@/components/common/RatingStars";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { AuthGuard } from "@/components/common/AuthGuard";
+
+const RATING_LABELS: Record<number, string> = {
+  1: "Poor",
+  2: "Fair",
+  3: "Good",
+  4: "Very good",
+  5: "Excellent!",
+};
 
 export default function FeedbackPage() {
   const params = useParams();
   const router = useRouter();
   const activityId = Array.isArray(params.activityId) ? params.activityId[0] : params.activityId;
   const activityData = useActivity(activityId);
-  const session = useSession();
   const otherProfile = usePublicProfile(activityData?.otherId ?? "");
 
   const [rating, setRating] = useState(5);
@@ -27,15 +32,20 @@ export default function FeedbackPage() {
 
   if (!activityData) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Activity not found</h2>
-        <p className="text-muted-foreground">
-          You can leave reviews only for activities that you have completed together.
-        </p>
-        <Button variant="outline" onClick={() => router.push("/my-activity")}>
-          Back to My Activity
-        </Button>
-      </div>
+      <AuthGuard>
+        <div className="page-container py-16 sm:py-24">
+          <div className="mx-auto max-w-md text-center space-y-4 animate-fade-up">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <SearchX className="h-8 w-8" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Activity not found</h1>
+            <p className="text-muted-foreground">You can leave reviews only for activities that you have completed together.</p>
+            <Button variant="outline" onClick={() => router.push("/my-activity")}>
+              Back to My Activity
+            </Button>
+          </div>
+        </div>
+      </AuthGuard>
     );
   }
 
@@ -51,7 +61,7 @@ export default function FeedbackPage() {
     setSubmitting(true);
     try {
       await leaveReview(activity.id, rating, comment);
-      router.push(`/profile/${otherProfile?.id}`);
+      router.push(otherProfile ? `/profile/${otherProfile.id}` : "/my-activity?tab=completed");
     } catch (err: any) {
       setError(err?.message || "Failed to submit review.");
       setSubmitting(false);
@@ -60,96 +70,99 @@ export default function FeedbackPage() {
 
   return (
     <AuthGuard>
-      <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-10">
-        <Card className="border-2 border-border bg-card shadow-md">
-          <CardHeader className="text-center space-y-2 border-b border-border pb-6">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-              <HeartHandshake className="h-7 w-7" />
+      <div className="page-container max-w-2xl py-6 sm:py-12">
+        <div className="overflow-hidden rounded-3xl border-2 border-border bg-card shadow-lift animate-fade-up">
+          {/* Header */}
+          <header className="relative overflow-hidden text-center space-y-3 border-b border-border px-5 py-8 sm:px-10 bg-gradient-to-b from-amber-50 to-transparent">
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 h-40 w-72 rounded-full bg-amber-200/40 blur-3xl" aria-hidden="true" />
+            <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-700 ring-4 ring-card shadow-soft animate-float">
+              {otherProfile?.avatarUrl ? (
+                <img src={otherProfile.avatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
+              ) : (
+                <HeartHandshake className="h-8 w-8" />
+              )}
             </div>
-            <CardTitle className="text-3xl font-extrabold text-foreground">
-              Rate Your Exchange
-            </CardTitle>
-            <CardDescription className="text-base">
+            <h1 className="relative text-2xl sm:text-3xl font-black text-foreground tracking-tight">Rate Your Exchange</h1>
+            <p className="relative text-sm sm:text-base text-muted-foreground">
               Activity: <strong className="text-foreground">{activity.title}</strong>
               {otherProfile && (
-                <span> with <strong className="text-primary">{otherProfile.fullName}</strong></span>
+                <>
+                  {" "}
+                  with <strong className="text-primary">{otherProfile.fullName}</strong>
+                </>
               )}
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </header>
 
           {mine ? (
-            <CardContent className="p-8 text-center space-y-4">
+            <div className="px-5 py-8 sm:px-10 text-center space-y-4">
               <div className="flex items-center justify-center gap-2 text-success font-bold text-lg">
                 <CheckCircle2 className="h-6 w-6" />
-                <span>You already reviewed this activity!</span>
+                You already reviewed this activity!
               </div>
               <div className="flex justify-center">
                 <RatingStars rating={mine.rating} size="lg" />
               </div>
-              {mine.comment && (
-                <p className="italic text-muted-foreground text-base">“{mine.comment}”</p>
-              )}
-              <div className="pt-4">
-                <Button variant="outline" onClick={() => router.push("/my-activity")}>
-                  Return to My Activity
-                </Button>
-              </div>
-            </CardContent>
+              {mine.comment && <p className="italic text-muted-foreground text-base">“{mine.comment}”</p>}
+              <Button variant="outline" onClick={() => router.push("/my-activity?tab=completed")}>
+                Return to My Activity
+              </Button>
+            </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-6 pt-6">
+              <div className="space-y-7 px-5 py-6 sm:px-10 sm:py-8">
                 {error && (
-                  <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive font-medium border border-destructive/20">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <span>{error}</span>
+                  <div role="alert" className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive font-medium border border-destructive/20">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    {error}
                   </div>
                 )}
 
-                {/* Rating Stars Selector */}
-                <div className="space-y-2 text-center">
-                  <label className="text-base font-bold text-foreground block">
-                    How was your experience?
-                  </label>
-                  <div className="flex justify-center py-2">
-                    <RatingStars
-                      rating={rating}
-                      interactive={true}
-                      onRate={(stars) => setRating(stars)}
-                      size="lg"
-                    />
+                <fieldset className="space-y-2 text-center">
+                  <legend className="text-base font-bold text-foreground mb-2 w-full">How was your experience?</legend>
+                  <div className="flex justify-center py-1">
+                    <RatingStars rating={rating} interactive onRate={setRating} size="lg" />
                   </div>
+                  <p key={rating} className="text-lg font-bold text-amber-700 animate-in fade-in zoom-in-95" aria-live="polite">
+                    {RATING_LABELS[rating]}
+                  </p>
                   <span className="text-xs text-muted-foreground">Tap a star to rate from 1 to 5</span>
-                </div>
+                </fieldset>
 
-                {/* Optional Comment */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-foreground">
-                    Share a short note or thank-you comment (optional, max 200 chars):
+                  <label htmlFor="feedback-comment" className="text-sm font-semibold text-foreground">
+                    Share a short note or thank-you comment (optional):
                   </label>
                   <Textarea
-                    rows={3}
-                    placeholder="Kenji was so patient and friendly during our exchange..."
+                    id="feedback-comment"
+                    rows={4}
+                    placeholder={`${otherProfile?.fullName?.split(" ")[0] ?? "They"} was so patient and friendly during our exchange...`}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     maxLength={200}
                   />
-                  <span className="text-xs text-muted-foreground text-right block">
+                  <span className={`text-xs text-right block tabular-nums ${comment.length > 180 ? "text-amber-700 font-semibold" : "text-muted-foreground"}`}>
                     {comment.length}/200 characters
                   </span>
                 </div>
-              </CardContent>
+              </div>
 
-              <CardFooter className="border-t border-border pt-4 flex justify-between gap-4">
+              <footer className="border-t border-border bg-muted/20 px-5 py-4 sm:px-10 flex flex-col-reverse min-[420px]:flex-row justify-between gap-3">
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancel
                 </Button>
-                <Button type="submit" size="lg" className="font-bold" disabled={submitting}>
+                <Button type="submit" className="font-bold px-8" disabled={submitting}>
+                  {submitting ? (
+                    <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  ) : (
+                    <Star className="h-4 w-4 fill-current" />
+                  )}
                   {submitting ? "Submitting review..." : "Submit Review"}
                 </Button>
-              </CardFooter>
+              </footer>
             </form>
           )}
-        </Card>
+        </div>
       </div>
     </AuthGuard>
   );

@@ -51,46 +51,54 @@ export function BottomNav() {
   ];
 
   return (
-    <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom)]"
-      aria-label="Mobile Navigation"
-    >
-      <div className="flex items-center justify-around h-14 px-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 h-full py-0.5 text-[10px] font-semibold transition-colors min-w-[44px] ${
-                item.isActive
-                  ? "text-primary font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <div
-                className={`flex items-center justify-center rounded-full p-0.5 relative ${
-                  item.highlight
-                    ? "bg-primary text-white shadow-xs -mt-2 p-1.5 border border-card"
-                    : item.isActive
-                    ? "bg-primary/10 text-primary"
-                    : ""
+    <>
+      {/* Spacer so page content and footer are never hidden behind the fixed bar */}
+      <div className="md:hidden h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true" />
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/85 shadow-[0_-4px_16px_rgba(36,28,22,0.06)] pb-[env(safe-area-inset-bottom)]"
+        aria-label="Mobile Navigation"
+      >
+        <div className="mx-auto flex max-w-md items-stretch justify-around h-16 px-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={item.isActive ? "page" : undefined}
+                className={`group relative flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 text-[11px] font-semibold transition-colors duration-200 ${
+                  item.isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Icon className={item.highlight ? "h-5 w-5" : "h-4 w-4"} />
-                {item.href === "/chat" && unreadMessages > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-white shadow">
-                    {unreadMessages > 9 ? "9+" : unreadMessages}
-                  </span>
+                {/* Active indicator */}
+                {!item.highlight && (
+                  <span
+                    className={`absolute top-0 h-0.5 w-8 rounded-full bg-primary transition-transform duration-300 ${
+                      item.isActive ? "scale-x-100" : "scale-x-0"
+                    }`}
+                    aria-hidden="true"
+                  />
                 )}
-              </div>
-              <span className="tracking-tight mt-0.5 text-[10px] truncate max-w-[56px] text-center">
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+                <span
+                  className={`relative flex items-center justify-center rounded-full transition-all duration-200 ${
+                    item.highlight
+                      ? "h-11 w-11 -mt-5 bg-primary text-primary-foreground shadow-glow ring-4 ring-card group-hover:scale-105 group-active:scale-95"
+                      : `h-8 w-12 ${item.isActive ? "bg-primary/10" : "group-hover:bg-muted"}`
+                  }`}
+                >
+                  <Icon className={item.highlight ? "h-6 w-6" : "h-5 w-5"} />
+                  {item.href === "/chat" && unreadMessages > 0 && (
+                    <span className="absolute -top-0.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white ring-2 ring-card">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                </span>
+                <span className="w-full truncate text-center px-0.5 leading-tight">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </>
   );
 }

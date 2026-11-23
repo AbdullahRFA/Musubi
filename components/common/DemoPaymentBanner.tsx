@@ -6,7 +6,7 @@ export function DemoPaymentBanner({ className }: { className?: string }) {
     <div
       role="note"
       aria-label="Demo payment disclaimer"
-      className={`flex items-center gap-3 rounded-md border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-900 ${
+      className={`flex items-start sm:items-center gap-3 rounded-md border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-900 ${
         className || ""
       }`}
     >

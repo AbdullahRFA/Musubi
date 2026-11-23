@@ -29,6 +29,27 @@ export const Header = memo(function Header() {
 
   const [fontSize, setFontSize] = useState<"standard" | "large">("standard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Elevate the header once the user scrolls
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Close the mobile drawer on navigation or Escape
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMobileMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     const savedFont = localStorage.getItem("tsunagu_font_size");
@@ -48,10 +69,6 @@ export const Header = memo(function Header() {
     }
   };
 
-  const handleToggleLanguage = (lang: "en" | "ja") => {
-    setLanguage(lang);
-  };
-
   const handleSignOut = async () => {
     await signOut();
     setMobileMenuOpen(false);
@@ -60,6 +77,64 @@ export const Header = memo(function Header() {
 
   const postsLabel = session ? t("nav.posts") : t("nav.explore");
 
+  const toggleBtn = (active: boolean, activeClass = "bg-card text-foreground") =>
+    `px-2 py-1 rounded-md text-xs font-semibold transition-all duration-200 ${
+      active ? `${activeClass} font-bold shadow-xs` : "text-muted-foreground hover:text-foreground hover:bg-card/60"
+    }`;
+
+  const renderToggles = () => (
+    <>
+      <div
+        className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 shrink-0"
+        role="group"
+        aria-label={t("nav.fontSize")}
+      >
+        <button
+          type="button"
+          onClick={() => handleToggleFontSize("standard")}
+          className={toggleBtn(fontSize === "standard")}
+          title={t("nav.fontSizeStandard")}
+          aria-pressed={fontSize === "standard"}
+        >
+          A
+        </button>
+        <button
+          type="button"
+          onClick={() => handleToggleFontSize("large")}
+          className={toggleBtn(fontSize === "large", "bg-primary text-primary-foreground")}
+          title={t("nav.fontSizeLarge")}
+          aria-pressed={fontSize === "large"}
+        >
+          A+
+        </button>
+      </div>
+      <div
+        className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 shrink-0"
+        role="group"
+        aria-label={t("nav.languageSelector")}
+      >
+        <button
+          type="button"
+          onClick={() => setLanguage("en")}
+          className={toggleBtn(language === "en")}
+          title="English"
+          aria-pressed={language === "en"}
+        >
+          EN
+        </button>
+        <button
+          type="button"
+          onClick={() => setLanguage("ja")}
+          className={toggleBtn(language === "ja", "bg-card text-primary")}
+          title="日本語"
+          aria-pressed={language === "ja"}
+        >
+          JA
+        </button>
+      </div>
+    </>
+  );
+
   const navLinks = [
     { href: "/posts", label: postsLabel, icon: Compass },
     { href: "/my-activity", label: t("nav.myActivity"), icon: FileCheck2 },
@@ -67,24 +142,28 @@ export const Header = memo(function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b-2 border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 shadow-xs">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 py-2 min-h-[56px]">
+    <header
+      className={`sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 transition-shadow duration-300 ${
+        scrolled ? "shadow-soft" : ""
+      }`}
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8 h-14 sm:h-16">
         {/* Brand Logo */}
-        <div className="flex items-center gap-3 sm:gap-6 shrink-0">
+        <div className="flex items-center gap-3 lg:gap-6 min-w-0">
           <Link
             href="/"
-            className="flex flex-col group focus:outline-none"
+            className="flex flex-col group rounded-md min-w-0"
             aria-label="Tsunagu Generations Home"
           >
             <div className="flex items-center gap-1.5">
-              <span className="font-black text-xl sm:text-2xl tracking-tight text-primary group-hover:text-[#234336] transition-colors">
+              <span className="font-black text-lg sm:text-2xl tracking-tight text-primary transition-colors duration-200 group-hover:text-[#7c2d12]">
                 Tsunagu
               </span>
-              <span className="font-bold text-lg sm:text-xl text-foreground">
+              <span className="font-bold text-base sm:text-xl text-foreground truncate">
                 Generations
               </span>
             </div>
-            <span className="text-[10px] text-muted-foreground font-medium hidden md:inline -mt-0.5">
+            <span className="text-[10px] text-muted-foreground font-medium hidden lg:inline -mt-0.5">
               {t("brandSubtitle")}
             </span>
           </Link>
@@ -98,14 +177,15 @@ export const Header = memo(function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium text-xs sm:text-sm transition-colors ${
+                  aria-current={active ? "page" : undefined}
+                  className={`relative inline-flex items-center gap-1.5 px-3 py-2 rounded-md font-medium text-sm transition-colors duration-200 after:absolute after:left-3 after:right-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
                     active
-                      ? "bg-muted text-primary font-bold"
-                      : "text-foreground hover:bg-muted/70 hover:text-primary"
+                      ? "text-primary font-bold after:scale-x-100"
+                      : "text-foreground hover:bg-muted/70 hover:text-primary after:scale-x-0"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{link.label}</span>
+                  <span className="whitespace-nowrap">{link.label}</span>
                 </Link>
               );
             })}
@@ -113,70 +193,9 @@ export const Header = memo(function Header() {
         </div>
 
         {/* Action Controls & User Menu */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-nowrap shrink-0">
-          {/* Font-Size Selector (Standard / Large) */}
-          <div
-            className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs font-semibold shrink-0"
-            role="group"
-            aria-label={t("nav.fontSize")}
-          >
-            <button
-              type="button"
-              onClick={() => handleToggleFontSize("standard")}
-              className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md transition-all text-[11px] sm:text-xs ${
-                fontSize === "standard"
-                  ? "bg-card text-foreground font-bold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title={t("nav.fontSizeStandard")}
-            >
-              A
-            </button>
-            <button
-              type="button"
-              onClick={() => handleToggleFontSize("large")}
-              className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md transition-all text-[11px] sm:text-xs ${
-                fontSize === "large"
-                  ? "bg-primary text-white font-bold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title={t("nav.fontSizeLarge")}
-            >
-              A+
-            </button>
-          </div>
-
-          {/* Language Selector (English / Japanese) */}
-          <div
-            className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs font-semibold shrink-0"
-            role="group"
-            aria-label={t("nav.languageSelector")}
-          >
-            <button
-              type="button"
-              onClick={() => handleToggleLanguage("en")}
-              className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md transition-all text-[11px] sm:text-xs ${
-                language === "en"
-                  ? "bg-card text-foreground font-bold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="English"
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => handleToggleLanguage("ja")}
-              className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md transition-all text-[11px] sm:text-xs ${
-                language === "ja"
-                  ? "bg-card text-primary font-bold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="日本語"
-            >
-              JA
-            </button>
-          </div>
+        <div className="flex items-center gap-1 sm:gap-2 flex-nowrap shrink-0">
+          {/* Accessibility toggles (tablet & desktop; mobile shows them in the drawer) */}
+          <div className="hidden sm:flex items-center gap-1.5">{renderToggles()}</div>
 
           {/* If Logged In: Notifications, Chat, Profile Menu */}
           {session ? (
@@ -184,12 +203,12 @@ export const Header = memo(function Header() {
               {/* Chat Icon (desktop/tablet; mobile has bottom nav) */}
               <Link
                 href="/chat"
-                className="hidden sm:inline-flex relative p-1.5 rounded-md text-foreground hover:bg-muted border border-transparent hover:border-border transition-colors"
+                className="hidden md:inline-flex relative h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted hover:text-primary transition-colors duration-200"
                 aria-label={t("nav.messages")}
               >
-                <MessageSquare className="h-4 w-4" />
+                <MessageSquare className="h-5 w-5" />
                 {unreadMessageCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white shadow">
+                  <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white shadow">
                     {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
                   </span>
                 )}
@@ -198,25 +217,25 @@ export const Header = memo(function Header() {
               {/* Notification Bell */}
               <Link
                 href="/notifications"
-                className="relative p-1.5 rounded-md text-foreground hover:bg-muted border border-transparent hover:border-border transition-colors shrink-0"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted hover:text-primary transition-colors duration-200 shrink-0"
                 aria-label={`${t("nav.notifications")} ${unreadCount > 0 ? `(${unreadCount})` : ""}`}
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white shadow">
+                  <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white shadow">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </Link>
 
               {/* User Avatar & Name Link */}
-              <div className="flex items-center gap-1 pl-1 border-l border-border shrink-0">
+              <div className="hidden md:flex items-center gap-1 pl-2 ml-1 border-l border-border shrink-0">
                 <Link
                   href={`/profile/${session.id}`}
-                  className="flex items-center gap-1.5 p-0.5 rounded-md hover:bg-muted transition-colors"
+                  className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-muted transition-colors duration-200"
                   title={t("nav.viewProfile")}
                 >
-                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground font-bold text-xs shadow-inner overflow-hidden shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground font-bold text-xs ring-2 ring-card shadow-xs overflow-hidden shrink-0">
                     {session.avatarUrl ? (
                       <img src={session.avatarUrl} alt={session.fullName} className="h-full w-full object-cover" />
                     ) : (
@@ -231,21 +250,21 @@ export const Header = memo(function Header() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="hidden sm:inline-flex p-1 text-muted-foreground hover:text-destructive hover:bg-muted rounded-md transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted rounded-full transition-colors duration-200"
                   title={t("nav.signOut")}
                   aria-label={t("nav.signOut")}
                 >
-                  <LogOut className="h-3.5 w-3.5" />
+                  <LogOut className="h-4 w-4" />
                 </button>
               </div>
             </>
           ) : (
             /* Logged Out Visitor Actions */
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              <Button asChild variant="outline" size="sm" className="font-semibold text-xs h-7 sm:h-8 px-2 sm:px-3 cursor-pointer">
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
+              <Button asChild variant="ghost" size="sm" className="font-semibold">
                 <Link href="/login">{t("nav.login")}</Link>
               </Button>
-              <Button asChild variant="default" size="sm" className="font-semibold text-xs h-7 sm:h-8 px-2 sm:px-3 bg-primary hover:bg-[#234336] text-white cursor-pointer">
+              <Button asChild variant="default" size="sm" className="font-semibold">
                 <Link href="/register">{t("nav.register")}</Link>
               </Button>
             </div>
@@ -255,8 +274,10 @@ export const Header = memo(function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 rounded-md hover:bg-muted text-foreground shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
+            className="md:hidden h-10 w-10 rounded-full hover:bg-muted text-foreground shrink-0 flex items-center justify-center transition-colors duration-200"
             aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-drawer"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -265,8 +286,11 @@ export const Header = memo(function Header() {
 
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-card px-4 py-4 space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
-          <div className="grid grid-cols-2 gap-2 pt-1">
+        <div
+          id="mobile-drawer"
+          className="md:hidden absolute inset-x-0 top-full border-b border-border bg-card shadow-lift px-4 py-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100dvh-3.5rem)] overflow-y-auto"
+        >
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-3 gap-2">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -274,39 +298,59 @@ export const Header = memo(function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 p-2.5 rounded-lg border border-border bg-muted/40 font-semibold text-xs text-foreground hover:bg-muted"
+                  className={`flex items-center gap-2 min-[380px]:flex-col min-[380px]:justify-center p-3 rounded-xl border font-semibold text-sm transition-colors duration-200 ${
+                    pathname === link.href || pathname.startsWith(`${link.href}/`)
+                      ? "border-primary/40 bg-primary/5 text-primary"
+                      : "border-border bg-muted/40 text-foreground hover:bg-muted"
+                  }`}
                 >
-                  <Icon className="h-4 w-4 text-primary" />
-                  <span>{link.label}</span>
+                  <Icon className="h-5 w-5 text-primary" />
+                  <span className="text-center">{link.label}</span>
                 </Link>
               );
             })}
           </div>
 
+          {/* Accessibility toggles */}
+          <div className="sm:hidden flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/40 border border-border p-2.5">
+            <span className="text-xs font-semibold text-muted-foreground">
+              {t("nav.fontSize")} · {t("nav.languageSelector")}
+            </span>
+            <div className="flex items-center gap-1.5">{renderToggles()}</div>
+          </div>
+
           {session ? (
-            <div className="pt-3 border-t border-border flex items-center justify-between">
+            <div className="pt-3 border-t border-border flex items-center justify-between gap-3">
               <Link
                 href={`/profile/${session.id}`}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2.5 min-w-0"
               >
-                <div className="h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-xs shrink-0">
-                  {initials(session.fullName)}
+                <div className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                  {session.avatarUrl ? (
+                    <img src={session.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    initials(session.fullName)
+                  )}
                 </div>
-                <div className="font-bold text-xs text-foreground truncate">{session.fullName}</div>
+                <div className="min-w-0">
+                  <div className="font-bold text-sm text-foreground truncate">{session.fullName}</div>
+                  <div className="text-xs text-muted-foreground">{t("nav.viewProfile")}</div>
+                </div>
               </Link>
-              <Button variant="outline" size="sm" onClick={handleSignOut} className="text-xs h-8 shrink-0">
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="shrink-0 gap-1.5 hover:text-destructive hover:border-destructive/40">
+                <LogOut className="h-4 w-4" />
                 {t("nav.signOut")}
               </Button>
             </div>
           ) : (
-            <div className="pt-2 border-t border-border grid grid-cols-2 gap-2">
-              <Button asChild variant="outline" className="w-full text-xs h-9 font-bold cursor-pointer">
+            <div className="pt-3 border-t border-border grid grid-cols-2 gap-2">
+              <Button asChild variant="outline" className="w-full font-bold">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                   {t("nav.login")}
                 </Link>
               </Button>
-              <Button asChild variant="default" className="w-full text-xs h-9 bg-primary text-white font-bold cursor-pointer">
+              <Button asChild variant="default" className="w-full font-bold">
                 <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
                   {t("nav.register")}
                 </Link>

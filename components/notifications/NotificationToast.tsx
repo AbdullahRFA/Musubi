@@ -117,8 +117,12 @@ export function NotificationToast() {
   const isMessage = activeToast.type === "message";
 
   return (
-    <div className="fixed top-20 right-4 z-50 max-w-sm w-full animate-in fade-in slide-in-from-top-4 duration-300">
-      <div className="bg-card border-2 border-primary shadow-xl rounded-xl p-4 text-foreground flex items-start gap-3 relative">
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed top-[4.25rem] sm:top-20 inset-x-3 sm:inset-x-auto sm:right-4 sm:w-full sm:max-w-sm z-50 animate-in fade-in slide-in-from-top-4 duration-300"
+    >
+      <div className="bg-card/95 backdrop-blur-md border-2 border-primary/60 shadow-lift rounded-2xl p-4 text-foreground flex items-start gap-3 relative">
         <div className="p-2 bg-primary/10 text-primary rounded-lg shrink-0 mt-0.5">
           {isMessage ? <MessageSquare className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
         </div>
@@ -133,16 +137,17 @@ export function NotificationToast() {
               markNotificationRead(activeToast.id);
               setActiveToast(null);
             }}
-            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline mt-2"
+            className="group inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline underline-offset-4 mt-2"
           >
             <span>View details</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
 
         <button
+          type="button"
           onClick={() => setActiveToast(null)}
-          className="absolute top-3 right-3 text-muted-foreground hover:text-foreground p-1 rounded-md"
+          className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
           aria-label="Close notification"
         >
           <X className="h-4 w-4" />

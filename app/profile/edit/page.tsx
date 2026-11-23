@@ -6,15 +6,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   User,
-  Plus,
-  X,
   AlertCircle,
   Save,
   MapPin,
-  HeartHandshake,
-  Search,
   Camera,
   Trash2,
+  ArrowLeft,
+  MessageSquare,
+  Phone,
+  Check,
+  BookOpen,
+  HelpCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { profileSchema, type ProfileValues } from "@/lib/validators";
 import { useSession } from "@/lib/services/authService";
@@ -28,8 +31,8 @@ import {
 } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { AuthGuard } from "@/components/common/AuthGuard";
+import { TagPicker, AgeGroupBadge } from "@/components/profile/TagPicker";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -40,17 +43,11 @@ export default function EditProfilePage() {
 
   // Neighborhoods state (up to 5)
   const [neighborhoods, setNeighborhoods] = useState<string[]>([]);
-  const [neighborhoodQuery, setNeighborhoodQuery] = useState("");
-  const [isNeighborhoodOpen, setIsNeighborhoodOpen] = useState(false);
 
   // Skills & Needs states
   const [skills, setSkills] = useState<string[]>([]);
-  const [skillQuery, setSkillQuery] = useState("");
-  const [isSkillOpen, setIsSkillOpen] = useState(false);
 
   const [servicesNeeded, setServicesNeeded] = useState<string[]>([]);
-  const [needQuery, setNeedQuery] = useState("");
-  const [isNeedOpen, setIsNeedOpen] = useState(false);
 
   // Profile Picture state
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -106,84 +103,6 @@ export default function EditProfilePage() {
     if (!num || num < 13 || num > 120) return null;
     return detectGeneration(num);
   }, [age]);
-
-  // Neighborhoods auto-suggestions
-  const filteredNeighborhoods = useMemo(() => {
-    const q = neighborhoodQuery.trim().toLowerCase();
-    const available = POPULAR_NEIGHBORHOODS.filter((p) => !neighborhoods.includes(p));
-    if (!q) return available.slice(0, 6);
-    return available.filter((p) => p.toLowerCase().includes(q));
-  }, [neighborhoodQuery, neighborhoods]);
-
-  const addNeighborhood = (name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    if (neighborhoods.length >= 5) {
-      setError("You can select up to 5 neighborhoods.");
-      return;
-    }
-    if (!neighborhoods.includes(trimmed)) {
-      setNeighborhoods([...neighborhoods, trimmed]);
-      setNeighborhoodQuery("");
-      setIsNeighborhoodOpen(false);
-    }
-  };
-
-  const removeNeighborhood = (name: string) => {
-    setNeighborhoods(neighborhoods.filter((n) => n !== name));
-  };
-
-  // Skills auto-suggestions
-  const filteredSkills = useMemo(() => {
-    const q = skillQuery.trim().toLowerCase();
-    const available = SUGGESTED_SKILLS.filter((s) => !skills.includes(s));
-    if (!q) return available.slice(0, 6);
-    return available.filter((s) => s.toLowerCase().includes(q));
-  }, [skillQuery, skills]);
-
-  const addSkill = (name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    if (skills.length >= 10) {
-      setError("You can add up to 10 skills.");
-      return;
-    }
-    if (!skills.includes(trimmed)) {
-      setSkills([...skills, trimmed]);
-      setSkillQuery("");
-      setIsSkillOpen(false);
-    }
-  };
-
-  const removeSkill = (tag: string) => {
-    setSkills(skills.filter((s) => s !== tag));
-  };
-
-  // Needs auto-suggestions
-  const filteredNeeds = useMemo(() => {
-    const q = needQuery.trim().toLowerCase();
-    const available = SUGGESTED_SERVICES.filter((n) => !servicesNeeded.includes(n));
-    if (!q) return available.slice(0, 6);
-    return available.filter((n) => n.toLowerCase().includes(q));
-  }, [needQuery, servicesNeeded]);
-
-  const addNeed = (name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    if (servicesNeeded.length >= 10) {
-      setError("You can add up to 10 services needed.");
-      return;
-    }
-    if (!servicesNeeded.includes(trimmed)) {
-      setServicesNeeded([...servicesNeeded, trimmed]);
-      setNeedQuery("");
-      setIsNeedOpen(false);
-    }
-  };
-
-  const removeNeed = (tag: string) => {
-    setServicesNeeded(servicesNeeded.filter((n) => n !== tag));
-  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -263,453 +182,296 @@ export default function EditProfilePage() {
     }
   };
 
+  const fieldError = (msg?: string) =>
+    msg ? <p className="text-xs text-destructive font-medium">{msg}</p> : null;
+
   return (
     <AuthGuard>
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-        <Card className="border-2 border-border bg-card shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="border-b border-border pb-6 space-y-1">
-            <CardTitle className="text-2xl sm:text-3xl font-extrabold text-foreground">Edit Your Profile</CardTitle>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Update your biography, age, neighborhoods, and skills
-            </p>
-          </CardHeader>
-
-          <form
-            onSubmit={handleSubmit(onSubmit, (formErrors) => {
-              const firstErr = Object.values(formErrors)[0]?.message;
-              if (firstErr) setError(firstErr);
-            })}
+      <div className="page-container py-6 sm:py-10">
+        {/* Page heading */}
+        <div className="mx-auto max-w-5xl mb-6 sm:mb-8 animate-fade-up">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="group mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
           >
-            <CardContent className="space-y-6 pt-6">
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive font-medium border border-destructive/20">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            Back to profile
+          </button>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground tracking-tight">Edit Your Profile</h1>
+          <p className="mt-1 text-sm sm:text-base text-muted-foreground">
+            Update your biography, age, neighborhoods, and skills
+          </p>
+        </div>
 
-              {/* Profile Picture Upload */}
-              <div className="space-y-2 pb-4 border-b border-border/80">
-                <label className="text-sm sm:text-base font-bold text-foreground">
-                  Profile Picture
+        <form
+          onSubmit={handleSubmit(onSubmit, (formErrors) => {
+            const firstErr = Object.values(formErrors)[0]?.message;
+            if (firstErr) setError(firstErr);
+          })}
+          className="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-6 lg:gap-8 items-start"
+        >
+          {/* ---------- Sidebar: avatar ---------- */}
+          <aside className="lg:sticky lg:top-24 rounded-2xl border-2 border-border bg-card p-5 sm:p-6 shadow-sm">
+            <div className="flex flex-row lg:flex-col items-center gap-4 lg:gap-5 lg:text-center">
+              <div className="group relative shrink-0">
+                <div className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 rounded-full border-4 border-card ring-2 ring-border bg-secondary text-secondary-foreground flex items-center justify-center text-2xl lg:text-4xl font-bold overflow-hidden shadow-soft">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Profile picture" className="h-full w-full object-cover" />
+                  ) : (
+                    initials(session?.fullName || "User")
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
+                  aria-label={avatarPreview ? "Change photo" : "Upload photo"}
+                >
+                  <Camera className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="min-w-0 flex-1 lg:flex-none space-y-2">
+                <p className="font-bold text-foreground truncate">{session?.fullName}</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <div className="flex flex-wrap lg:justify-center items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="gap-1.5 font-bold"
+                  >
+                    <Camera className="h-4 w-4" />
+                    <span>{avatarPreview ? "Change" : "Upload"}</span>
+                  </Button>
+                  {avatarPreview && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveAvatar}
+                      className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Remove</span>
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground">PNG, JPG, or WEBP up to 5MB. Resized automatically.</p>
+              </div>
+            </div>
+          </aside>
+
+          {/* ---------- Main form ---------- */}
+          <div className="space-y-5 sm:space-y-6 min-w-0">
+            {error && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive font-medium border border-destructive/20 animate-in fade-in slide-in-from-top-1"
+              >
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Basics */}
+            <FormSection icon={User} title="About you">
+              <div className="space-y-1.5">
+                <label htmlFor="pe-name" className="text-sm font-bold text-foreground">
+                  Full Name
                 </label>
-                <div className="flex items-center gap-4">
-                  <div className="h-20 w-20 rounded-full border-2 border-border bg-secondary text-secondary-foreground flex items-center justify-center text-xl font-bold overflow-hidden shadow-xs shrink-0">
-                    {avatarPreview ? (
-                      <img
-                        src={avatarPreview}
-                        alt="Profile picture"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      initials(session?.fullName || "User")
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="gap-1.5 font-bold text-xs"
-                      >
-                        <Camera className="h-3.5 w-3.5" />
-                        <span>{avatarPreview ? "Change Photo" : "Upload Photo"}</span>
-                      </Button>
-                      {avatarPreview && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleRemoveAvatar}
-                          className="gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          <span>Remove</span>
-                        </Button>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      PNG, JPG, or WEBP up to 5MB. Resized automatically.
-                    </p>
-                  </div>
-                </div>
+                <Input id="pe-name" autoComplete="name" {...register("fullName")} aria-invalid={Boolean(errors.fullName)} />
+                {fieldError(errors.fullName?.message)}
               </div>
 
-              {/* Full Name */}
               <div className="space-y-1.5">
-                <label className="text-sm sm:text-base font-bold text-foreground">Full Name</label>
-                <Input {...register("fullName")} aria-invalid={Boolean(errors.fullName)} className="h-10 text-sm" />
-                {errors.fullName && (
-                  <p className="text-xs text-destructive font-medium">{errors.fullName.message}</p>
-                )}
-              </div>
-
-              {/* Age Input with Live Auto-Detection (60+ older, <60 younger) */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm sm:text-base font-bold text-foreground">Your Age</label>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                  <label htmlFor="pe-age" className="text-sm font-bold text-foreground">
+                    Your Age
+                  </label>
                   <span className="text-xs text-muted-foreground">Automatically sets age group</span>
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <Input
+                    id="pe-age"
                     type="number"
+                    inputMode="numeric"
                     min={13}
                     max={120}
                     value={age}
                     onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
                     placeholder="Enter your age"
-                    className="h-10 text-sm sm:w-48"
+                    className="sm:w-40"
                   />
-                  {detectedGroup && (
-                    <div
-                      className={`flex-1 flex items-center justify-between p-2 px-3 rounded-lg border text-xs sm:text-sm font-semibold ${
-                        detectedGroup.userGroup === "og"
-                          ? "bg-[#315B4B]/10 border-[#315B4B]/30 text-[#315B4B]"
-                          : "bg-[#2563EB]/10 border-[#2563EB]/30 text-[#1D4ED8]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <HeartHandshake className="h-4 w-4 shrink-0" />
-                        <span>Detected Group: <strong>{detectedGroup.label}</strong></span>
-                      </div>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/80 border border-current">
-                        {detectedGroup.userGroup === "og" ? "O.G." : "Y.G."}
-                      </span>
-                    </div>
-                  )}
+                  <AgeGroupBadge group={detectedGroup} />
                 </div>
               </div>
 
-              {/* Bio */}
               <div className="space-y-1.5">
-                <label className="text-sm sm:text-base font-bold text-foreground">Short Biography</label>
+                <label htmlFor="pe-bio" className="text-sm font-bold text-foreground">
+                  Short Biography
+                </label>
                 <Textarea
-                  rows={3}
+                  id="pe-bio"
+                  rows={4}
                   placeholder="Tell neighbors a little about your life, what you enjoy doing, and what you'd like to share..."
                   {...register("bio")}
                   aria-invalid={Boolean(errors.bio)}
                 />
-                {errors.bio && (
-                  <p className="text-xs text-destructive font-medium">{errors.bio.message}</p>
-                )}
+                {fieldError(errors.bio?.message)}
+              </div>
+            </FormSection>
+
+            {/* Location */}
+            <FormSection icon={MapPin} title="Location">
+              <TagPicker
+                label="Your Neighborhoods"
+                description="Select neighborhoods you live in or frequently connect with"
+                icon={MapPin}
+                values={neighborhoods}
+                onChange={(next) => {
+                  setNeighborhoods(next);
+                  setError(null);
+                }}
+                suggestions={POPULAR_NEIGHBORHOODS}
+                max={5}
+                onLimit={setError}
+                placeholder="Search neighborhood (e.g. Urakami, Peace Park)..."
+                quickPickLabel="Quick pick:"
+                emptyText="No neighborhoods selected yet. Add at least one below."
+                suggestionIcon={MapPin}
+                formatQuickPick={(p) => p.split(",")[0]}
+              />
+            </FormSection>
+
+            {/* Contact */}
+            <FormSection icon={MessageSquare} title="Preferred Contact Method">
+              <div role="radiogroup" aria-label="Preferred contact method" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(
+                  [
+                    { value: "chat", icon: MessageSquare, label: "In-App Chat Only" },
+                    { value: "phone", icon: Phone, label: "Allow Phone Contact" },
+                  ] as const
+                ).map(({ value, icon: OptIcon, label }) => {
+                  const selected = contactMethod === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setValue("contactMethod", value)}
+                      className={`flex items-center gap-2.5 p-3.5 rounded-xl border-2 text-left font-bold text-sm transition-all duration-200 ${
+                        selected
+                          ? "border-primary bg-primary/5 text-primary shadow-soft"
+                          : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-muted/60"
+                      }`}
+                    >
+                      <OptIcon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1">{label}</span>
+                      {selected && <Check className="h-4 w-4 shrink-0" />}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Neighborhoods (Up to 5 with pills matching user's screenshot) */}
-              <div className="space-y-3 pt-2 border-t border-border/80">
-                <div>
-                  <label className="text-sm sm:text-base font-bold text-foreground flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>Your Neighborhoods (up to 5)</span>
+              {contactMethod === "phone" && (
+                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1">
+                  <label htmlFor="pe-phone" className="text-sm font-bold text-foreground">
+                    Phone Number <span className="font-normal text-muted-foreground">(shared only on accepted exchanges)</span>
                   </label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Select neighborhoods you live in or frequently connect with
-                  </p>
+                  <Input
+                    id="pe-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="e.g. 095-822-1004"
+                    {...register("phone")}
+                    aria-invalid={Boolean(errors.phone)}
+                  />
+                  {fieldError(errors.phone?.message)}
                 </div>
+              )}
+            </FormSection>
 
-                {/* Pill list */}
-                <div className="flex flex-wrap items-center gap-2 min-h-[36px]">
-                  {neighborhoods.map((place) => (
-                    <span
-                      key={place}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-[#315B4B] text-white shadow-2xs"
-                    >
-                      <span>{place}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeNeighborhood(place)}
-                        className="rounded-full hover:bg-black/20 p-0.5 transition-colors"
-                        aria-label={`Remove ${place}`}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                {/* Add Neighborhood Input */}
-                {neighborhoods.length < 5 && (
-                  <div className="relative pt-1">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          value={neighborhoodQuery}
-                          onChange={(e) => {
-                            setNeighborhoodQuery(e.target.value);
-                            setIsNeighborhoodOpen(true);
-                          }}
-                          onFocus={() => setIsNeighborhoodOpen(true)}
-                          onBlur={() => setTimeout(() => setIsNeighborhoodOpen(false), 250)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              addNeighborhood(neighborhoodQuery);
-                            }
-                          }}
-                          placeholder="Search or type a neighborhood..."
-                          className="h-10 text-xs sm:text-sm pl-9"
-                        />
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => addNeighborhood(neighborhoodQuery)}
-                        disabled={!neighborhoodQuery.trim()}
-                        className="h-10 text-xs sm:text-sm font-bold shrink-0 gap-1 rounded-full border-primary text-primary hover:bg-primary/10"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add</span>
-                      </Button>
-                    </div>
-
-                    {isNeighborhoodOpen && filteredNeighborhoods.length > 0 && (
-                      <div className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border-2 border-border bg-white p-1.5 shadow-2xl">
-                        {filteredNeighborhoods.map((name) => (
-                          <button
-                            key={name}
-                            type="button"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              addNeighborhood(name);
-                            }}
-                            className="flex w-full items-center justify-between px-3 py-2 text-left text-xs sm:text-sm rounded-lg font-medium hover:bg-primary/10 text-foreground transition-colors"
-                          >
-                            <span>{name}</span>
-                            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+            {/* Skills & needs */}
+            <FormSection icon={BookOpen} title="Skills & needs">
+              <TagPicker
+                label="Skills provided"
+                icon={BookOpen}
+                values={skills}
+                onChange={setSkills}
+                suggestions={SUGGESTED_SKILLS}
+                max={10}
+                onLimit={setError}
+                placeholder="Search a skill (e.g. Origami, Tech help)..."
+                addLabel="Add Skill"
+                emptyText="No skills added yet."
+              />
+              <div className="border-t border-border/70 pt-5">
+                <TagPicker
+                  label="Services needed"
+                  icon={HelpCircle}
+                  iconClassName="text-secondary"
+                  values={servicesNeeded}
+                  onChange={setServicesNeeded}
+                  suggestions={SUGGESTED_SERVICES}
+                  max={10}
+                  onLimit={setError}
+                  placeholder="Search a need (e.g. Smartphone Assistance)..."
+                  addLabel="Add Need"
+                  emptyText="No services listed yet."
+                />
               </div>
+            </FormSection>
 
-              {/* Preferred Contact Method */}
-              <div className="space-y-3 pt-2 border-t border-border/80">
-                <label className="text-sm sm:text-base font-bold text-foreground">Preferred Contact Method</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setValue("contactMethod", "chat")}
-                    className={`p-3 rounded-xl border-2 text-left font-bold text-sm transition-all ${
-                      contactMethod === "chat"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-background text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    In-App Chat Only
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setValue("contactMethod", "phone")}
-                    className={`p-3 rounded-xl border-2 text-left font-bold text-sm transition-all ${
-                      contactMethod === "phone"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-background text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Allow Phone Contact
-                  </button>
-                </div>
-
-                {contactMethod === "phone" && (
-                  <div className="space-y-1.5 pt-2">
-                    <label className="text-xs sm:text-sm font-bold text-foreground">
-                      Phone Number (Shared only on accepted exchanges)
-                    </label>
-                    <Input
-                      placeholder="e.g. 095-822-1004"
-                      {...register("phone")}
-                      aria-invalid={Boolean(errors.phone)}
-                      className="h-10 text-sm"
-                    />
-                    {errors.phone && (
-                      <p className="text-xs text-destructive font-medium">{errors.phone.message}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Tag Input: Skills & Expertise (Pills with ✕ matching screenshot) */}
-              <div className="space-y-3 pt-2 border-t border-border/80">
-                <label className="text-sm sm:text-base font-bold text-foreground">Skills provided</label>
-                <div className="flex flex-wrap items-center gap-2 min-h-[36px]">
-                  {skills.map((s) => (
-                    <span
-                      key={s}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-[#315B4B] text-white shadow-2xs"
-                    >
-                      <span>{s}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeSkill(s)}
-                        className="rounded-full hover:bg-black/20 p-0.5 transition-colors"
-                        aria-label={`Remove ${s}`}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                {skills.length < 10 && (
-                  <div className="relative pt-1">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          value={skillQuery}
-                          onChange={(e) => {
-                            setSkillQuery(e.target.value);
-                            setIsSkillOpen(true);
-                          }}
-                          onFocus={() => setIsSkillOpen(true)}
-                          onBlur={() => setTimeout(() => setIsSkillOpen(false), 250)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              addSkill(skillQuery);
-                            }
-                          }}
-                          placeholder="Type or search a skill..."
-                          className="h-10 text-xs sm:text-sm pl-9"
-                        />
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => addSkill(skillQuery)}
-                        disabled={!skillQuery.trim()}
-                        className="h-10 text-xs sm:text-sm font-bold shrink-0 gap-1 rounded-full border-primary text-primary hover:bg-primary/10"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add</span>
-                      </Button>
-                    </div>
-
-                    {isSkillOpen && filteredSkills.length > 0 && (
-                      <div className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border-2 border-border bg-white p-1.5 shadow-2xl">
-                        {filteredSkills.map((name) => (
-                          <button
-                            key={name}
-                            type="button"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              addSkill(name);
-                            }}
-                            className="flex w-full items-center justify-between px-3 py-2 text-left text-xs sm:text-sm rounded-lg font-medium hover:bg-primary/10 text-foreground transition-colors"
-                          >
-                            <span>{name}</span>
-                            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Tag Input: Services Needed (Pills with ✕ matching screenshot) */}
-              <div className="space-y-3 pt-2 border-t border-border/80">
-                <label className="text-sm sm:text-base font-bold text-foreground">Services needed</label>
-                <div className="flex flex-wrap items-center gap-2 min-h-[36px]">
-                  {servicesNeeded.map((n) => (
-                    <span
-                      key={n}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-[#315B4B] text-white shadow-2xs"
-                    >
-                      <span>{n}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeNeed(n)}
-                        className="rounded-full hover:bg-black/20 p-0.5 transition-colors"
-                        aria-label={`Remove ${n}`}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                {servicesNeeded.length < 10 && (
-                  <div className="relative pt-1">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          value={needQuery}
-                          onChange={(e) => {
-                            setNeedQuery(e.target.value);
-                            setIsNeedOpen(true);
-                          }}
-                          onFocus={() => setIsNeedOpen(true)}
-                          onBlur={() => setTimeout(() => setIsNeedOpen(false), 250)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              addNeed(needQuery);
-                            }
-                          }}
-                          placeholder="Type or search a needed service..."
-                          className="h-10 text-xs sm:text-sm pl-9"
-                        />
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => addNeed(needQuery)}
-                        disabled={!needQuery.trim()}
-                        className="h-10 text-xs sm:text-sm font-bold shrink-0 gap-1 rounded-full border-primary text-primary hover:bg-primary/10"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add</span>
-                      </Button>
-                    </div>
-
-                    {isNeedOpen && filteredNeeds.length > 0 && (
-                      <div className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border-2 border-border bg-white p-1.5 shadow-2xl">
-                        {filteredNeeds.map((name) => (
-                          <button
-                            key={name}
-                            type="button"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              addNeed(name);
-                            }}
-                            className="flex w-full items-center justify-between px-3 py-2 text-left text-xs sm:text-sm rounded-lg font-medium hover:bg-primary/10 text-foreground transition-colors"
-                          >
-                            <span>{name}</span>
-                            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-
-            <CardFooter className="border-t border-border pt-4 flex justify-between gap-4">
+            {/* Actions */}
+            <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card/95 backdrop-blur-md p-3 sm:p-4 shadow-lift">
               <Button type="button" variant="outline" onClick={() => router.back()}>
                 Cancel
               </Button>
-              <Button type="submit" size="lg" className="font-bold gap-2 bg-primary text-white hover:bg-[#234336]" disabled={saving}>
-                <Save className="h-4 w-4" />
+              <Button type="submit" className="font-bold flex-1 sm:flex-none sm:px-8" disabled={saving}>
+                {saving ? (
+                  <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
                 <span>{saving ? "Saving..." : "Save Profile"}</span>
               </Button>
-            </CardFooter>
-          </form>
-        </Card>
+            </div>
+          </div>
+        </form>
       </div>
     </AuthGuard>
+  );
+}
+
+function FormSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border-2 border-border bg-card p-5 sm:p-6 shadow-sm space-y-5 transition-shadow duration-300 hover:shadow-soft">
+      <h2 className="flex items-center gap-2.5 text-base sm:text-lg font-extrabold text-foreground">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="h-4 w-4" />
+        </span>
+        {title}
+      </h2>
+      {children}
+    </section>
   );
 }

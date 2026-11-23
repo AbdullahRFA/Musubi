@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
-import {
-  MessageSquare,
-  Clock,
-  ArrowRight,
-  ShieldCheck,
-  ChevronRight,
-  Compass,
-} from "lucide-react";
+import { MessageSquare, Clock, ShieldCheck, ChevronRight, Compass } from "lucide-react";
 import { useConversations } from "@/lib/services/chatService";
 import { formatWhen, initials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -56,37 +49,37 @@ function ChatMasterDetail() {
     router.replace("/chat", { scroll: false });
   };
 
+  const groupLabel = (g: "og" | "yg") =>
+    g === "og" ? (isJa ? "シニア" : "Senior") : isJa ? "ユース" : "Youth";
+
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4">
-      {/* Top Header */}
-      <div className="border-b-2 border-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className={`page-container max-w-7xl ${selectedId ? "px-0 sm:px-6 py-0 sm:py-6" : "py-5 sm:py-8"} space-y-4 sm:space-y-6`}>
+      {/* Header (hidden on phones while a thread is open to give the conversation full height) */}
+      <div className={`${selectedId ? "hidden md:flex" : "flex"} flex-col sm:flex-row sm:items-end justify-between gap-3 animate-fade-up`}>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground flex items-center gap-2.5">
-            <MessageSquare className="h-7 w-7 text-primary" />
-            <span>{isJa ? "メッセージ・やり取り" : "Messages & Arrangements"}</span>
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-2.5 tracking-tight">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <MessageSquare className="h-5 w-5" />
+            </span>
+            {isJa ? "メッセージ・やり取り" : "Messages & Arrangements"}
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1.5">
             {isJa
               ? "依頼が承認されると、こちらで個別に待ち合わせや相談を行えます。"
               : "Private conversations unlock once a service request is accepted."}
           </p>
         </div>
-
         {conversations.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm font-bold px-3 py-1.5 rounded-full bg-[#E7EEE4] text-[#315B4B] border border-[#CBD5E1]">
-              {isJa
-                ? `やり取り中: ${conversations.length}件`
-                : `${conversations.length} active chats`}
-            </span>
-          </div>
+          <span className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold px-3 py-1.5 rounded-full bg-[#E7EEE4] text-[#315B4B] border border-[#315B4B]/20">
+            <ShieldCheck className="h-4 w-4" />
+            {isJa ? `やり取り中: ${conversations.length}件` : `${conversations.length} active chats`}
+          </span>
         )}
       </div>
 
       {conversations.length === 0 ? (
-        /* Empty State */
-        <div className="rounded-2xl border-2 border-dashed border-border bg-card p-8 sm:p-14 text-center space-y-4 max-w-2xl mx-auto my-8">
-          <div className="h-16 w-16 rounded-full bg-[#E7EEE4] text-[#315B4B] flex items-center justify-center mx-auto">
+        <div className="rounded-2xl border-2 border-dashed border-border bg-card p-8 sm:p-14 text-center space-y-4 max-w-2xl mx-auto animate-fade-up">
+          <div className="h-16 w-16 rounded-full bg-[#E7EEE4] text-[#315B4B] flex items-center justify-center mx-auto animate-float">
             <MessageSquare className="h-8 w-8" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">
@@ -97,118 +90,107 @@ function ChatMasterDetail() {
               ? "投稿にお手伝いの応募をしたり、届いた依頼を承認すると、ここにメッセージ画面が開きます。"
               : "When you or a neighbor accept a service request, a private chat unlocks here."}
           </p>
-          <div className="pt-2">
+          <Button asChild size="lg" variant="secondary" className="font-bold gap-2">
             <Link href="/posts">
-              <Button size="lg" className="font-bold gap-2 text-base h-13 px-6 bg-[#315B4B] hover:bg-[#254639] text-white">
-                <Compass className="h-5 w-5" />
-                <span>{isJa ? "コミュニティ投稿を見る" : "Browse Community Posts"}</span>
-              </Button>
+              <Compass className="h-5 w-5" />
+              {isJa ? "コミュニティ投稿を見る" : "Browse Community Posts"}
             </Link>
-          </div>
+          </Button>
         </div>
       ) : (
-        /* Master-Detail Container */
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 h-[calc(100vh-190px)] min-h-[580px]">
-          {/* Conversation List Column */}
-          {/* On mobile: visible only when no thread is selected. On desktop: always visible as left column */}
+        <div
+          className={`grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-5 md:h-[calc(100dvh-15rem)] md:min-h-[520px] ${
+            selectedId ? "h-[calc(100dvh-3.5rem-4rem-env(safe-area-inset-bottom))]" : ""
+          }`}
+        >
+          {/* Conversation list */}
           <div
-            className={`flex flex-col bg-card rounded-2xl border-2 border-border overflow-hidden md:col-span-5 lg:col-span-4 ${
+            className={`flex-col min-h-0 bg-card rounded-2xl border-2 border-border overflow-hidden md:col-span-5 lg:col-span-4 ${
               selectedId ? "hidden md:flex" : "flex"
             }`}
           >
-            <div className="p-3 sm:p-4 bg-[#FAF9F5] border-b-2 border-border flex items-center justify-between">
+            <div className="px-4 py-3 bg-[#FAF9F5] border-b-2 border-border flex items-center justify-between">
               <span className="text-sm sm:text-base font-bold text-foreground">
                 {isJa ? "メッセージ一覧" : "All Conversations"}
               </span>
               <span className="text-xs text-muted-foreground">
-                {isJa ? "クリックして開く" : "Click to view"}
+                {isJa ? "タップして開く" : "Tap to open"}
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y-2 divide-border/60">
+            <ul className="flex-1 overflow-y-auto overscroll-contain divide-y divide-border/70">
               {conversations.map(({ conversation, other, last, post }) => {
                 const isSelected = selectedId === conversation.id;
                 return (
-                  <button
-                    key={conversation.id}
-                    type="button"
-                    onClick={() => handleSelectConversation(conversation.id)}
-                    className={`w-full text-left p-4 sm:p-5 transition-all flex items-start gap-3.5 hover:bg-[#FAF9F5] ${
-                      isSelected
-                        ? "bg-[#F3F7F2] border-l-4 border-l-[#315B4B]"
-                        : "bg-card"
-                    }`}
-                  >
-                    <div className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-base shrink-0 border border-border mt-0.5">
-                      {other ? initials(other.fullName) : "?"}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-bold text-base sm:text-lg text-foreground truncate">
-                          {other?.fullName ?? (isJa ? "地域の仲間" : "Community Member")}
-                        </h3>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                          <Clock className="h-3 w-3" />
-                          {last ? formatWhen(last.createdAt) : formatWhen(conversation.createdAt)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 mt-0.5 mb-1 flex-wrap">
-                        {other && (
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[#E7EEE4] text-[#315B4B]">
-                            {other.userGroup === "og"
-                              ? isJa
-                                ? "シニア"
-                                : "Senior"
-                              : isJa
-                              ? "ユース"
-                              : "Youth"}
-                          </span>
-                        )}
-                        {post && (
-                          <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded truncate max-w-[170px] sm:max-w-[200px]">
-                            {post.title}
-                          </span>
+                  <li key={conversation.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectConversation(conversation.id)}
+                      aria-current={isSelected ? "true" : undefined}
+                      className={`group w-full text-left px-4 py-4 transition-colors duration-200 flex items-start gap-3 border-l-4 ${
+                        isSelected ? "bg-[#F3F7F2] border-l-[#315B4B]" : "bg-card border-l-transparent hover:bg-[#FAF9F5]"
+                      }`}
+                    >
+                      <div className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-base shrink-0 border border-border overflow-hidden transition-transform group-hover:scale-105">
+                        {other?.avatarUrl ? (
+                          <img src={other.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        ) : other ? (
+                          initials(other.fullName)
+                        ) : (
+                          "?"
                         )}
                       </div>
 
-                      <p className="text-sm text-muted-foreground truncate leading-snug">
-                        {last ? last.body : (isJa ? "やり取りを開始しましょう" : "Say hello!")}
-                      </p>
-                    </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <h3 className="font-bold text-base text-foreground truncate">
+                            {other?.fullName ?? (isJa ? "地域の仲間" : "Community Member")}
+                          </h3>
+                          <span className="text-[11px] text-muted-foreground flex items-center gap-1 shrink-0">
+                            <Clock className="h-3 w-3" />
+                            {formatWhen(last ? last.createdAt : conversation.createdAt)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5 mb-1 min-w-0">
+                          {other && (
+                            <span className="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded bg-[#E7EEE4] text-[#315B4B]">
+                              {groupLabel(other.userGroup)}
+                            </span>
+                          )}
+                          {post && (
+                            <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded truncate">
+                              {post.title}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate leading-snug">
+                          {last ? last.body : isJa ? "やり取りを開始しましょう" : "Say hello!"}
+                        </p>
+                      </div>
 
-                    <ChevronRight className={`h-5 w-5 shrink-0 self-center transition-colors ${
-                      isSelected ? "text-[#315B4B]" : "text-muted-foreground/60"
-                    }`} />
-                  </button>
+                      <ChevronRight
+                        className={`h-5 w-5 shrink-0 self-center transition-all duration-200 group-hover:translate-x-0.5 ${
+                          isSelected ? "text-[#315B4B]" : "text-muted-foreground/60"
+                        }`}
+                      />
+                    </button>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </div>
 
-          {/* Active Thread Detail Column */}
-          {/* On mobile: visible when selected. On desktop: always visible as right column */}
-          <div
-            className={`flex-1 md:col-span-7 lg:col-span-8 h-full ${
-              selectedId ? "flex flex-col" : "hidden md:flex md:flex-col"
-            }`}
-          >
+          {/* Thread */}
+          <div className={`min-h-0 md:col-span-7 lg:col-span-8 ${selectedId ? "flex flex-col" : "hidden md:flex md:flex-col"}`}>
             {selectedId ? (
-              <ChatThreadView
-                conversationId={selectedId}
-                showBackButton={true}
-                onBack={handleBackToList}
-              />
+              <ChatThreadView key={selectedId} conversationId={selectedId} showBackButton onBack={handleBackToList} />
             ) : (
-              <div className="flex flex-col items-center justify-center p-8 text-center h-full bg-card rounded-2xl border-2 border-border text-muted-foreground space-y-2">
+              <div className="flex flex-col items-center justify-center p-8 text-center h-full bg-card rounded-2xl border-2 border-dashed border-border text-muted-foreground space-y-2">
                 <MessageSquare className="h-10 w-10 text-muted-foreground/50 mb-1" />
                 <p className="text-base font-bold text-foreground">
                   {isJa ? "左の一覧から会話を選択してください" : "Select a conversation to start reading"}
                 </p>
-                <p className="text-sm">
-                  {isJa ? "ワンタップでメッセージを確認・返信できます。" : "One click to view and reply instantly."}
-                </p>
+                <p className="text-sm">{isJa ? "ワンタップでメッセージを確認・返信できます。" : "One click to view and reply instantly."}</p>
               </div>
             )}
           </div>
@@ -223,7 +205,8 @@ export default function ChatListPage() {
     <AuthGuard>
       <Suspense
         fallback={
-          <div className="mx-auto max-w-4xl p-12 text-center text-muted-foreground">
+          <div className="flex min-h-[50vh] items-center justify-center gap-3 p-8 text-muted-foreground">
+            <span className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
             Loading messages...
           </div>
         }

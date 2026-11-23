@@ -27,7 +27,7 @@ import { confirmCompletion } from "@/lib/services/requestService";
 import { useSession } from "@/lib/services/authService";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { useLanguage } from "@/lib/i18n";
-import { formatWhen, initials } from "@/lib/utils";
+import { formatWhen, initials, money } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 interface ChatThreadViewProps {
@@ -56,11 +56,13 @@ export function ChatThreadView({
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [quickHint, setQuickHint] = useState<string | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll the message pane only (scrollIntoView would also scroll the page on mobile)
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [thread?.messages.length]);
 
   // Clean up speech synthesis on unmount
@@ -94,6 +96,20 @@ export function ChatThreadView({
   }
 
   const { messages, other, request, post } = thread;
+
+  const avatar = (size: string) => (
+    <div
+      className={`rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold shrink-0 border border-border overflow-hidden ${size}`}
+    >
+      {otherPublic?.avatarUrl ? (
+        <img src={otherPublic.avatarUrl} alt="" className="h-full w-full object-cover" />
+      ) : other ? (
+        initials(other.fullName)
+      ) : (
+        "?"
+      )}
+    </div>
+  );
   const isCompleted = request.status === "completed";
   const isRequester = request.requesterId === session?.id;
   const myDone = isRequester ? request.requesterDone : request.ownerDone;
@@ -187,30 +203,28 @@ export function ChatThreadView({
   };
 
   return (
-    <div className="flex flex-col h-full bg-card rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+    <div className="flex flex-col h-full min-h-0 bg-card rounded-none sm:rounded-2xl border-y-2 sm:border-2 border-border overflow-hidden shadow-sm">
       {/* Thread Header */}
-      <div className="p-4 sm:p-5 bg-card border-b-2 border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="px-3 py-3 sm:p-5 bg-card border-b-2 border-border flex flex-col lg:flex-row lg:items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           {showBackButton && onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="p-2 -ml-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors shrink-0"
+              className="md:hidden flex h-10 w-10 -ml-1 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors shrink-0"
               aria-label={isJa ? "一覧に戻る" : "Back to messages"}
             >
               <ArrowLeft className="h-6 w-6 text-foreground" />
             </button>
           )}
 
-          <div className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-lg shrink-0 border border-border">
-            {other ? initials(other.fullName) : "?"}
-          </div>
+          {avatar("h-11 w-11 sm:h-12 sm:w-12 text-base sm:text-lg")}
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <Link
                 href={`/profile/${other?.id}`}
-                className="font-bold text-lg sm:text-xl text-foreground hover:text-primary transition-colors truncate"
+                className="font-bold text-base sm:text-xl text-foreground hover:text-primary transition-colors truncate"
               >
                 {other?.fullName ?? (isJa ? "地域の仲間" : "Community Member")}
               </Link>
@@ -228,23 +242,24 @@ export function ChatThreadView({
             </div>
 
             {post && (
-              <div className="text-xs sm:text-sm text-muted-foreground truncate max-w-sm sm:max-w-md mt-0.5">
-                <span className="font-semibold text-primary">
-                  {isJa ? "📌 依頼: " : "📌 Topic: "}
-                </span>
+              <Link
+                href={`/posts/${post.id}`}
+                className="block text-xs sm:text-sm text-muted-foreground truncate mt-0.5 hover:text-primary transition-colors"
+              >
+                <span className="font-semibold text-primary">{isJa ? "📌 依頼: " : "📌 Topic: "}</span>
                 <span>{post.title}</span>
-              </div>
+              </Link>
             )}
           </div>
         </div>
 
         {/* Quick Actions in Header */}
-        <div className="flex items-center gap-2 pl-2 sm:pl-0 flex-wrap shrink-0">
+        <div className="-mx-3 px-3 sm:mx-0 sm:px-0 flex items-center gap-2 overflow-x-auto scrollbar-none lg:flex-wrap lg:justify-end shrink-0">
           {/* Phone contact if shared */}
           {otherPublic?.phoneShared && otherPublic.phone && (
             <a
               href={`tel:${otherPublic.phone}`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-950 border-2 border-emerald-300 text-xs sm:text-sm font-bold hover:bg-emerald-100 transition-colors"
+              className="shrink-0 flex items-center gap-1.5 px-3 h-10 rounded-xl bg-emerald-50 text-emerald-950 border-2 border-emerald-300 text-xs sm:text-sm font-bold hover:bg-emerald-100 transition-colors whitespace-nowrap"
               title={isJa ? "電話をかける" : "Call"}
             >
               <Phone className="h-4 w-4 text-emerald-700" />
@@ -254,49 +269,51 @@ export function ChatThreadView({
 
           {/* Demo Payment link if monetary post */}
           {post?.exchangeMethod === "paid" && post.amount && (
-            <Link href="/transactions">
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs sm:text-sm font-bold gap-1 border-blue-300 bg-blue-50 text-blue-900 hover:bg-blue-100 h-10 px-3"
-              >
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="shrink-0 text-xs sm:text-sm font-bold gap-1 border-blue-300 bg-blue-50 text-blue-900 hover:bg-blue-100 hover:border-blue-400 min-h-[40px] px-3"
+            >
+              <Link href="/transactions">
                 <Coins className="h-4 w-4 text-blue-600" />
-                <span>Pay £{post.amount} (Demo)</span>
-              </Button>
-            </Link>
+                Pay {money(post.amount)} (Demo)
+              </Link>
+            </Button>
           )}
 
           {/* Mutual Completion / Review Button */}
           {isCompleted ? (
             matchedActivity ? (
               myReview ? (
-                <span className="text-xs sm:text-sm font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                <span className="text-xs sm:text-sm font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                   <span>{isJa ? "レビュー済み" : "Feedback Given"}</span>
                 </span>
               ) : (
-                <Link href={`/feedback/${matchedActivity.id}`}>
-                  <Button
-                    size="sm"
-                    className="text-xs sm:text-sm font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs h-10 px-3"
-                  >
+                <Button
+                  asChild
+                  size="sm"
+                  className="shrink-0 text-xs sm:text-sm font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs min-h-[40px] px-3"
+                >
+                  <Link href={`/feedback/${matchedActivity.id}`}>
                     <Sparkles className="h-4 w-4" />
-                    <span>{isJa ? "評価・レビューを書く" : "Rate & Review"}</span>
-                  </Button>
-                </Link>
+                    {isJa ? "評価・レビューを書く" : "Rate & Review"}
+                  </Link>
+                </Button>
               )
             ) : (
-              <span className="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+              <span className="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 <span>{isJa ? "完了済み" : "Completed"}</span>
               </span>
             )
           ) : myDone && !otherDone ? (
             <span
-              className="text-xs sm:text-sm font-bold text-amber-900 bg-amber-50 border border-amber-300 px-3 py-2 rounded-xl flex items-center gap-1.5"
+              className="text-xs sm:text-sm font-bold text-amber-900 bg-amber-50 border border-amber-300 px-3 py-2 rounded-xl flex items-center gap-1.5 shrink-0 whitespace-nowrap"
               title={isJa ? "相手の完了確認を待っています" : "Waiting for partner to mark completed"}
             >
-              <Clock className="h-4 w-4 text-amber-600 animate-spin" />
+              <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
               <span>{isJa ? "相手の確認待ち" : "Waiting for Partner"}</span>
             </span>
           ) : !myDone && otherDone ? (
@@ -304,7 +321,7 @@ export function ChatThreadView({
               size="sm"
               onClick={handleCompleteActivity}
               disabled={completing}
-              className="text-xs sm:text-sm font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs h-10 px-3 animate-pulse"
+              className="text-xs sm:text-sm font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs min-h-[40px] px-3 shrink-0 animate-pulse"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>{isJa ? "相手確認済・完了する" : "Partner Confirmed • Finish"}</span>
@@ -315,7 +332,7 @@ export function ChatThreadView({
               variant="outline"
               onClick={handleCompleteActivity}
               disabled={completing}
-              className="text-xs sm:text-sm font-bold gap-1.5 text-foreground hover:border-primary border-2 h-10 px-3"
+              className="text-xs sm:text-sm font-bold gap-1.5 text-foreground hover:border-primary border-2 min-h-[40px] px-3 shrink-0"
             >
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <span>{isJa ? "活動を完了にする" : "Mark Completed"}</span>
@@ -325,9 +342,9 @@ export function ChatThreadView({
       </div>
 
       {/* Non-blocking Friendly Safety Advice Card */}
-      <div className="bg-[#FEF9EE] border-b-2 border-[#F6E0B5] px-4 py-2.5 text-xs sm:text-sm text-[#7A4B00] flex items-center gap-2.5 shrink-0">
-        <ShieldCheck className="h-5 w-5 text-[#D97706] shrink-0" />
-        <span className="font-medium">
+      <div className="bg-[#FEF9EE] border-b-2 border-[#F6E0B5] px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#7A4B00] flex items-start sm:items-center gap-2 sm:gap-2.5 shrink-0">
+        <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-[#D97706] shrink-0" />
+        <span className="font-medium line-clamp-2 sm:line-clamp-none">
           {isJa
             ? "【安心の約束】初めてお会いする時は、公民館・図書館・カフェなど明るい公共の場所を選びましょう。"
             : "Safety Tip: For first meetings, please choose a bright public place like a community center, library, or cafe."}
@@ -335,7 +352,12 @@ export function ChatThreadView({
       </div>
 
       {/* Message Stream */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#FAF9F5]">
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6 space-y-4 bg-[#FAF9F5]"
+        aria-live="polite"
+        aria-label={isJa ? "メッセージ" : "Messages"}
+      >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
             <Sparkles className="h-8 w-8 text-primary/70" />
@@ -356,20 +378,18 @@ export function ChatThreadView({
             return (
               <div
                 key={m.id}
-                className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                className={`flex flex-col animate-in fade-in slide-in-from-bottom-2 ${isMe ? "items-end" : "items-start"}`}
               >
-                <div className="flex items-end gap-2 max-w-[90%] sm:max-w-[75%]">
+                <div className="flex items-end gap-2 max-w-[92%] sm:max-w-[75%]">
                   {!isMe && (
-                    <div className="h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-xs shrink-0 mb-1 border border-border">
-                      {other ? initials(other.fullName) : "?"}
-                    </div>
+                    <div className="mb-1">{avatar("h-8 w-8 text-xs")}</div>
                   )}
 
                   <div
-                    className={`p-4 rounded-2xl text-base sm:text-lg leading-relaxed shadow-xs ${
+                    className={`px-4 py-3 sm:p-4 rounded-2xl text-base sm:text-lg leading-relaxed shadow-xs ${
                       isMe
-                        ? "bg-[#315B4B] text-white rounded-br-xs"
-                        : "bg-white text-foreground border-2 border-[#D1D5DB] rounded-bl-xs"
+                        ? "bg-[#315B4B] text-white rounded-br-sm"
+                        : "bg-white text-foreground border-2 border-[#D1D5DB] rounded-bl-sm"
                     }`}
                   >
                     <p className="whitespace-pre-wrap break-words">{m.body}</p>
@@ -413,12 +433,11 @@ export function ChatThreadView({
             );
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Elder-Friendly 1-Tap Quick Replies Bar */}
-      <div className="bg-[#F3F7F2] border-t-2 border-border p-3 space-y-2 shrink-0">
-        <div className="flex items-center justify-between">
+      <div className="bg-[#F3F7F2] border-t-2 border-border px-3 py-2.5 sm:p-3 space-y-2 shrink-0">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-xs sm:text-sm font-bold text-[#315B4B] flex items-center gap-1.5">
             <Sparkles className="h-4 w-4 text-[#315B4B]" />
             <span>{isJa ? "ワンタップ簡単返信（文字入力不要）:" : "1-Tap Quick Replies:"}</span>
@@ -430,13 +449,13 @@ export function ChatThreadView({
           )}
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+        <div className="-mx-3 px-3 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
           {QUICK_REPLIES.map((qr) => (
             <button
               key={qr.id}
               type="button"
               onClick={() => handleQuickReply(qr)}
-              className="shrink-0 px-3.5 py-2 rounded-xl border-2 border-[#CBD5E1] bg-white hover:border-[#315B4B] hover:bg-[#FAF9F5] active:scale-98 text-xs sm:text-sm font-bold text-foreground transition-all shadow-xs flex items-center gap-1.5 min-h-[44px]"
+              className="snap-start shrink-0 px-3.5 py-2 rounded-xl border-2 border-[#CBD5E1] bg-white hover:border-[#315B4B] hover:bg-[#FAF9F5] hover:-translate-y-0.5 active:scale-[0.98] text-xs sm:text-sm font-bold text-foreground transition-all duration-200 shadow-xs flex items-center gap-1.5 min-h-[44px]"
             >
               <span>{qr.icon}</span>
               <span>{isJa ? qr.ja : qr.en}</span>
@@ -448,7 +467,7 @@ export function ChatThreadView({
       {/* Message Input & Big Send Button */}
       <form
         onSubmit={handleSend}
-        className="p-3 sm:p-4 bg-card border-t-2 border-border flex items-center gap-2.5 shrink-0"
+        className="p-2.5 sm:p-4 bg-card border-t-2 border-border flex items-center gap-2 sm:gap-2.5 shrink-0"
       >
         <input
           ref={inputRef}
@@ -463,15 +482,22 @@ export function ChatThreadView({
           }}
           disabled={sending}
           maxLength={500}
-          className="flex-1 h-13 sm:h-14 px-4 text-base sm:text-lg rounded-xl border-2 border-border bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors disabled:opacity-60 shadow-xs"
+          aria-label={isJa ? "メッセージ" : "Message"}
+          enterKeyHint="send"
+          className="flex-1 min-w-0 h-12 sm:h-14 px-4 text-base sm:text-lg rounded-xl border-2 border-border bg-white text-foreground placeholder:text-muted-foreground hover:border-primary/40 focus:outline-none focus:border-primary transition-colors disabled:opacity-60 shadow-xs"
         />
         <Button
           type="submit"
           disabled={sending || !inputBody.trim()}
-          className="h-13 sm:h-14 px-6 text-base sm:text-lg font-bold gap-2 bg-[#315B4B] hover:bg-[#254639] text-white rounded-xl shadow-xs shrink-0 min-w-[100px]"
+          aria-label={isJa ? "送信" : "Send"}
+          className="h-12 sm:h-14 px-4 sm:px-6 text-base sm:text-lg font-bold gap-2 bg-[#315B4B] hover:bg-[#254639] hover:shadow-md text-white rounded-xl shadow-xs shrink-0"
         >
-          <Send className="h-5 w-5" />
-          <span>{isJa ? "送信" : "Send"}</span>
+          {sending ? (
+            <span className="h-5 w-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+          ) : (
+            <Send className="h-5 w-5" />
+          )}
+          <span className="hidden min-[400px]:inline">{isJa ? "送信" : "Send"}</span>
         </Button>
       </form>
     </div>

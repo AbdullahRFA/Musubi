@@ -27,11 +27,13 @@ interface PostMapProps {
 
 export default function PostMap({ lat, lng, locationName, title }: PostMapProps) {
   return (
-    <div className="h-64 sm:h-72 w-full rounded-lg overflow-hidden border-2 border-border shadow-xs">
+    <div className="h-56 sm:h-72 w-full rounded-xl overflow-hidden border-2 border-border shadow-xs">
       <MapContainer
         center={[lat, lng]}
         zoom={13}
         scrollWheelZoom={false}
+        // Avoid trapping page scroll on touch devices; pinch-zoom still works
+        dragging={!L.Browser.mobile}
         className="h-full w-full"
       >
         <TileLayer
