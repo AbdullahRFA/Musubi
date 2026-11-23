@@ -46,6 +46,38 @@ const config: Config = {
       minHeight: {
         tap: "3rem",
       },
+      boxShadow: {
+        xs: "0 1px 2px 0 rgba(36, 28, 22, 0.06)",
+        soft: "0 4px 20px -4px rgba(36, 28, 22, 0.10)",
+        lift: "0 14px 34px -10px rgba(36, 28, 22, 0.22)",
+        glow: "0 8px 24px -6px rgba(154, 52, 18, 0.40)",
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(16px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-8px)" },
+        },
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "fade-in": "fade-in 0.4s ease-out both",
+        float: "float 6s ease-in-out infinite",
+        shimmer: "shimmer 1.6s infinite",
+      },
+      transitionTimingFunction: {
+        smooth: "cubic-bezier(0.22, 1, 0.36, 1)",
+      },
     },
   },
   plugins: [],
