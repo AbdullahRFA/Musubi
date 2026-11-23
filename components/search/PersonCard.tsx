@@ -142,24 +142,24 @@ export function PersonCard({ person }: { person: Profile }) {
           )}
         </CardContent>
 
-        <CardFooter className="p-5 pt-0 border-t border-border/60 mt-auto flex items-center justify-between gap-2">
-          <Link href={`/profile/${person.id}`}>
-            <Button variant="outline" size="sm" className="font-semibold">
+        <CardFooter className="p-4 sm:p-5 pt-3 border-t border-border/60 mt-auto flex items-center justify-between gap-2">
+          <Button asChild variant="outline" size="sm" className={`font-semibold text-xs h-8 cursor-pointer ${isMe ? "w-full" : "flex-1 sm:flex-initial"}`}>
+            <Link href={`/profile/${person.id}`}>
               Profile
-            </Button>
-          </Link>
+            </Link>
+          </Button>
 
           {!isMe && (
-            <>
+            <div className="flex-1 sm:flex-initial flex justify-end">
               {existingRequest ? (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   <RequestStatusBadge status={existingRequest.status} />
                   {existingRequest.status === "accepted" && (
-                    <Link href="/chat">
-                      <Button size="sm" variant="default" className="text-xs">
+                    <Button asChild size="sm" variant="default" className="text-xs h-8 cursor-pointer">
+                      <Link href="/chat">
                         Chat
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   )}
                 </div>
               ) : (
@@ -167,13 +167,13 @@ export function PersonCard({ person }: { person: Profile }) {
                   size="sm"
                   variant="default"
                   onClick={() => setModalOpen(true)}
-                  className="font-bold gap-1 bg-secondary hover:bg-[#32402e] text-white"
+                  className="font-bold gap-1 bg-secondary hover:bg-[#32402e] text-white w-full sm:w-auto text-xs h-8 px-2.5 truncate"
                 >
-                  <Send className="h-3.5 w-3.5" />
-                  <span>Connect / Request</span>
+                  <Send className="h-3 w-3 shrink-0" />
+                  <span className="truncate">Connect</span>
                 </Button>
               )}
-            </>
+            </div>
           )}
         </CardFooter>
       </Card>

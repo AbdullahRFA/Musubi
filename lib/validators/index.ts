@@ -1,11 +1,12 @@
 import { z } from "zod";
 
 const categories = [
+  "Cooking",
+  "Technology",
+  "Arts & Crafts",
+  "Gardening",
   "Daily Assistance",
-  "Technology Help",
   "Companionship",
-  "Home Assistance",
-  "Learning",
 ] as const;
 
 export const loginSchema = z.object({
@@ -15,17 +16,21 @@ export const loginSchema = z.object({
 
 export const registerSchema = loginSchema.extend({
   fullName: z.string().trim().min(2, "Please enter your full name.").max(80, "That name is too long."),
-  userGroup: z.enum(["og", "yg"], { required_error: "Choose a group to continue." }),
+  age: z.coerce.number({ invalid_type_error: "Please enter your age as a number." }).min(13, "Must be at least 13 years old.").max(120, "Please enter a valid age."),
+  neighborhood: z.string().trim().optional(),
+  userGroup: z.enum(["og", "yg"]).optional(),
 });
 
 export const profileSchema = z.object({
   fullName: z.string().trim().min(2, "Please enter your full name.").max(80),
   email: z.string().trim().email("Enter a valid email address."),
-  userGroup: z.enum(["og", "yg"]),
-  ageGroup: z.enum(["18-29", "30-49", "50-64", "65+"]).or(z.literal("")),
+  age: z.coerce.number().min(13).max(120).nullable().optional(),
+  userGroup: z.enum(["og", "yg"]).optional(),
+  ageGroup: z.enum(["18-29", "30-49", "50-64", "65+"]).or(z.literal("")).optional(),
   location: z.string().trim().min(2, "Choose a location."),
+  neighborhoods: z.array(z.string().trim().min(1)).max(5).optional(),
   bio: z.string().trim().max(400, "Please keep your bio under 400 characters."),
-  availability: z.string().trim().min(2, "Choose when you are usually free."),
+  availability: z.string().trim().optional(),
   contactMethod: z.enum(["chat", "phone"]),
   phone: z.string().trim().max(30),
   interests: z.array(z.string().trim().min(1).max(40)).max(12),
@@ -50,10 +55,10 @@ export const postSchema = z.object({
   location: z.string().trim().min(2, "Choose a location."),
   availability: z.string().trim().min(2, "Choose availability."),
   postType: z.enum(["offer", "request"]),
-  exchangeMethod: z.enum(["knowledge", "service", "payment"]),
+  exchangeMethod: z.enum(["free", "exchange", "paid"]),
   amount: z.number().nullable(),
 }).superRefine((value, ctx) => {
-  if (value.exchangeMethod === "payment" && (!value.amount || value.amount <= 0)) {
+  if (value.exchangeMethod === "paid" && (!value.amount || value.amount <= 0)) {
     ctx.addIssue({
       code: "custom",
       path: ["amount"],
@@ -76,12 +81,16 @@ export const reportSchema = z.object({
 });
 
 export const onboardingSchema = z.object({
-  ageGroup: z.enum(["18-29", "30-49", "50-64", "65+"]),
-  location: z.string().min(2, "Choose a location."),
-  availability: z.string().min(2, "Choose when you are free."),
+  age: z.coerce.number().min(13, "Must be at least 13").max(120, "Please enter a valid age").optional(),
+  ageGroup: z.enum(["18-29", "30-49", "50-64", "65+"]).optional(),
+  location: z.string().optional(),
+  neighborhoods: z.array(z.string().trim().min(1)).min(1, "Please select at least 1 neighborhood.").max(5, "Select up to 5 neighborhoods.").optional(),
+  availability: z.string().optional(),
   contactMethod: z.enum(["chat", "phone"]),
-  skill: z.string().trim().max(40),
-  need: z.string().trim().max(40),
+  skills: z.array(z.string().trim().min(1)).optional(),
+  servicesNeeded: z.array(z.string().trim().min(1)).optional(),
+  skill: z.string().trim().max(40).optional(),
+  need: z.string().trim().max(40).optional(),
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;

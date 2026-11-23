@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useState, useMemo } from "react";
 import { Sparkles, PlusCircle, Search, Filter, RefreshCcw } from "lucide-react";
 import { usePosts } from "@/lib/services/postService";
+import { useSession } from "@/lib/services/authService";
 import { CATEGORIES, EXCHANGE_METHODS } from "@/lib/constants";
 import { PostCard } from "@/components/posts/PostCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function PostsDirectoryPage() {
+  const session = useSession();
   const allPosts = usePosts();
 
   const [query, setQuery] = useState("");
@@ -52,21 +54,44 @@ export default function PostsDirectoryPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link href="/quick-post">
-            <Button className="gap-2 font-bold bg-primary hover:bg-[#832c0f] text-white shadow">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full sm:w-auto">
+          <Button asChild className="w-full sm:w-auto gap-1.5 font-bold bg-primary hover:bg-[#234336] text-white shadow-xs h-9 text-xs cursor-pointer">
+            <Link href="/quick-post">
               <Sparkles className="h-4 w-4 text-amber-200" />
               <span>Quick Post</span>
-            </Button>
-          </Link>
-          <Link href="/posts/new">
-            <Button variant="outline" className="gap-2 font-semibold">
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full sm:w-auto gap-1.5 font-semibold h-9 text-xs cursor-pointer">
+            <Link href="/posts/new">
               <PlusCircle className="h-4 w-4" />
               <span>Standard Post</span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
+
+      {/* Guest Exploration Banner for Logged-Out / Unregistered Visitors */}
+      {!session && (
+        <div className="rounded-xl border-2 border-primary/30 bg-[#E7EEE4]/60 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 font-bold text-xs sm:text-sm text-primary">
+              <Sparkles className="h-4 w-4 text-amber-600" />
+              <span>Browsing Community Exchanges as a Guest</span>
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              You can explore all skills, offers, and requests. Sign in or register when you are ready to respond to a neighbor or create your own post.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <Button asChild variant="outline" size="sm" className="font-bold text-xs h-8 px-3 cursor-pointer w-full sm:w-auto">
+              <Link href="/login">Log In</Link>
+            </Button>
+            <Button asChild size="sm" className="font-bold text-xs h-8 px-3 bg-primary hover:bg-[#234336] text-white cursor-pointer w-full sm:w-auto">
+              <Link href="/register">Register</Link>
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Toolbar */}
       <div className="rounded-lg border-2 border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">

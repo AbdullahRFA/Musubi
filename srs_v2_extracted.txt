@@ -1,0 +1,384 @@
+TSUNAGU GENERATIONS
+Software Requirements Specification (SRS) | Version 2.0
+Document status: Updated baseline for UI/UX design and hackathon MVP planning.
+Document Control
+Field
+Value
+Project
+Tsunagu Generations
+Document
+Software Requirements Specification
+Version
+2.0
+Product tagline
+Connecting the Past to the Present
+Primary platforms
+Responsive web: desktop, tablet, and mobile
+1. Introduction
+1.1 Purpose
+This document defines the functional and non-functional requirements for Tsunagu Generations, a community-based platform connecting people across generations through knowledge sharing, skill exchange, daily assistance, and companionship. It is intended to guide UI/UX design, frontend development, backend implementation, and hackathon MVP testing.
+1.2 Problem Statement
+Older people have valuable knowledge, skills, and life experiences but may have limited opportunities to share them. Some people also need assistance with daily activities, technology, or companionship. Younger people and other community members may want to learn traditional knowledge and contribute their time and skills. The platform provides a two-way way to discover and coordinate these exchanges.
+1.3 Objectives
+Connect older and younger generations.
+Preserve traditional knowledge and practical skills.
+Provide a platform for offering and requesting services.
+Encourage skill exchange and community participation.
+Build trust through profiles, activity history, feedback, and safety controls.
+1.4 Scope
+The system includes registration/login, profiles, OFFER and REQUEST posts, quick-post templates, search and filtering, people discovery, service requests, chat, notifications, simulated payments, feedback, activity history, homepage/landing experience, and support/reporting. Real-money processing is out of scope for the hackathon MVP.
+2. User Groups and General User Rule
+2.1 Older Generation (O.G.)
+Older Generation is a demographic/community label. Users may share knowledge, teach skills, request assistance, offer services, learn new skills, or participate in exchanges.
+2.2 Younger Generation (Y.G.)
+Younger Generation is a demographic/community label. Users may learn skills, offer assistance, request knowledge or services, teach skills, or participate in exchanges.
+2.3 General User Rule
+All users follow the same registration process and have the same core capabilities. Age or age group is profile information, not a role or permission level. Every registered user can create both OFFER and REQUEST posts, browse, search, respond to posts, and communicate subject to the same system rules. The interface may offer accessibility aids, but must not assume that all users in an age group have identical needs.
+3. Functional Requirements
+3.1 User Registration and Login
+The system shall allow users to register using email and password.
+The system shall allow registered users to log in and log out.
+The system shall use secure authentication.
+The registration flow shall be the same for all users and shall not require choosing O.G. or Y.G. as a role.
+The system shall allow users to provide age or age group as profile information.
+The system shall allow users to update account information.
+The system shall protect authenticated pages and actions from unauthorized access.
+3.2 User Profile Management
+Each user profile may contain:
+Full name and profile picture.
+Age or age group and location.
+Short biography and interests.
+Skills and expertise.
+Services the user can provide and services the user needs.
+Availability and preferred contact method.
+Completed activity count and feedback, where available.
+The system shall allow users to create and edit their own profiles, add or remove skills and interests, specify offers and needs, view other users' public profile information, and view permitted activity history and feedback.
+3.3 Post and Requirement Management
+3.3.1 Post Types
+Type
+Definition
+Example
+OFFER
+A skill, knowledge area, or service the author can provide.
+I can teach origami; I can help with smartphone settings.
+REQUEST
+A skill, knowledge area, or service the author wants to learn or receive.
+I want to learn origami; I need help with smartphone settings.
+3.3.2 General Post Creation
+Any registered user shall be able to create both OFFER and REQUEST posts. A post shall support the following fields:
+Post type (OFFER or REQUEST).
+Title and description.
+Category and offered/required skill or service.
+Location.
+Availability.
+Exchange method: Free, Skill/Service Exchange, or Paid.
+Optional payment amount when Paid is selected.
+Post status.
+Users shall be able to create, view, edit, delete, close, and mark their own posts as completed. Users shall not be able to edit or delete posts owned by other users.
+3.3.3 Quick Post Templates
+The system shall provide reusable templates for common offers and requests. Templates shall be available to all users. The flow should minimize typing and use accessible controls, with particular attention to users who prefer a simplified process.
+Category
+Example templates
+Daily Assistance
+Grocery shopping; medicine pickup (subject to applicable safety rules).
+Technology Help
+Smartphone assistance; video-call setup.
+Companionship
+Conversation; walking companion.
+Home Assistance
+Gardening; small household tasks.
+Learning
+Learn a traditional or practical skill.
+Template workflow: (1) user selects OFFER or REQUEST; (2) selects a category; (3) selects a suggested template; (4) system pre-fills a draft title and short description; (5) user confirms or edits optional details such as location, availability, and exchange method; (6) user previews and publishes the post.
+3.4 Service Request and Response
+Users shall be able to respond to an available post with an optional message.
+Post owners shall be able to accept or reject incoming requests.
+Users shall be able to cancel their own pending requests.
+The system shall display request status.
+The system shall make the relevant conversation available after a request is accepted.
+The workflow shall support knowledge exchange, service exchange, free arrangements, and paid arrangements.
+Request statuses: Pending, Accepted, Rejected, Cancelled, Completed.
+3.5 Search and Filtering
+The platform shall provide a discovery experience with a prominent search field and filters. Users shall be able to search by post title, category, skill/expertise, service name, location, and user name.
+Search priority: (1) search matching available posts; (2) apply selected filters; (3) display matching posts; (4) if no suitable post is found, search user profiles for matching skills or expertise; (5) display matching people separately from post results.
+Available filters shall include category, location, skill/expertise, exchange method, availability, post type (All/Offers/Requests), and optional user group (O.G./Y.G.). User group filtering shall not imply different permissions.
+3.6 Chat and Communication
+Users shall be able to use in-app text chat after a service request is accepted.
+Messages shall display timestamps and conversation history.
+Users shall be able to coordinate activity details and meeting times.
+Phone contact may be arranged only where permitted and with the relevant user's consent.
+Private conversations shall only be accessible to their participants.
+3.7 Notifications
+Notify users about new service requests.
+Notify users when requests are accepted, rejected, or cancelled.
+Notify users about new chat messages.
+Notify users about activity updates and completion.
+Notify users about new feedback or reviews.
+Provide a dedicated notification page or panel.
+3.8 Demo Money Transaction
+Display the agreed service amount when a paid arrangement is selected.
+Allow users to initiate a simulated payment.
+Simulate payment confirmation and store a demo transaction record.
+Display transaction status: Pending, Successful, or Failed.
+Clearly label the workflow as a demonstration; no real-money processing or payment gateway is required.
+3.9 Feedback and Activity History
+Users shall be able to submit feedback after an activity is marked completed.
+Users shall be able to rate the other participant.
+Profiles may display ratings, reviews, and completed activity counts.
+The system shall maintain a history of completed exchanges.
+The interface shall not present ratings or activity counts as a guarantee of identity or safety.
+3.10 Homepage and Landing Page
+3.10.1 Common Homepage Structure
+The homepage shall use a responsive layout with no left sidebar.
+The page shall contain: Sticky Header, Hero Section, Categories, Community Feed, and Footer.
+The homepage shall display a warm illustration banner communicating intergenerational knowledge sharing and mutual contribution.
+The homepage shall display visual categories for Cooking, Technology, Arts & Crafts, Gardening, Daily Assistance, and Companionship.
+The community feed shall contain vertical post cards and All, Offers, and Requests filters.
+The feed shall provide search and navigation to post details.
+The footer shall provide About, How It Works, Help & Support, Safety Guidelines, and Contact links.
+3.10.2 Sticky Header
+The header shall remain visible while the user scrolls.
+The header shall display the Tsunagu Generations logo.
+For authenticated users, it shall provide access to notifications and profile.
+The header shall provide Standard and Large font-size options.
+The header shall provide English and Japanese language options, subject to the implementation scope defined for the release.
+The header shall adapt to smaller screens without horizontal overflow.
+3.10.3 Logged-Out Homepage State
+The left side of the desktop hero shall display the mission illustration and tagline: 'Connecting the Past to the Present'.
+The right side shall display a New Registration card and a Login card.
+The logged-out visitor shall be able to browse content designated as public.
+Authenticated-only actions such as responding, messaging, and managing posts shall require login.
+3.10.4 Logged-In Homepage State
+The left-side hero illustration shall remain consistent.
+The right-side panel shall replace Registration and Login cards with My Posts and Pending Requests summary cards.
+My Posts shall display the user's post count and link to post management.
+Pending Requests shall display the relevant pending request count and link to request management.
+The same categories and community feed shall remain available.
+3.10.5 Responsive Navigation
+Desktop shall use a horizontal header and shall not use a left sidebar.
+On mobile, the hero shall stack vertically, category cards may scroll horizontally, and feed cards shall use the available screen width.
+Authenticated mobile users shall have bottom navigation: Home, Discover, Create, Messages, and Profile.
+Logged-out visitors shall be shown registration/login access rather than authenticated bottom-navigation destinations.
+3.11 About, Support, and Safety
+Explain the platform's purpose and provide basic usage guidance.
+Provide support information and safety guidelines.
+Allow users to report inappropriate posts and profiles.
+Allow users to block other users.
+Do not display private contact details publicly.
+Share contact details only with appropriate consent.
+Encourage safe meeting arrangements and clear agreement on the activity before meeting.
+3.12 Accessibility and Language Preferences
+Provide Standard and Large text-size options.
+Use readable typography, adequate contrast, clear labels, and large interactive targets.
+Avoid relying on colour alone to distinguish OFFER and REQUEST posts.
+Support English and Japanese interface language selection when localization is included in the release.
+Make simplified post templates available to all users.
+4. Main User Workflows
+4.1 Registration and Profile Workflow
+Visitor opens the homepage and selects Register.
+User completes the common registration process.
+User creates a profile and optionally provides age/age group, location, interests, skills, offers, and needs.
+User can update profile information later.
+4.2 Offer or Request Workflow
+User logs in.
+User chooses Create Offer or Create Request.
+User completes a full post form or selects a quick-post template.
+User previews and publishes the post.
+The post appears in the community feed and relevant search results.
+4.3 Service Request Workflow
+User browses or searches for a post.
+User opens post details and sends a response.
+Post owner accepts or rejects the response.
+After acceptance, the users can communicate.
+Users agree on the activity, time, location, and exchange method.
+Activity is marked completed and feedback may be submitted.
+4.4 Search and Expertise Matching Workflow
+User enters a keyword or chooses a category.
+System searches available posts and applies filters.
+Matching posts are displayed first.
+If no suitable post is found, matching user profiles are displayed.
+User can open a profile and use an available connection/request action.
+5. Main Application Modules
+Module
+Responsibilities
+Authentication
+Registration, login, logout, access control.
+Homepage / Landing
+Mission, conditional hero panel, categories, feed, navigation.
+Profile
+Personal information, age group, skills, expertise, needs, activity history.
+Post Management
+Create, view, edit, delete, close, complete OFFER/REQUEST posts.
+Quick Templates
+Predefined post drafts for common offers and requests.
+Search and Discovery
+Search/filter posts and matching user profiles.
+Service Requests
+Respond, accept, reject, cancel, and track status.
+Chat
+Real-time communication between accepted participants.
+Notifications
+Request, message, and activity updates.
+Transactions
+Simulated payment workflow.
+Feedback and Activity History
+Ratings, reviews, completed exchanges.
+About, Support, and Safety
+Guidance, reporting, blocking, and support information.
+6. Database Requirements
+The system shall use a relational database. Proposed tables/entities:
+Table
+Purpose
+profiles
+User profile, age/age group, location, biography, preferences.
+skills
+Skills and expertise associated with users.
+needs
+Services or skills users need or want to learn.
+posts
+OFFER/REQUEST posts and their fields/status.
+post_categories
+Category definitions and post-category mapping, if normalized.
+requirement_templates
+Reusable quick-post templates for offers and requests.
+service_requests
+Responses to posts and request status.
+conversations
+Chat conversation membership and metadata.
+messages
+Chat messages and timestamps.
+notifications
+User notifications.
+transactions
+Simulated payment records.
+reviews
+Ratings and feedback.
+activities
+Completed activities and exchange history.
+reports
+Reports about users or posts.
+user_blocks
+User blocking relationships.
+The final schema should enforce ownership and access rules through Supabase Row Level Security (RLS).
+7. Non-Functional Requirements
+7.1 Usability
+The interface shall be simple and understandable.
+The design shall use readable text and sufficiently large controls.
+The quick-post flow shall minimize typing.
+The interface shall provide clear feedback for loading, success, empty, and error states.
+The application shall work on desktop, tablet, and mobile browsers.
+7.2 Performance
+Pages should load promptly under normal network conditions.
+Search and filtering should return results efficiently.
+Chat and notifications should update in real time where implemented.
+7.3 Security and Privacy
+Authentication shall be handled securely through Supabase Auth.
+Users shall only edit or delete their own posts and profiles.
+Private conversations shall only be accessible to participants.
+Database access shall be protected using Row Level Security.
+Sensitive personal information and private contact details shall not be publicly exposed.
+Report and block actions shall be available to users.
+7.4 Reliability
+The system shall handle invalid input gracefully.
+Failed operations shall display understandable error messages.
+Important user actions and statuses shall be stored reliably.
+7.5 Accessibility
+Use readable fonts and sufficient contrast.
+Provide Standard and Large font-size options.
+Provide large clickable areas and clear text labels.
+Do not use colour as the only way to communicate post type or status.
+Avoid unnecessarily complex navigation.
+7.6 Compatibility and Responsiveness
+Support current modern desktop and mobile browsers.
+Support desktop, tablet, and mobile viewport layouts.
+Prevent horizontal overflow and preserve usable controls on narrow screens.
+8. Technology Stack
+Layer
+Technology
+Frontend
+Next.js (App Router)
+Programming Language
+TypeScript
+Styling
+Tailwind CSS
+UI Components
+shadcn/ui
+Backend / Server Logic
+Supabase; Next.js Server Actions and Route Handlers
+Database
+Supabase PostgreSQL
+Authentication
+Supabase Auth
+Realtime
+Supabase Realtime for chat and notifications
+File Storage
+Supabase Storage
+Form Validation
+React Hook Form + Zod
+Search and Matching
+PostgreSQL queries, filters, and indexes
+Maps (if used)
+Leaflet + OpenStreetMap
+Icons
+Lucide React
+Deployment
+Vercel
+Payment
+Simulated workflow only; no real payment gateway
+9. Hackathon MVP Scope
+9.1 P1 — Core Demonstration
+Registration and login.
+Profile creation and editing.
+OFFER and REQUEST post creation and browsing.
+Homepage with logged-out and logged-in states.
+Category browsing and All/Offers/Requests feed filters.
+Basic search and filtering.
+Post details and service request/response.
+Basic ownership and privacy rules.
+Report/block controls or clearly demonstrable safety flow.
+9.2 P2 — If Time Permits
+Quick-post templates.
+Real-time chat.
+Notifications.
+Feedback and activity history.
+Simulated payment workflow.
+Full English/Japanese localization.
+Persisted Standard/Large font preference.
+9.3 Future Enhancements
+AI-powered recommendations.
+Voice-based post creation.
+Video calling.
+Real payment gateway integration.
+Identity verification.
+Advanced location-based matching.
+Family or guardian support features.
+Release note: The UI design includes English/Japanese and Standard/Large controls. The implementation plan must state whether these controls are fully functional in the MVP or shown as prototype controls only. Do not imply full localization or real payment processing if not implemented.
+10. Business Rules
+Every registered user can both offer and request services or knowledge.
+Age group does not restrict user capabilities or permissions.
+A user can create multiple posts.
+A user cannot respond to their own post.
+Only the post owner can accept or reject responses to that post.
+Chat is enabled after a request is accepted.
+Feedback can only be submitted for completed activities.
+Users can edit or delete only their own posts.
+Quick templates are available to all users and are intended to reduce typing.
+The platform supports Free, Skill/Service Exchange, and Paid arrangements.
+Simulated payments must be clearly identified as demo transactions.
+Search results prioritize matching posts, then matching user expertise when no suitable post is found.
+Private contact details are not publicly displayed.
+Reports and blocks must be associated with the relevant user and/or post.
+11. Acceptance Criteria (Homepage and Core Flow)
+A visitor can see the mission banner, Register and Login cards, categories, and public community posts.
+After login, the hero's right panel shows My Posts and Pending Requests instead of Register and Login.
+The header remains visible while scrolling.
+A user can switch the feed between All, Offers, and Requests.
+Selecting a category filters or navigates to relevant content.
+A user can create both an OFFER and a REQUEST regardless of age group.
+A user can find matching posts through search and filters.
+If no suitable post is found, the system can display matching people profiles where expertise data is available.
+An authenticated mobile user can access Home, Discover, Create, Messages, and Profile through bottom navigation.
+The layout remains usable at desktop, tablet, and mobile widths without horizontal overflow.
+12. Expected Outcome
+Tsunagu Generations will provide a digital community space where people across generations can connect, exchange knowledge, request assistance, and support one another. The platform aims to preserve traditional knowledge, encourage mutual contribution, and strengthen local community connections.
+Vision: Connecting the wisdom of the past with the energy of today.

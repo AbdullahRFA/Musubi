@@ -14,8 +14,8 @@ export default function AboutSafetyPage() {
       a: "No! Tsunagu Generations is a community exchange. Any payment options in the app are strictly simulated demo transactions (clearly labelled DEMO). No credit card numbers or real payment gateways are connected.",
     },
     {
-      q: "How does the Quick Post wizard help older users?",
-      a: "The Quick Post wizard provides 1-click requirement templates (like grocery shopping, medicine pickup, smartphone assistance, or walking companion) with large buttons and readable text. Users do not need to type long paragraphs.",
+      q: "How does the Quick Post wizard work?",
+      a: "The Quick Post wizard provides accessible, guided templates across all 6 core categories for both Offers and Requests with large buttons, minimal typing, and readable text for all community members.",
     },
     {
       q: "When does chat open between two members?",

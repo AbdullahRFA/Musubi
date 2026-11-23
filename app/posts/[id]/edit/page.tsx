@@ -151,7 +151,7 @@ export default function EditPostPage() {
                 </div>
               </div>
 
-              {exchangeMethod === "payment" && (
+              {exchangeMethod === "paid" && (
                 <div className="space-y-3 p-4 rounded-lg border border-blue-200 bg-blue-50/50">
                   <DemoPaymentBanner />
                   <label className="text-sm font-bold text-foreground block">Demo Amount (£)</label>

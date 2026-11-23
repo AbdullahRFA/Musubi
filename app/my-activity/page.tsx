@@ -58,7 +58,7 @@ function ActivityContent() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap border-b-2 border-border gap-2 sm:gap-6">
+      <div className="flex overflow-x-auto border-b-2 border-border gap-1.5 sm:gap-6 scrollbar-none touch-pan-x -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap">
         {[
           { id: "posts", label: "My Posts", count: myPosts.length, icon: Compass },
           { id: "requests", label: "My Requests", count: incoming.length + outgoing.length, icon: Inbox },
@@ -73,15 +73,15 @@ function ActivityContent() {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 pb-3 pt-1 px-2 font-bold text-base sm:text-lg border-b-4 transition-all -mb-[2px] ${
+              className={`flex items-center gap-1.5 pb-2.5 pt-1 px-2 font-bold text-xs sm:text-base border-b-4 transition-all -mb-[2px] shrink-0 whitespace-nowrap ${
                 isActive
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 shrink-0" />
               <span>{tab.label}</span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold">
                 {tab.count}
               </span>
             </button>

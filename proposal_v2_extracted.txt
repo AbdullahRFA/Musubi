@@ -1,0 +1,152 @@
+TSUNAGU GENERATIONS
+Project Proposal | Connecting the Past to the Present | Version 2.0
+Project concept: A community exchange platform where people across generations can share knowledge, offer skills and services, request assistance, and build meaningful local connections.
+1. Executive Summary
+Tsunagu Generations is a responsive, community-based platform designed to connect older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship. Every registered user can both offer something and request something. Age group is displayed as profile information, not as a role that limits what a person can do.
+The platform brings together two simple actions: OFFER (something I can teach or provide) and REQUEST (something I want to learn or receive). Users can publish posts, discover relevant posts and people, respond to requests, communicate, arrange an exchange, and leave feedback after completion.
+2. Problem Statement
+Older people may have valuable knowledge, practical skills, cultural traditions, and life experiences that have limited opportunities to be shared.
+Some community members need help with everyday activities, technology, companionship, or learning new skills.
+Younger people may want to learn traditional skills, contribute to their communities, and find meaningful ways to share their time and abilities.
+Existing opportunities can be difficult to discover or coordinate at an individual, local, and recurring level.
+3. Proposed Solution
+Tsunagu Generations provides one shared platform where community members create profiles, publish OFFER or REQUEST posts, search by category, skill, location, and exchange preference, and connect with suitable people. The platform supports free help, skill/service exchange, and paid arrangements. The hackathon payment flow is demonstrative only and does not process real money.
+4. Target Users and User Principle
+Older Generation (O.G.): community members who may share experience and skills, learn something new, offer services, or request support.
+Younger Generation (Y.G.): community members who may share skills and assistance, learn from others, offer services, or request support.
+Other community members may also participate where appropriate.
+All users follow the same registration process and have the same core capabilities. Age or age group is profile information and does not determine permissions. Every user can create OFFER and REQUEST posts, browse, search, respond, and communicate.
+5. Main Platform Concept
+Post type
+Meaning
+Examples
+OFFER
+Something I can teach, share, or provide.
+Teach origami; help with smartphone settings; assist with groceries; teach cooking.
+REQUEST
+Something I want to learn or receive.
+Learn origami; get smartphone assistance; request grocery help; find a walking companion.
+Each post can specify an exchange arrangement: Free, Skill/Service Exchange, or Paid. Payment is optional and only simulated in the hackathon MVP.
+6. Main Features (Functional Requirements)
+6.1 Registration and Login
+One registration and login process for all users.
+Secure email/password authentication.
+Create and update a profile with name, profile image, age or age group, location, biography, interests, skills, needs, availability, and contact preferences.
+Age group is not a permission or role.
+6.2 User Profile and Expertise
+Users can list skills, expertise, interests, services they can provide, and services they need.
+Users can view public profile information, activity history, completed activity counts, and feedback.
+Users can update their own profile.
+6.3 Post and Requirement Management
+Every registered user can create both OFFER and REQUEST posts.
+Posts include title, description, category, skill/service, location, availability, exchange method, optional amount, and status.
+Users can edit, delete, close, or mark their own posts as completed.
+Quick-post templates reduce typing for common needs and are available to all users, with accessibility-focused design.
+6.4 Service Request and Response
+Users can respond to posts with an optional message.
+Post owners can accept or reject responses.
+Users can cancel their own pending requests.
+Request status is visible; accepted requests enable the agreed communication workflow.
+6.5 Search and Discovery
+Search posts and people by keyword, category, skill/expertise, service, user name, and location.
+Show matching posts first; if no suitable post is found, show profiles with matching expertise.
+Provide filters for category, location, exchange method, availability, and optional age-group filtering.
+Community feed supports All, Offers, and Requests filters.
+6.6 Chat and Communication
+Matched users can use in-app text chat after a request is accepted.
+Messages show timestamps and conversation history.
+Users can coordinate activity details and meeting times.
+Phone contact is optional and shared only with appropriate consent.
+6.7 Notifications
+Notify users about new requests, request decisions, messages, activity updates, and feedback.
+Provide a dedicated notification page.
+6.8 Demo Money Transaction
+Show the agreed amount and a simulated payment confirmation flow.
+Store demo transaction status as Pending, Successful, or Failed.
+No real payment gateway or real-money processing is included in the hackathon MVP.
+6.9 Feedback and Activity History
+Allow feedback and ratings after an activity is marked completed.
+Show completed activity counts and reviews on profiles.
+Treat activity counts and reviews as reputation signals, not guarantees of safety.
+6.10 Homepage and Landing Experience
+Use a sticky header with logo, notifications/profile controls, font-size selector (Standard/Large), and language selector (English/Japanese).
+Logged-out visitors see a mission illustration banner and Register/Login cards.
+Logged-in users see the same banner and homepage structure, but the right-hand hero panel shows My Posts and Pending Requests summary cards.
+Show category discovery and a community feed with All, Offers, and Requests filters.
+Use responsive desktop/tablet/mobile layouts; authenticated mobile users get bottom navigation.
+6.11 About, Support, and Safety
+Explain the mission and how the platform works.
+Provide help and support information and safety guidance.
+Allow users to report inappropriate posts or profiles and block other users.
+Do not expose private contact information publicly; share contact details only with consent.
+7. Homepage Structure
+Order
+Section
+Description
+1
+Sticky Header
+Logo; notifications; profile; Standard/Large font; English/Japanese language selector. No left sidebar.
+2
+Hero
+Left: warm illustration of older and younger people exchanging knowledge. Right: Register/Login for visitors; My Posts/Pending Requests for signed-in users.
+3
+Categories
+Visual cards for Cooking, Technology, Arts & Crafts, Gardening, Daily Assistance, and Companionship.
+4
+Community Feed
+Search field; All/Offers/Requests filters; vertical post cards; View Post/Respond actions.
+5
+Footer
+About, How It Works, Help & Support, Safety Guidelines, Contact, and language options.
+Desktop uses a two-column hero (approximately 68% illustration and 32% action panel). On mobile, the hero stacks vertically, category cards scroll horizontally, post cards use full width, and authenticated users see fixed bottom navigation: Home, Discover, Create, Messages, Profile. No left sidebar is used.
+8. Core User Journey
+Register or log in and create/update a profile.
+Choose to create an OFFER or REQUEST, or discover existing posts.
+Create a post using the full form or a quick template.
+Search and filter posts; if no suitable post exists, discover matching people.
+Respond to a post; the post owner accepts or rejects the request.
+After acceptance, communicate, agree on the activity and exchange method, and complete the activity.
+Record completion and exchange feedback.
+9. Business and Sustainability Perspective
+The core value is a trusted local discovery and coordination layer for intergenerational exchange. The platform should demonstrate value to participants and potential community partners such as local organizations, community centres, educational institutions, and local governments. These are potential stakeholder groups, not confirmed partners.
+Potential future sustainability options include sponsored community programmes, partnerships with municipalities or community organizations, and clearly disclosed service fees for paid exchanges. These are hypotheses for validation, not part of the hackathon MVP or a confirmed revenue model. The MVP should focus on proving that users can discover, connect, and complete useful exchanges.
+10. Technology Stack
+Layer / Feature
+Technology / Implementation
+Frontend
+Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui
+Backend / Server Logic
+Supabase and Next.js Server Actions / Route Handlers
+Database
+Supabase PostgreSQL
+Authentication
+Supabase Auth
+Realtime Chat / Notifications
+Supabase Realtime
+File Storage
+Supabase Storage
+Forms / Validation
+React Hook Form + Zod
+Search / Matching
+PostgreSQL queries, indexes, and filters
+Maps (if included in MVP)
+Leaflet + OpenStreetMap
+Icons
+Lucide React
+Deployment
+Vercel
+Payment Demo
+Simulated workflow stored in PostgreSQL; no payment gateway
+11. Hackathon MVP Scope
+Priority
+Features
+P1 — Core demo
+Registration/login; profile; OFFER/REQUEST posts; homepage; category browsing; feed filters; search; post details; service request/response; basic safety/reporting.
+P2 — If time permits
+Quick templates; chat; notifications; activity history and feedback; simulated payment; English/Japanese UI; Standard/Large font control.
+Future
+AI recommendations; voice-based posting; video calls; real payment gateway; identity verification; advanced location matching; family/guardian support.
+Scope note: The agreed visual design includes English/Japanese and Standard/Large controls. If full localization and persisted accessibility preferences cannot be completed during the hackathon, the prototype should show the controls and clearly identify any non-functional demo elements.
+12. Expected Outcome and Vision
+Tsunagu Generations aims to make it easier for people across generations to exchange knowledge, skills, services, and companionship. It encourages mutual contribution rather than defining one generation only as a helper and the other only as a recipient.
+Vision: Connecting the wisdom of the past with the energy of today.

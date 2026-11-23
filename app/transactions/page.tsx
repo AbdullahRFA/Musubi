@@ -29,7 +29,7 @@ export default function TransactionsPage() {
   const payableRequests = [...incoming, ...outgoing].filter((req) => {
     if (req.status !== "accepted") return false;
     const post = req.postId ? allPosts.find((p) => p.id === req.postId) : null;
-    return post && post.exchangeMethod === "payment" && post.amount;
+    return post && post.exchangeMethod === "paid" && post.amount;
   });
 
   const getUser = (id: string) => allUsers.find((u) => u.id === id);

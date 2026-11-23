@@ -216,36 +216,36 @@ export default function RequestsPage() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2">
                         {req.status === "pending" && (
-                          <div className="flex items-center gap-2">
+                          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                             <Button
                               size="sm"
                               onClick={() => handleAccept(req.id)}
                               disabled={isBusy}
-                              className="font-bold bg-primary hover:bg-[#832c0f] text-white gap-1.5"
+                              className="font-bold bg-primary hover:bg-[#234336] text-white gap-1.5 w-full sm:w-auto text-xs h-8"
                             >
-                              <CheckCircle2 className="h-4 w-4" />
-                              <span>Accept Request</span>
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              <span>Accept</span>
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleReject(req.id)}
                               disabled={isBusy}
-                              className="text-muted-foreground hover:text-destructive"
+                              className="text-muted-foreground hover:text-destructive w-full sm:w-auto text-xs h-8"
                             >
-                              <XCircle className="h-4 w-4" />
+                              <XCircle className="h-3.5 w-3.5" />
                               <span>Decline</span>
                             </Button>
                           </div>
                         )}
 
                         {req.status === "accepted" && (
-                          <div className="flex flex-wrap items-center gap-3">
-                            <Link href="/chat">
-                              <Button size="sm" variant="default" className="gap-1.5 font-bold">
-                                <MessageSquare className="h-4 w-4" />
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                            <Link href="/chat" className="w-full sm:w-auto">
+                              <Button size="sm" variant="default" className="gap-1.5 font-bold w-full sm:w-auto text-xs h-8">
+                                <MessageSquare className="h-3.5 w-3.5" />
                                 <span>Go to Chat</span>
                               </Button>
                             </Link>
@@ -255,13 +255,13 @@ export default function RequestsPage() {
                               size="sm"
                               onClick={() => handleConfirmDone(req.id)}
                               disabled={isBusy || req.ownerDone}
-                              className={`gap-1.5 font-semibold ${
+                              className={`gap-1.5 font-semibold w-full sm:w-auto text-xs h-8 ${
                                 req.ownerDone ? "text-success border-success" : ""
                               }`}
                             >
-                              <CheckCircle2 className="h-4 w-4" />
+                              <CheckCircle2 className="h-3.5 w-3.5" />
                               <span>
-                                {req.ownerDone ? "Waiting for other to confirm" : "Mark Activity Completed"}
+                                {req.ownerDone ? "Waiting for other" : "Mark Completed"}
                               </span>
                             </Button>
                           </div>
@@ -352,10 +352,10 @@ export default function RequestsPage() {
                         )}
 
                         {req.status === "accepted" && (
-                          <div className="flex flex-wrap items-center gap-3">
-                            <Link href="/chat">
-                              <Button size="sm" variant="default" className="gap-1.5 font-bold">
-                                <MessageSquare className="h-4 w-4" />
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                            <Link href="/chat" className="w-full sm:w-auto">
+                              <Button size="sm" variant="default" className="gap-1.5 font-bold w-full sm:w-auto text-xs h-8">
+                                <MessageSquare className="h-3.5 w-3.5" />
                                 <span>Go to Chat</span>
                               </Button>
                             </Link>
@@ -365,13 +365,13 @@ export default function RequestsPage() {
                               size="sm"
                               onClick={() => handleConfirmDone(req.id)}
                               disabled={isBusy || req.requesterDone}
-                              className={`gap-1.5 font-semibold ${
+                              className={`gap-1.5 font-semibold w-full sm:w-auto text-xs h-8 ${
                                 req.requesterDone ? "text-success border-success" : ""
                               }`}
                             >
-                              <CheckCircle2 className="h-4 w-4" />
+                              <CheckCircle2 className="h-3.5 w-3.5" />
                               <span>
-                                {req.requesterDone ? "Waiting for author to confirm" : "Mark Activity Completed"}
+                                {req.requesterDone ? "Waiting for author" : "Mark Completed"}
                               </span>
                             </Button>
                           </div>

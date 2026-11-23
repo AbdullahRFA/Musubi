@@ -296,7 +296,7 @@ export async function confirmCompletion(requestId: string) {
     postId: request.postId,
     participantIds: [request.requesterId, request.ownerId],
     title: post?.title ?? "Direct service request",
-    category: post?.category ?? "Learning",
+    category: post?.category ?? "Companionship",
     completedAt: now,
   };
   useAppStore.setState((current) => ({

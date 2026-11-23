@@ -46,10 +46,10 @@ CREATE TABLE IF NOT EXISTS public.needs (
 -- 3. Requirement Templates (Quick-post templates for older users)
 CREATE TABLE IF NOT EXISTS public.requirement_templates (
     id TEXT PRIMARY KEY,
-    category TEXT NOT NULL CHECK (category IN ('Daily Assistance', 'Technology Help', 'Companionship', 'Home Assistance', 'Learning')),
+    category TEXT NOT NULL CHECK (category IN ('Cooking', 'Technology', 'Arts & Crafts', 'Gardening', 'Daily Assistance', 'Companionship')),
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    suggested_exchange TEXT NOT NULL CHECK (suggested_exchange IN ('knowledge', 'service', 'payment')),
+    suggested_exchange TEXT NOT NULL CHECK (suggested_exchange IN ('free', 'exchange', 'paid')),
     skill TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -60,14 +60,14 @@ CREATE TABLE IF NOT EXISTS public.posts (
     author_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    category TEXT NOT NULL CHECK (category IN ('Daily Assistance', 'Technology Help', 'Companionship', 'Home Assistance', 'Learning')),
+    category TEXT NOT NULL CHECK (category IN ('Cooking', 'Technology', 'Arts & Crafts', 'Gardening', 'Daily Assistance', 'Companionship')),
     skill TEXT NOT NULL,
     location TEXT NOT NULL,
     lat DOUBLE PRECISION,
     lng DOUBLE PRECISION,
     availability TEXT NOT NULL,
     post_type TEXT NOT NULL CHECK (post_type IN ('offer', 'request')),
-    exchange_method TEXT NOT NULL CHECK (exchange_method IN ('knowledge', 'service', 'payment')),
+    exchange_method TEXT NOT NULL CHECK (exchange_method IN ('free', 'exchange', 'paid')),
     amount NUMERIC(10, 2),
     status TEXT NOT NULL CHECK (status IN ('open', 'in_progress', 'completed', 'closed')) DEFAULT 'open',
     template_id TEXT REFERENCES public.requirement_templates(id) ON DELETE SET NULL,

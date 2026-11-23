@@ -154,7 +154,7 @@ export default function ChatRoomPage() {
             )}
 
             {/* Demo Payment link if monetary post */}
-            {post?.exchangeMethod === "payment" && post.amount && (
+            {post?.exchangeMethod === "paid" && post.amount && (
               <Link href="/transactions">
                 <Button size="sm" variant="outline" className="text-xs gap-1 border-blue-300 bg-blue-50 text-blue-900">
                   <Coins className="h-3.5 w-3.5 text-blue-600" />

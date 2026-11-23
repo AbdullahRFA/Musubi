@@ -8,7 +8,7 @@
 export type UserGroup = "og" | "yg";
 export type ContactMethod = "chat" | "phone";
 export type AgeGroup = "18-29" | "30-49" | "50-64" | "65+";
-export type ExchangeMethod = "knowledge" | "service" | "payment";
+export type ExchangeMethod = "free" | "exchange" | "paid";
 export type PostType = "offer" | "request";
 export type PostStatus = "open" | "in_progress" | "completed" | "closed";
 export type RequestStatus = "pending" | "accepted" | "rejected" | "cancelled" | "completed";
@@ -16,11 +16,12 @@ export type TransactionStatus = "pending" | "successful" | "failed";
 export type ReportTarget = "post" | "user";
 
 export type Category =
+  | "Cooking"
+  | "Technology"
+  | "Arts & Crafts"
+  | "Gardening"
   | "Daily Assistance"
-  | "Technology Help"
-  | "Companionship"
-  | "Home Assistance"
-  | "Learning";
+  | "Companionship";
 
 /** profiles */
 export interface Profile {
@@ -28,8 +29,10 @@ export interface Profile {
   email: string;
   fullName: string;
   avatarUrl: string | null;
+  age?: number | null;
   ageGroup: AgeGroup | null;
   location: string;
+  neighborhoods?: string[];
   lat: number | null;
   lng: number | null;
   bio: string;
@@ -51,6 +54,8 @@ export interface PublicProfile extends Omit<Profile, "email" | "phone"> {
   averageRating: number | null;
   reviewCount: number;
   completedCount: number;
+  age?: number | null;
+  neighborhoods?: string[];
 }
 
 /** skills */
@@ -96,6 +101,7 @@ export interface RequirementTemplate {
   description: string;
   suggestedExchange: ExchangeMethod;
   skill: string;
+  postType: PostType;
 }
 
 /** service_requests */

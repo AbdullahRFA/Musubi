@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
+import { BottomNav } from "@/components/common/BottomNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tsunagu Generations — Connecting Wisdom & Energy",
+  title: "Tsunagu Generations — Connecting the Past to the Present",
   description:
-    "A community platform connecting older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.",
+    "An intergenerational community platform connecting older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.",
 };
 
 export default function RootLayout({
@@ -21,8 +22,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground antialiased">
         <Header />
-        <main className="flex-1 focus:outline-none">{children}</main>
+        <main className="flex-1 focus:outline-none pb-16 md:pb-0">{children}</main>
         <Footer />
+        <BottomNav />
       </body>
     </html>
   );

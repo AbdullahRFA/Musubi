@@ -8,6 +8,10 @@ const config: Config = {
         background: "#f6f1e8",
         foreground: "#241c16",
         card: "#fffaf3",
+        popover: {
+          DEFAULT: "#ffffff",
+          foreground: "#241c16",
+        },
         primary: {
           DEFAULT: "#9a3412",
           foreground: "#fffaf3",

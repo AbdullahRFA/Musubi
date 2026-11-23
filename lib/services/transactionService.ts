@@ -51,7 +51,7 @@ export async function payDemo(requestId: string) {
     throw new ServiceError("A demo payment is available after a request is accepted.");
   }
   const post = request.postId ? state.posts.find((item) => item.id === request.postId) : null;
-  if (!post || post.exchangeMethod !== "payment" || !post.amount) {
+  if (!post || post.exchangeMethod !== "paid" || !post.amount) {
     throw new ServiceError("This activity does not use a demo payment.");
   }
   const payerId = payerIdFor(post, request);
