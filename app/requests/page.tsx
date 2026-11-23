@@ -110,7 +110,11 @@ export default function RequestsPage() {
         <div className="border-b-2 border-border pb-6 space-y-1">
           <h1 className="text-3xl font-extrabold text-foreground">Service Requests</h1>
           <p className="text-base text-muted-foreground">
-            Manage incoming responses to your posts and review requests you have sent to others.
+            Manage pending responses and connection requests. Once accepted, exchanges move to{" "}
+            <Link href="/my-activity?tab=inprogress" className="text-primary font-bold hover:underline">
+              In Progress
+            </Link>{" "}
+            and unlock private chat.
           </p>
         </div>
 

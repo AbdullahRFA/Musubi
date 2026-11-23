@@ -29,11 +29,17 @@ export function useMyRequests() {
     });
     return {
       incoming: visible
-        .filter((request) => request.ownerId === userId)
+        .filter((request) => request.ownerId === userId && request.status === "pending")
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
       outgoing: visible
-        .filter((request) => request.requesterId === userId)
+        .filter((request) => request.requesterId === userId && request.status === "pending")
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      inProgress: visible
+        .filter((request) => request.status === "accepted")
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+      completed: visible
+        .filter((request) => request.status === "completed")
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
     };
   }, [blocks, requests, userId]);
 }
@@ -299,6 +305,7 @@ export async function confirmCompletion(requestId: string) {
     category: post?.category ?? "Companionship",
     completedAt: now,
   };
+  const targetConv = state.conversations.find((c) => c.requestId === requestId);
   useAppStore.setState((current) => ({
     requests: current.requests.map((item) =>
       item.id === requestId
@@ -308,6 +315,9 @@ export async function confirmCompletion(requestId: string) {
     posts: current.posts.map((item) =>
       item.id === request.postId ? { ...item, status: "completed" as const, updatedAt: now } : item,
     ),
+    // Task completion: chat head from all conversation is deleted
+    conversations: current.conversations.filter((c) => c.requestId !== requestId),
+    messages: targetConv ? current.messages.filter((m) => m.conversationId !== targetConv.id) : current.messages,
     activities: [activity, ...current.activities],
   }));
   [request.requesterId, request.ownerId].forEach((userId) => {

@@ -33,7 +33,7 @@ export function usePosts() {
   return useMemo(
     () =>
       posts
-        .filter((post) => post.status !== "closed")
+        .filter((post) => post.status === "open")
         .filter((post) => !hiddenFrom(blocks, viewerId, post.authorId))
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [blocks, posts, viewerId],
@@ -58,7 +58,7 @@ export function useMyPosts() {
   return useMemo(
     () =>
       posts
-        .filter((post) => post.authorId === viewerId)
+        .filter((post) => post.authorId === viewerId && post.status === "open")
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [posts, viewerId],
   );

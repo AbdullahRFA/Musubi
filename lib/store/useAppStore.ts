@@ -8,7 +8,7 @@ import type { AppState } from "@/lib/types";
 export const useAppStore = create<AppState>()(
   persist(() => seedState(), {
     name: "tsunagu-generations",
-    version: 2,
+    version: 3,
     migrate: () => seedState(),
     skipHydration: false,
   }),
