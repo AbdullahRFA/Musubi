@@ -18,6 +18,8 @@ import {
   Check,
   BookOpen,
   HelpCircle,
+  CalendarClock,
+  Heart,
   KeyRound,
   ArrowRight,
   type LucideIcon,
@@ -30,6 +32,8 @@ import {
   POPULAR_NEIGHBORHOODS,
   SUGGESTED_SKILLS,
   SUGGESTED_SERVICES,
+  SUGGESTED_INTERESTS,
+  AVAILABILITY,
   detectGeneration,
 } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -51,6 +55,7 @@ export default function EditProfilePage() {
   const [skills, setSkills] = useState<string[]>([]);
 
   const [servicesNeeded, setServicesNeeded] = useState<string[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
 
   // Profile Picture state
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -94,11 +99,13 @@ export default function EditProfilePage() {
       }
       setSkills(session.skills || []);
       setServicesNeeded(session.servicesNeeded || []);
+      setInterests(session.interests || []);
       if (session.avatarUrl) setAvatarPreview(session.avatarUrl);
     }
   }, [session, reset]);
 
   const contactMethod = watch("contactMethod");
+  const availability = watch("availability") || "Flexible";
 
   // Automatic Generation Detection
   const detectedGroup = useMemo(() => {
@@ -175,6 +182,7 @@ export default function EditProfilePage() {
         skills,
         servicesOffered: skills,
         servicesNeeded,
+        interests,
         avatarUrl: avatarPreview,
       });
       router.push(`/profile/${session?.id}`);
@@ -417,6 +425,50 @@ export default function EditProfilePage() {
                   {fieldError(errors.phone?.message)}
                 </div>
               )}
+            </FormSection>
+
+            {/* Availability */}
+            <FormSection icon={CalendarClock} title="Availability">
+              <p className="-mt-2 text-sm text-muted-foreground">When are you usually free to meet or help?</p>
+              <div role="radiogroup" aria-label="Availability" className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {AVAILABILITY.map((slot) => {
+                  const selected = availability === slot;
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setValue("availability", slot, { shouldDirty: true })}
+                      className={`flex items-center justify-between gap-2 min-h-[48px] rounded-xl border-2 px-4 py-2.5 text-left text-sm font-bold transition-all duration-200 ${
+                        selected
+                          ? "border-primary bg-primary/5 text-primary shadow-soft"
+                          : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-muted/60"
+                      }`}
+                    >
+                      {slot}
+                      {selected && <Check className="h-4 w-4 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </FormSection>
+
+            {/* Interests */}
+            <FormSection icon={Heart} title="Interests">
+              <TagPicker
+                label="Your interests"
+                description="Hobbies and topics you enjoy — helps neighbours find common ground"
+                icon={Heart}
+                values={interests}
+                onChange={setInterests}
+                suggestions={SUGGESTED_INTERESTS}
+                max={12}
+                onLimit={setError}
+                placeholder="Search an interest (e.g. Gardening, Music)..."
+                addLabel="Add Interest"
+                emptyText="No interests added yet."
+              />
             </FormSection>
 
             {/* Skills & needs */}
