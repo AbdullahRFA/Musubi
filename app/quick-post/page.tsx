@@ -10,11 +10,7 @@ import {
   MapPin,
   Clock,
   HandHelping,
-  Coins,
-  Gift,
-  ArrowLeftRight,
   AlertCircle,
-  HelpCircle,
   UtensilsCrossed,
   Laptop,
   Palette,
@@ -22,7 +18,7 @@ import {
   HeartHandshake,
   Users,
 } from "lucide-react";
-import { REQUIREMENT_TEMPLATES, templatesByCategory } from "@/lib/templates";
+import { templatesByCategory } from "@/lib/templates";
 import { CATEGORIES, EXCHANGE_METHODS, AVAILABILITY, PLACES } from "@/lib/constants";
 import { useSession } from "@/lib/services/authService";
 import { createPost } from "@/lib/services/postService";
@@ -36,15 +32,14 @@ export default function QuickPostWizardPage() {
   const session = useSession();
 
   // Wizard Steps:
-  // 1 -> Type (Offer vs Request)
-  // 2 -> Category
-  // 3 -> Template Selection
-  // 4 -> Details (prefilled, editable)
-  // 5 -> Preview & Publish
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  // 1 -> Category
+  // 2 -> Template Selection
+  // 3 -> Details (prefilled, editable)
+  // 4 -> Preview & Publish
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Form State
-  const [postType, setPostType] = useState<PostType>("offer");
+  // Form State — defaults directly to "request"
+  const [postType] = useState<PostType>("request");
   const [selectedCategory, setSelectedCategory] = useState<Category>("Cooking");
   const [selectedTemplate, setSelectedTemplate] = useState<RequirementTemplate | null>(null);
 
@@ -60,16 +55,10 @@ export default function QuickPostWizardPage() {
 
   const availableTemplates = templatesByCategory(selectedCategory, postType);
 
-  const handleSelectType = (type: PostType) => {
-    setPostType(type);
-    setSelectedTemplate(null);
-    setStep(2);
-  };
-
   const handleSelectCategory = (cat: Category) => {
     setSelectedCategory(cat);
     setSelectedTemplate(null);
-    setStep(3);
+    setStep(2);
   };
 
   const handleSelectTemplate = (template: RequirementTemplate) => {
@@ -77,7 +66,7 @@ export default function QuickPostWizardPage() {
     setTitle(template.title);
     setDescription(template.description);
     setExchangeMethod(template.suggestedExchange);
-    setStep(4);
+    setStep(3);
   };
 
   const handlePublish = async () => {
@@ -126,11 +115,11 @@ export default function QuickPostWizardPage() {
               <span>Accessible Quick Post Wizard</span>
             </span>
             <span className="text-muted-foreground text-xs font-semibold">
-              Step {step} of 5
+              Step {step} of 4
             </span>
           </div>
-          <div className="grid grid-cols-5 gap-2">
-            {[1, 2, 3, 4, 5].map((s) => (
+          <div className="grid grid-cols-4 gap-2">
+            {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
                 className={`h-2 rounded-full transition-all ${
@@ -149,85 +138,16 @@ export default function QuickPostWizardPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 1: CHOOSE OFFER OR REQUEST                                           */}
+        {/* STEP 1: CHOOSE CATEGORY                                                   */}
         {/* ========================================================================= */}
         {step === 1 && (
-          <Card className="border-2 border-border bg-card shadow-sm">
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-black text-foreground">
-                What would you like to post?
-              </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
-                Choose whether you want to offer a skill or request a helping hand.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <button
-                type="button"
-                onClick={() => handleSelectType("offer")}
-                className={`p-6 rounded-2xl border-2 text-left transition-all flex flex-col justify-between gap-4 group ${
-                  postType === "offer"
-                    ? "border-[#315B4B] bg-[#E7EEE4]/60 shadow-md"
-                    : "border-border bg-background hover:border-[#315B4B]/60 hover:bg-[#FAF9F5]"
-                }`}
-              >
-                <div className="h-12 w-12 rounded-xl bg-[#315B4B] text-white flex items-center justify-center">
-                  <Sparkles className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="font-black text-xl text-foreground mb-1">
-                    I want to OFFER help
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Share traditional cooking, gardening advice, origami, crafts, or companionship.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-primary group-hover:translate-x-1 transition-transform">
-                  <span>Continue with Offer</span>
-                  <ArrowRight className="h-4 w-4" />
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSelectType("request")}
-                className={`p-6 rounded-2xl border-2 text-left transition-all flex flex-col justify-between gap-4 group ${
-                  postType === "request"
-                    ? "border-blue-600 bg-blue-50/60 shadow-md"
-                    : "border-border bg-background hover:border-blue-500/60 hover:bg-[#FAF9F5]"
-                }`}
-              >
-                <div className="h-12 w-12 rounded-xl bg-blue-600 text-white flex items-center justify-center">
-                  <HandHelping className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="font-black text-xl text-foreground mb-1">
-                    I want to REQUEST help
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Get assistance with smartphones, heavy groceries, garden weeding, or finding a walking partner.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform">
-                  <span>Continue with Request</span>
-                  <ArrowRight className="h-4 w-4" />
-                </div>
-              </button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ========================================================================= */}
-        {/* STEP 2: CHOOSE CATEGORY                                                   */}
-        {/* ========================================================================= */}
-        {step === 2 && (
           <Card className="border-2 border-border bg-card shadow-sm">
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-2xl font-black text-foreground">
                 Select a Category
               </CardTitle>
               <CardDescription className="text-sm text-muted-foreground">
-                Which area fits your {postType === "offer" ? "offer" : "request"} best?
+                Which area fits your request best?
               </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
@@ -262,7 +182,7 @@ export default function QuickPostWizardPage() {
               })}
             </CardContent>
             <CardFooter className="flex justify-between border-t border-border pt-4">
-              <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1 text-xs">
+              <Button variant="outline" size="sm" onClick={() => router.back()} className="gap-1 text-xs">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span>Back</span>
               </Button>
@@ -271,9 +191,9 @@ export default function QuickPostWizardPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 3: SELECT SUGGESTED TEMPLATE                                         */}
+        {/* STEP 2: SELECT SUGGESTED TEMPLATE                                         */}
         {/* ========================================================================= */}
-        {step === 3 && (
+        {step === 2 && (
           <Card className="border-2 border-border bg-card shadow-sm">
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-2xl font-black text-foreground">
@@ -315,7 +235,7 @@ export default function QuickPostWizardPage() {
               )}
             </CardContent>
             <CardFooter className="flex justify-between border-t border-border pt-4">
-              <Button variant="outline" size="sm" onClick={() => setStep(2)} className="gap-1 text-xs">
+              <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1 text-xs">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span>Back</span>
               </Button>
@@ -324,9 +244,9 @@ export default function QuickPostWizardPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 4: CONFIRM & CUSTOMIZE DETAILS                                      */}
+        {/* STEP 3: CONFIRM & CUSTOMIZE DETAILS                                      */}
         {/* ========================================================================= */}
-        {step === 4 && (
+        {step === 3 && (
           <Card className="border-2 border-border bg-card shadow-sm">
             <CardHeader className="pb-4 border-b border-border">
               <CardTitle className="text-2xl font-black text-foreground">
@@ -441,14 +361,14 @@ export default function QuickPostWizardPage() {
               )}
             </CardContent>
             <CardFooter className="flex justify-between border-t border-border pt-4">
-              <Button variant="outline" size="sm" onClick={() => setStep(3)} className="gap-1 text-xs">
+              <Button variant="outline" size="sm" onClick={() => setStep(2)} className="gap-1 text-xs">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span>Back</span>
               </Button>
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => setStep(5)}
+                onClick={() => setStep(4)}
                 className="gap-1 text-xs bg-primary hover:bg-[#234336] text-white font-bold"
               >
                 <span>Continue to Preview</span>
@@ -459,9 +379,9 @@ export default function QuickPostWizardPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 5: PREVIEW & PUBLISH                                                */}
+        {/* STEP 4: PREVIEW & PUBLISH                                                */}
         {/* ========================================================================= */}
-        {step === 5 && (
+        {step === 4 && (
           <Card className="border-2 border-border bg-card shadow-sm">
             <CardHeader className="pb-4 border-b border-border">
               <CardTitle className="text-2xl font-black text-foreground">
@@ -508,7 +428,7 @@ export default function QuickPostWizardPage() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between border-t border-border pt-4">
-              <Button variant="outline" size="sm" onClick={() => setStep(4)} className="gap-1 text-xs">
+              <Button variant="outline" size="sm" onClick={() => setStep(3)} className="gap-1 text-xs">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span>Back to Edit</span>
               </Button>

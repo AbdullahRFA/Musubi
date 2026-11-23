@@ -16,21 +16,18 @@ export default function PostsDirectoryPage() {
   const { language, t } = useLanguage();
 
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedType, setSelectedType] = useState<"all" | "offer" | "request">("all");
   const [selectedExchange, setSelectedExchange] = useState("all");
 
   const filteredPosts = useMemo(() => {
     return allPosts.filter((post) => {
       if (selectedCategory !== "all" && post.category !== selectedCategory) return false;
-      if (selectedType !== "all" && post.postType !== selectedType) return false;
       if (selectedExchange !== "all" && post.exchangeMethod !== selectedExchange) return false;
       return true;
     });
-  }, [allPosts, selectedCategory, selectedType, selectedExchange]);
+  }, [allPosts, selectedCategory, selectedExchange]);
 
   const resetFilters = () => {
     setSelectedCategory("all");
-    setSelectedType("all");
     setSelectedExchange("all");
   };
 
@@ -50,20 +47,22 @@ export default function PostsDirectoryPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full sm:w-auto">
-          <Button asChild className="w-full sm:w-auto gap-1.5 font-bold bg-primary hover:bg-[#234336] text-white shadow-xs h-9 text-xs cursor-pointer">
-            <Link href="/quick-post">
-              <Sparkles className="h-4 w-4 text-amber-200" />
-              <span>{t("postsPage.quickPost", "Quick Post")}</span>
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full sm:w-auto gap-1.5 font-semibold h-9 text-xs cursor-pointer">
-            <Link href="/posts/new">
-              <PlusCircle className="h-4 w-4" />
-              <span>{t("postsPage.standardPost", "Standard Post")}</span>
-            </Link>
-          </Button>
-        </div>
+        {session && (
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full sm:w-auto">
+            <Button asChild className="w-full sm:w-auto gap-1.5 font-bold bg-primary hover:bg-[#234336] text-white shadow-xs h-9 text-xs cursor-pointer">
+              <Link href="/quick-post">
+                <Sparkles className="h-4 w-4 text-amber-200" />
+                <span>{t("postsPage.quickPost", "Quick Post")}</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full sm:w-auto gap-1.5 font-semibold h-9 text-xs cursor-pointer">
+              <Link href="/posts/new">
+                <PlusCircle className="h-4 w-4" />
+                <span>{t("postsPage.standardPost", "Standard Post")}</span>
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Guest Exploration Banner for Logged-Out / Unregistered Visitors */}
@@ -94,48 +93,7 @@ export default function PostsDirectoryPage() {
 
       {/* Filter Toolbar */}
       <div className="rounded-lg border-2 border-border bg-card p-4 sm:p-6 space-y-3 shadow-sm">
-        {(selectedCategory !== "all" || selectedType !== "all" || selectedExchange !== "all") && (
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetFilters}
-              className="text-muted-foreground hover:text-foreground gap-1.5 shrink-0 h-8 text-xs"
-            >
-              <RefreshCcw className="h-3.5 w-3.5" />
-              <span>{t("postsPage.resetFilters", "Clear all filters")}</span>
-            </Button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Post Type Selector */}
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">
-              {t("postsPage.typeLabel", "Type of Post")}
-            </label>
-            <div className="grid grid-cols-3 gap-1 rounded-md bg-muted p-1">
-              {(["all", "offer", "request"] as const).map((tp) => (
-                <button
-                  key={tp}
-                  type="button"
-                  onClick={() => setSelectedType(tp)}
-                  className={`py-1.5 text-xs font-bold rounded capitalize transition-colors ${
-                    selectedType === tp
-                      ? "bg-card text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tp === "all"
-                    ? t("postsPage.allTypes", "All")
-                    : tp === "offer"
-                    ? t("postsPage.offers", "Offers")
-                    : t("postsPage.requests", "Requests")}
-                </button>
-              ))}
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Category Selector */}
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">
@@ -174,6 +132,21 @@ export default function PostsDirectoryPage() {
             </select>
           </div>
         </div>
+
+        {/* Clear all filters below dropdowns (right side) */}
+        {(selectedCategory !== "all" || selectedExchange !== "all") && (
+          <div className="flex justify-end pt-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              className="text-muted-foreground hover:text-foreground gap-1.5 shrink-0 h-8 text-xs cursor-pointer"
+            >
+              <RefreshCcw className="h-3.5 w-3.5" />
+              <span>{t("postsPage.resetFilters", "Clear all filters")}</span>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Results Header */}
