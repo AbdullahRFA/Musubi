@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePaymentGatedCompletion } from "@/components/transactions/CompletePaymentDialog";
+
 import { useRouter } from "next/navigation";
 import { Inbox, Send, CheckCircle2, XCircle, MessageSquare, Clock, AlertCircle } from "lucide-react";
 import {
@@ -87,7 +89,7 @@ export default function RequestsPage() {
     }
   };
 
-  const handleConfirmDone = async (requestId: string) => {
+  const runCompletion = useCallback(async (requestId: string) => {
     setActionError(null);
     setLoadingId(requestId);
     try {
@@ -100,7 +102,10 @@ export default function RequestsPage() {
     } finally {
       setLoadingId(null);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const paymentGate = usePaymentGatedCompletion(runCompletion);
+  const handleConfirmDone = (requestId: string) => paymentGate.start(requestId);
 
   const conversationHref = (requestId: string) => {
     const convo = conversations.find((c) => c.requestId === requestId);
@@ -116,6 +121,7 @@ export default function RequestsPage() {
 
   return (
     <AuthGuard>
+      {paymentGate.dialog}
       <div className="pb-12 sm:pb-16">
         <section className="border-b border-border bg-gradient-to-b from-card to-background">
           <div className="page-container max-w-5xl pt-8 sm:pt-12 space-y-5">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { getPaymentRequirement, PaymentRequiredError } from "@/lib/services/transactionService";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Activity, Conversation, ServiceRequest } from "@/lib/types";
 import { pushNotification } from "@/lib/services/notificationService";
@@ -574,6 +575,10 @@ export async function confirmCompletion(requestId: string): Promise<{ completed:
   }
   if ((isRequester && request.requesterDone) || (isOwner && request.ownerDone)) {
     throw new ServiceError("You already marked this activity completed.");
+  }
+  // Paid activities: the payer must finish the demo payment first
+  if (getPaymentRequirement(requestId).mustPay) {
+    throw new PaymentRequiredError();
   }
 
   const supabase = createClient();

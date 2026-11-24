@@ -26,6 +26,7 @@ import {
 import { useThread, sendMessage, QUICK_REPLIES, type QuickReplyOption } from "@/lib/services/chatService";
 import { usePublicProfile } from "@/lib/services/profileService";
 import { confirmCompletion } from "@/lib/services/requestService";
+import { CompletePaymentDialog } from "@/components/transactions/CompletePaymentDialog";
 import { markConversationRead, setActiveConversation, getActiveConversation } from "@/lib/services/notificationService";
 import { useSession } from "@/lib/services/authService";
 import { useAppStore } from "@/lib/store/useAppStore";
@@ -89,6 +90,7 @@ export function ChatThreadView({ conversationId, onBack, showBackButton = false 
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [showQuick, setShowQuick] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
   const [waitingNotice, setWaitingNotice] = useState(false);
@@ -294,6 +296,12 @@ export function ChatThreadView({ conversationId, onBack, showBackButton = false 
     window.speechSynthesis.speak(utterance);
   };
 
+  // Payers must finish the demo payment before marking the task completed
+  const openComplete = () => {
+    if (isPayer && !paymentDone) setPaymentOpen(true);
+    else setConfirmOpen(true);
+  };
+
   const handleComplete = async () => {
     setCompleting(true);
     setCompleteError(null);
@@ -304,6 +312,7 @@ export function ChatThreadView({ conversationId, onBack, showBackButton = false 
       else setWaitingNotice(true);
     } catch (err: any) {
       setCompleteError(err?.message || (isJa ? "更新に失敗しました。" : "Couldn't update. Please try again."));
+      setConfirmOpen(true); // surface the error in the confirmation dialog
     } finally {
       setCompleting(false);
     }
@@ -339,12 +348,12 @@ export function ChatThreadView({ conversationId, onBack, showBackButton = false 
       {isJa ? `${otherFirst}さんの確認待ち` : `Waiting for ${otherFirst}`}
     </span>
   ) : otherDone ? (
-    <Button size="sm" onClick={() => setConfirmOpen(true)} className="gap-1.5 bg-emerald-600 font-bold text-white hover:bg-emerald-700">
+    <Button size="sm" onClick={openComplete} className="gap-1.5 bg-emerald-600 font-bold text-white hover:bg-emerald-700">
       <CheckCircle2 className="h-4 w-4" />
       {isJa ? "相手確認済・完了する" : `${otherFirst} confirmed — finish`}
     </Button>
   ) : (
-    <Button size="sm" variant="outline" onClick={() => setConfirmOpen(true)} className="gap-1.5 font-bold hover:border-emerald-600 hover:text-emerald-700">
+    <Button size="sm" variant="outline" onClick={openComplete} className="gap-1.5 font-bold hover:border-emerald-600 hover:text-emerald-700">
       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
       {isJa ? "完了にする" : "Mark completed"}
     </Button>
@@ -447,11 +456,9 @@ export function ChatThreadView({ conversationId, onBack, showBackButton = false 
                   {isJa ? "支払い済み (デモ)" : "Paid (demo)"}
                 </span>
               ) : (
-                <Button asChild size="sm" variant="outline" className="gap-1.5 border-blue-300 bg-blue-50 font-bold text-blue-900 hover:bg-blue-100">
-                  <Link href="/transactions">
-                    <Coins className="h-4 w-4" />
-                    {isJa ? `${money(post!.amount!)} を支払う (デモ)` : `Pay ${money(post!.amount!)} (demo)`}
-                  </Link>
+                <Button size="sm" variant="outline" onClick={() => setPaymentOpen(true)} className="gap-1.5 border-blue-300 bg-blue-50 font-bold text-blue-900 hover:bg-blue-100">
+                  <Coins className="h-4 w-4" />
+                  {isJa ? `${money(post!.amount!)} を支払う (デモ)` : `Pay ${money(post!.amount!)} (demo)`}
                 </Button>
               ))}
             {primaryAction}
@@ -709,6 +716,19 @@ export function ChatThreadView({ conversationId, onBack, showBackButton = false 
           </Button>
         </div>
       </Dialog>
+
+      {/* ===== Demo payment required before completing ===== */}
+      <CompletePaymentDialog
+        requestId={request.id}
+        open={paymentOpen}
+        onOpenChange={setPaymentOpen}
+        completing={completing}
+        onMarkCompleted={async () => {
+          if (myDone || isCompleted) return setPaymentOpen(false);
+          await handleComplete();
+          setPaymentOpen(false);
+        }}
+      />
     </div>
   );
 }
