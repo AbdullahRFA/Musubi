@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
+import { usePaymentGatedCompletion } from "@/components/transactions/CompletePaymentDialog";
+import { getPaymentRequirement } from "@/lib/services/transactionService";
+
 import type { PostStatus } from "@/lib/types";
 import {
   Compass,
@@ -89,8 +92,7 @@ function ActivityContent() {
 
   const getUser = (id: string) => allUsers.find((u) => u.id === id);
 
-  const handleConfirmDone = async (requestId: string) => {
-    if (!confirm("Confirm marking this exchange as completed?")) return;
+  const runCompletion = useCallback(async (requestId: string) => {
     try {
       const res = await confirmCompletion(requestId);
       if (res.completed && res.activityId) {
@@ -101,6 +103,14 @@ function ActivityContent() {
     } catch (err: any) {
       alert(err?.message || "Failed to update completion.");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const paymentGate = usePaymentGatedCompletion(runCompletion);
+  const handleConfirmDone = (requestId: string) => {
+    // Payers who still owe a demo payment get the payment popup instead
+    if (getPaymentRequirement(requestId).mustPay) return paymentGate.openFor(requestId);
+    if (!confirm("Confirm marking this exchange as completed?")) return;
+    runCompletion(requestId);
   };
 
   const selectTab = (id: TabId) => {
@@ -121,6 +131,7 @@ function ActivityContent() {
 
   return (
     <div className="pb-12 sm:pb-16">
+      {paymentGate.dialog}
       {/* ---------- Header ---------- */}
       <section className="border-b border-border bg-gradient-to-b from-card to-background">
         <div className="page-container max-w-6xl pt-8 pb-6 sm:pt-12 sm:pb-8 space-y-6">
