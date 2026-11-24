@@ -108,7 +108,7 @@ export function NotificationsMenu({ label }: { label: string }) {
 
 function NotificationsPanel({ onClose }: { onClose: () => void }) {
   const all = useNotifications();
-  const items = all.filter((n) => n.type !== "message");
+  const items = all.filter((n) => n.type !== "message" && n.type !== "direct_message");
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [sound, setSound] = useState(true);
   useEffect(() => setSound(isSoundEnabled()), []);

@@ -3,7 +3,7 @@
 import { useMemo, useEffect } from "react";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Post, ServiceRequest, Transaction } from "@/lib/types";
-import { money } from "@/lib/utils";
+import { createUuid, money } from "@/lib/utils";
 import { pushNotification } from "@/lib/services/notificationService";
 import { requireUser, ServiceError, userById } from "@/lib/services/shared";
 import { createClient } from "@/lib/supabase/client";
@@ -119,30 +119,17 @@ export async function payDemo(requestId: string): Promise<Transaction> {
     .filter((item) => item.requestId === requestId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   if (previous?.status === "successful") throw new ServiceError("This demo payment is already complete.");
-  if (previous?.status === "pending") throw new ServiceError("A demo payment is already in progress.");
 
   const supabase = createClient();
-  const newRow = {
-    request_id: requestId,
-    post_id: post.id,
-    payer_id: payerId,
-    payee_id: payeeId,
-    amount: post.amount,
-    status: "pending",
-  };
-
-  const { data, error } = await supabase
-    .from("transactions")
-    .insert(newRow)
-    .select()
-    .single();
-
   let transaction: Transaction;
-  if (!error && data) {
-    transaction = rowToTransaction(data);
+
+  if (previous?.status === "pending") {
+    // A previous attempt was interrupted (e.g. the tab closed) — finish it
+    transaction = previous;
   } else {
+    // Client-side id + no read-back keeps the insert independent of RLS RETURNING
     transaction = {
-      id: "t_" + Math.random().toString(36).substring(2, 9),
+      id: createUuid(),
       requestId,
       postId: post.id,
       payerId,
@@ -151,30 +138,41 @@ export async function payDemo(requestId: string): Promise<Transaction> {
       status: "pending",
       createdAt: new Date().toISOString(),
     };
+    const { error } = await supabase.from("transactions").insert({
+      id: transaction.id,
+      request_id: requestId,
+      post_id: post.id,
+      payer_id: payerId,
+      payee_id: payeeId,
+      amount: post.amount,
+      status: "pending",
+      created_at: transaction.createdAt,
+    });
+    if (error) {
+      console.error("payDemo insert:", error);
+      throw new ServiceError("We couldn't start the demo payment. Please try again.");
+    }
+    useAppStore.setState((current) => ({
+      transactions: [transaction, ...current.transactions.filter((t) => t.id !== transaction.id)],
+    }));
   }
 
-  useAppStore.setState((current) => ({
-    transactions: [transaction, ...current.transactions.filter((t) => t.id !== transaction.id)],
-  }));
+  // Simulate payment processing (demo payments always succeed so the
+  // completion flow is predictable; no real money moves)
+  await wait(1200);
+  const failed = false;
+  const status = "successful" as const;
 
-  // Simulate payment processing
-  await wait(900);
-  const failed = Math.random() < 0.1; // 10% demo chance
-  const status = failed ? "failed" : "successful";
-
-  if (!error && data) {
-    await supabase
-      .from("transactions")
-      .update({ status })
-      .eq("id", transaction.id);
+  const { error: updateError } = await supabase.from("transactions").update({ status }).eq("id", transaction.id);
+  if (updateError) {
+    console.error("payDemo update:", updateError);
+    throw new ServiceError("The demo payment couldn't be confirmed. Please try again.");
   }
 
-  const finishedTx = { ...transaction, status: status as "failed" | "successful" };
+  const finishedTx: Transaction = { ...transaction, status };
 
   useAppStore.setState((current) => ({
-    transactions: current.transactions.map((item) =>
-      item.id === transaction.id ? finishedTx : item,
-    ),
+    transactions: [finishedTx, ...current.transactions.filter((item) => item.id !== transaction.id)],
   }));
 
   const payer = userById(useAppStore.getState().users, payerId);
@@ -193,4 +191,62 @@ export async function payDemo(requestId: string): Promise<Transaction> {
   });
 
   return finishedTx;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Payment gate for "Mark completed"                                          */
+/* -------------------------------------------------------------------------- */
+
+export interface PaymentRequirement {
+  /** The current member must pay before they can mark the task completed. */
+  mustPay: boolean;
+  /** A successful demo payment already exists for this request. */
+  paid: boolean;
+  amount: number | null;
+  payerId: string | null;
+  payeeId: string | null;
+  postTitle: string | null;
+}
+
+const NO_PAYMENT: PaymentRequirement = { mustPay: false, paid: false, amount: null, payerId: null, payeeId: null, postTitle: null };
+
+/** Works out whether a demo payment is owed by the signed-in member for a request. */
+export function getPaymentRequirement(requestId: string): PaymentRequirement {
+  const state = useAppStore.getState();
+  return computeRequirement(state.requests, state.posts, state.transactions, state.sessionUserId, requestId);
+}
+
+function computeRequirement(
+  requests: ServiceRequest[],
+  posts: Post[],
+  transactions: Transaction[],
+  myId: string | null,
+  requestId: string,
+): PaymentRequirement {
+  const request = requests.find((r) => r.id === requestId);
+  const post = request?.postId ? posts.find((p) => p.id === request.postId) : null;
+  if (!request || !post || post.exchangeMethod !== "paid" || !post.amount) return NO_PAYMENT;
+  const payerId = payerIdFor(post, request);
+  const payeeId = payeeIdFor(post, request);
+  const paid = transactions.some((t) => t.requestId === requestId && t.status === "successful");
+  return { mustPay: myId === payerId && !paid, paid, amount: post.amount, payerId, payeeId, postTitle: post.title };
+}
+
+export function usePaymentRequirement(requestId: string | null): PaymentRequirement {
+  const requests = useAppStore((s) => s.requests);
+  const posts = useAppStore((s) => s.posts);
+  const transactions = useAppStore((s) => s.transactions);
+  const myId = useAppStore((s) => s.sessionUserId);
+  return useMemo(
+    () => (requestId ? computeRequirement(requests, posts, transactions, myId, requestId) : NO_PAYMENT),
+    [requests, posts, transactions, myId, requestId],
+  );
+}
+
+/** Error thrown by confirmCompletion when the payer hasn't paid yet. */
+export class PaymentRequiredError extends ServiceError {
+  constructor() {
+    super("Please complete the demo payment before marking this task completed.");
+    this.name = "PaymentRequiredError";
+  }
 }

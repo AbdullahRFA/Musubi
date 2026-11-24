@@ -125,7 +125,12 @@ export function getActiveConversation() {
 }
 
 /** Extracts the conversation id from a message notification link. */
+const isChatType = (t: string) => t === "message" || t === "direct_message";
+
 export function conversationIdFromHref(href: string): string | null {
+  // Direct messages: /connections/chat/<connectionId> -> "dm:<connectionId>"
+  const dm = href.match(/^\/connections\/chat\/([^/?#]+)/);
+  if (dm) return `dm:${decodeURIComponent(dm[1])}`;
   const path = href.match(/^\/chat\/([^/?#]+)/);
   if (path) return decodeURIComponent(path[1]);
   const query = href.match(/[?&]id=([^&#]+)/);
@@ -254,7 +259,7 @@ export function useUnreadCount(): number {
   const userId = useCurrentUserId();
   const notifications = useAppStore((state) => state.notifications);
   return useMemo(
-    () => notifications.filter((item) => !item.read && item.userId === userId && item.type !== "message").length,
+    () => notifications.filter((item) => !item.read && item.userId === userId && !isChatType(item.type)).length,
     [notifications, userId],
   );
 }
@@ -269,6 +274,26 @@ export function useUnreadMessageCount(): number {
   );
 }
 
+/** Unread direct messages (connections) — drives the Connections badge. */
+export function useUnreadDmCount(): number {
+  const userId = useCurrentUserId();
+  const notifications = useAppStore((state) => state.notifications);
+  return useMemo(
+    () => notifications.filter((item) => !item.read && item.userId === userId && item.type === "direct_message").length,
+    [notifications, userId],
+  );
+}
+
+/** Unread connection requests — also drives the Connections badge. */
+export function useUnreadConnectionRequestCount(): number {
+  const userId = useCurrentUserId();
+  const notifications = useAppStore((state) => state.notifications);
+  return useMemo(
+    () => notifications.filter((item) => !item.read && item.userId === userId && item.type === "connection_request").length,
+    [notifications, userId],
+  );
+}
+
 /** Map of conversationId -> number of unread messages. */
 export function useUnreadByConversation(): Record<string, number> {
   const userId = useCurrentUserId();
@@ -276,7 +301,7 @@ export function useUnreadByConversation(): Record<string, number> {
   return useMemo(() => {
     const counts: Record<string, number> = {};
     for (const n of notifications) {
-      if (n.read || n.userId !== userId || n.type !== "message") continue;
+      if (n.read || n.userId !== userId || !isChatType(n.type)) continue;
       const id = conversationIdFromHref(n.href);
       if (id) counts[id] = (counts[id] ?? 0) + 1;
     }
@@ -294,7 +319,7 @@ export async function markConversationRead(conversationId: string): Promise<void
   const ids = useAppStore
     .getState()
     .notifications.filter(
-      (n) => !n.read && n.userId === userId && n.type === "message" && conversationIdFromHref(n.href) === conversationId,
+      (n) => !n.read && n.userId === userId && isChatType(n.type) && conversationIdFromHref(n.href) === conversationId,
     )
     .map((n) => n.id);
   if (ids.length === 0) return;
@@ -313,7 +338,7 @@ export async function markAllActivityRead(): Promise<void> {
   const me = requireUser();
   const ids = useAppStore
     .getState()
-    .notifications.filter((n) => !n.read && n.userId === me.id && n.type !== "message")
+    .notifications.filter((n) => !n.read && n.userId === me.id && !isChatType(n.type))
     .map((n) => n.id);
   if (ids.length === 0) return;
   useAppStore.setState((state) => ({
@@ -354,4 +379,19 @@ export async function markAllNotificationsRead(): Promise<void> {
       item.userId === me.id ? { ...item, read: true } : item,
     ),
   }));
+}
+
+/** Marks every unread notification of one type as read (e.g. when opening the Requests tab). */
+export async function markAllNotificationsReadOfType(type: Notification["type"]): Promise<void> {
+  const userId = useAppStore.getState().sessionUserId;
+  if (!userId) return;
+  const ids = useAppStore
+    .getState()
+    .notifications.filter((n) => !n.read && n.userId === userId && n.type === type)
+    .map((n) => n.id);
+  if (ids.length === 0) return;
+  useAppStore.setState((state) => ({
+    notifications: state.notifications.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)),
+  }));
+  await createClient().from("notifications").update({ read: true }).in("id", ids).eq("user_id", userId);
 }
