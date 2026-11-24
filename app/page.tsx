@@ -16,8 +16,6 @@ import {
   CheckCircle2,
   Smartphone,
   Users,
-  ShieldCheck,
-  MapPin,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -141,19 +139,12 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
 /* Small presentational helpers                                               */
 /* -------------------------------------------------------------------------- */
 
-/** Highlighted phrase with a coloured underline bar used in the hero headline. */
+/** Highlighted phrase used in the hero headline. */
 function Highlight({ children, tone }: { children: React.ReactNode; tone: "amber" | "emerald" }) {
-  const styles =
-    tone === "amber"
-      ? { text: "text-amber-300", bar: "bg-[#E5B55E]" }
-      : { text: "text-emerald-300", bar: "bg-[#66C2A5]" };
+  const colorClass = tone === "amber" ? "text-amber-300" : "text-emerald-300";
   return (
-    <span className={`relative inline-block ${styles.text} drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]`}>
-      <span>{children}</span>
-      <span
-        className={`absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[4px] sm:h-[6px] ${styles.bar} rounded-full shadow-md`}
-        aria-hidden="true"
-      />
+    <span className={`inline-block ${colorClass} drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]`}>
+      {children}
     </span>
   );
 }
@@ -210,24 +201,13 @@ export default function HomePage() {
     );
   }
 
-  const trustPoints = [
-    { icon: ShieldCheck, label: t("hero.trust.0", language === "ja" ? "安全第一" : "Safety first") },
-    { icon: MapPin, label: t("hero.trust.1", language === "ja" ? "地域密着" : "Local neighbours") },
-    { icon: Users, label: t("hero.trust.2", language === "ja" ? "全世代歓迎" : "All ages welcome") },
-  ];
-
   return (
-    <div className="flex flex-col pb-12 sm:pb-16">
+    <div className="flex flex-col">
       {/* ================================================================== */}
       {/* HERO                                                               */}
       {/* ================================================================== */}
       <HeroBackgroundVideo>
-        <div className="max-w-4xl space-y-5 sm:space-y-8 text-left">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 backdrop-blur-md px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-white shadow-sm animate-fade-up">
-            <Sparkles className="h-4 w-4 text-amber-300 shrink-0" />
-            <span>{t("hero.badge", "Community Skill & Knowledge Exchange")}</span>
-          </div>
-
+        <div className="max-w-4xl space-y-6 sm:space-y-8 text-left">
           <h1
             className="text-[2rem] min-[400px]:text-4xl sm:text-5xl md:text-6xl xl:text-[4.25rem] font-black tracking-tight text-white leading-[1.15] sm:leading-[1.1] [text-shadow:_0_2px_14px_rgba(0,0,0,0.85)] text-balance animate-fade-up [animation-delay:100ms]"
           >
@@ -247,18 +227,11 @@ export default function HomePage() {
             )}
           </h1>
 
-          <p className="text-base sm:text-lg md:text-xl text-white/95 font-medium leading-relaxed max-w-2xl [text-shadow:_0_1px_8px_rgba(0,0,0,0.85)] animate-fade-up [animation-delay:200ms]">
-            {t(
-              "hero.subtitle",
-              "Tsunagu Generations brings older and younger generations together to share knowledge, exchange practical help, and build meaningful companionship."
-            )}
-          </p>
-
-          <div className="pt-1 sm:pt-2 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center gap-3 animate-fade-up [animation-delay:300ms]">
+          <div className="pt-2 sm:pt-4 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center gap-3.5 sm:gap-4 animate-fade-up [animation-delay:200ms]">
             <Button
               asChild
               size="lg"
-              className="group bg-[#315B4B] hover:bg-[#234336] text-white font-bold text-sm sm:text-base px-6 sm:px-8 rounded-xl shadow-xl border border-emerald-400/30 hover:-translate-y-0.5 hover:shadow-2xl"
+              className="group bg-[#315B4B] hover:bg-[#234336] text-white font-bold text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 rounded-xl shadow-xl border border-emerald-400/30 hover:-translate-y-0.5 hover:shadow-2xl"
             >
               <Link href="/posts">
                 <span>{t("hero.exploreBtn", "Explore Community Posts")}</span>
@@ -269,20 +242,11 @@ export default function HomePage() {
               asChild
               variant="outline"
               size="lg"
-              className="bg-white/10 hover:bg-white/20 border-white/40 hover:border-white text-white hover:text-white font-bold text-sm sm:text-base px-6 sm:px-8 rounded-xl backdrop-blur-md shadow-lg hover:-translate-y-0.5"
+              className="bg-white/10 hover:bg-white/20 border-white/40 hover:border-white text-white hover:text-white font-bold text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 rounded-xl backdrop-blur-md shadow-lg hover:-translate-y-0.5"
             >
               <Link href="/register">{t("hero.joinBtn", "Join Our Community")}</Link>
             </Button>
           </div>
-
-          <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-1 text-xs sm:text-sm text-white/90 font-semibold animate-fade-up [animation-delay:400ms]">
-            {trustPoints.map(({ icon: Icon, label }) => (
-              <li key={label} className="inline-flex items-center gap-1.5 [text-shadow:_0_1px_6px_rgba(0,0,0,0.8)]">
-                <Icon className="h-4 w-4 text-emerald-300" />
-                {label}
-              </li>
-            ))}
-          </ul>
         </div>
       </HeroBackgroundVideo>
 
@@ -429,51 +393,6 @@ export default function HomePage() {
               </Link>
             );
           })}
-        </div>
-      </section>
-
-      {/* ================================================================== */}
-      {/* FINAL CTA                                                          */}
-      {/* ================================================================== */}
-      <section className="page-container">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#234336] via-[#2F5344] to-[#1c332a] text-white px-6 py-12 sm:px-12 sm:py-16 text-center shadow-lift">
-          {/* Decorative orbs */}
-          <div className="absolute -top-20 -left-20 h-64 w-64 rounded-full bg-amber-400/15 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-emerald-300/15 blur-3xl" aria-hidden="true" />
-
-          <div className="relative max-w-2xl mx-auto space-y-4">
-            <HeartHandshake className="h-10 w-10 mx-auto text-amber-300 animate-float" />
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight text-balance">
-              {t("cta.title", "Everyone has something to share. Everyone has something to gain.")}
-            </h2>
-            <p className="text-sm sm:text-base text-white/85 leading-relaxed">
-              {t(
-                "cta.subtitle",
-                "Join your local Tsunagu community today. Whether you wish to share wisdom, lend an everyday hand, or connect with a neighbor, there is a place for you."
-              )}
-            </p>
-          </div>
-
-          <div className="relative pt-7 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center justify-center gap-3">
-            <Button
-              asChild
-              size="lg"
-              className="group bg-amber-400 hover:bg-amber-300 text-stone-900 font-black rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              <Link href="/register">
-                <span>{t("cta.getStarted", "Get Started")}</span>
-                <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="bg-transparent border-white/40 hover:border-white hover:bg-white/10 text-white hover:text-white font-bold rounded-xl"
-            >
-              <Link href="/about">{t("footer.howItWorks", "How It Works")}</Link>
-            </Button>
-          </div>
         </div>
       </section>
     </div>
