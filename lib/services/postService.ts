@@ -172,6 +172,57 @@ export function usePosts(): Post[] {
 }
 
 /**
+ * Every post the signed-in member authored, in any status (open, in
+ * progress, completed, closed), newest first. Used by My Activity.
+ */
+export function useMyPosts(): Post[] {
+  const posts = useAppStore((state) => state.posts);
+  const viewerId = useAppStore((state) => state.sessionUserId);
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  return useMemo(
+    () =>
+      viewerId
+        ? posts.filter((post) => post.authorId === viewerId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        : [],
+    [posts, viewerId],
+  );
+}
+
+/**
+ * Self-healing post status. When the helper (not the author) is the last to
+ * confirm completion, RLS only lets authors update posts, so the post row
+ * stays "in_progress" in the database. The author's client fixes that here:
+ * any of my in-progress posts whose request is completed becomes completed.
+ */
+export async function reconcileMyPostStatuses(): Promise<void> {
+  const state = useAppStore.getState();
+  const me = state.sessionUserId;
+  if (!me) return;
+  const completedPostIds = new Set(
+    state.requests.filter((r) => r.ownerId === me && r.status === "completed" && r.postId).map((r) => r.postId as string)
+  );
+  const stale = state.posts.filter((p) => p.authorId === me && p.status === "in_progress" && completedPostIds.has(p.id));
+  if (!stale.length) return;
+
+  const ids = stale.map((p) => p.id);
+  const now = new Date().toISOString();
+  useAppStore.setState((current) => ({
+    posts: current.posts.map((p) => (ids.includes(p.id) ? { ...p, status: "completed" as PostStatus, updatedAt: now } : p)),
+  }));
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("posts")
+    .update({ status: "completed", updated_at: now })
+    .in("id", ids)
+    .eq("author_id", me);
+  if (error) console.warn("reconcileMyPostStatuses:", error.message);
+}
+
+/**
  * Hook to retrieve a single post by ID, fetching from Supabase if not in cache
  */
 export function usePost(id: string): Post | null {
@@ -196,26 +247,6 @@ export function usePost(id: string): Post | null {
     if (hiddenFrom(blocks, viewerId, post.authorId)) return null;
     return post;
   }, [blocks, fetchedPost, id, posts, viewerId]);
-}
-
-/**
- * Hook to retrieve the authenticated user's own posts
- */
-export function useMyPosts(): Post[] {
-  const posts = useAppStore((state) => state.posts);
-  const viewerId = useAppStore((state) => state.sessionUserId);
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  return useMemo(
-    () =>
-      posts
-        .filter((post) => post.authorId === viewerId && post.status === "open")
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [posts, viewerId],
-  );
 }
 
 /**
