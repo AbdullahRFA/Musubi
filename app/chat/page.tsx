@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
-import { MessageSquare, Clock, ShieldCheck, ChevronRight, Compass } from "lucide-react";
+import { MessageSquare, ShieldCheck, ChevronRight, Compass, Search, CheckCircle2 } from "lucide-react";
 import { useConversations } from "@/lib/services/chatService";
 import { useUnreadByConversation } from "@/lib/services/notificationService";
-import { formatWhen, initials } from "@/lib/utils";
+import { initials } from "@/lib/utils";
+import { timeAgo } from "@/components/notifications/notificationStyles";
+import { useAppStore } from "@/lib/store/useAppStore";
 import { Button } from "@/components/ui/button";
 import { AuthGuard } from "@/components/common/AuthGuard";
 import { ChatThreadView } from "@/components/chat/ChatThreadView";
@@ -17,6 +19,7 @@ function ChatMasterDetail() {
   const searchParams = useSearchParams();
   const paramId = searchParams.get("id");
   const conversations = useConversations();
+  const myId = useAppStore((s) => s.sessionUserId);
   const unreadByConvo = useUnreadByConversation();
   const { language } = useLanguage();
   const isJa = language === "ja";
@@ -52,7 +55,21 @@ function ChatMasterDetail() {
   };
 
   const groupLabel = (g: "og" | "yg") =>
-    g === "og" ? (isJa ? "シニア" : "Senior") : isJa ? "ユース" : "Youth";
+    g === "og" ? (isJa ? "シニア世代" : "Older Generation") : isJa ? "若い世代" : "Younger Generation";
+
+  // Search + status filter for the conversation list
+  const [listQuery, setListQuery] = useState("");
+  const [listFilter, setListFilter] = useState<"all" | "active" | "completed">("all");
+  const isDone = (status?: string) => status === "completed";
+  const activeCount = conversations.filter((c) => !isDone(c.request?.status)).length;
+  const completedCount = conversations.length - activeCount;
+  const shownConversations = conversations.filter((c) => {
+    if (listFilter === "active" && isDone(c.request?.status)) return false;
+    if (listFilter === "completed" && !isDone(c.request?.status)) return false;
+    const q = listQuery.trim().toLowerCase();
+    if (!q) return true;
+    return [c.other?.fullName, c.post?.title, c.last?.body].some((v) => v?.toLowerCase().includes(q));
+  });
 
   return (
     <div className={`page-container max-w-7xl ${selectedId ? "px-0 sm:px-6 py-0 sm:py-6" : "py-5 sm:py-8"} space-y-4 sm:space-y-6`}>
@@ -74,7 +91,7 @@ function ChatMasterDetail() {
         {conversations.length > 0 && (
           <span className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold px-3 py-1.5 rounded-full bg-[#E7EEE4] text-[#315B4B] border border-[#315B4B]/20">
             <ShieldCheck className="h-4 w-4" />
-            {isJa ? `やり取り中: ${conversations.length}件` : `${conversations.length} active chats`}
+            {isJa ? `やり取り中: ${activeCount}件` : `${activeCount} active ${activeCount === 1 ? "chat" : "chats"}`}
           </span>
         )}
       </div>
@@ -111,18 +128,51 @@ function ChatMasterDetail() {
               selectedId ? "hidden md:flex" : "flex"
             }`}
           >
-            <div className="px-4 py-3 bg-[#FAF9F5] border-b-2 border-border flex items-center justify-between">
-              <span className="text-sm sm:text-base font-bold text-foreground">
-                {isJa ? "メッセージ一覧" : "All Conversations"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {isJa ? "タップして開く" : "Tap to open"}
-              </span>
+            <div className="space-y-2.5 border-b border-border bg-[#FAF9F5] p-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="search"
+                  value={listQuery}
+                  onChange={(e) => setListQuery(e.target.value)}
+                  placeholder={isJa ? "名前や投稿で検索" : "Search by name or post"}
+                  aria-label={isJa ? "会話を検索" : "Search conversations"}
+                  className="h-11 w-full rounded-full border-2 border-border bg-white pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors hover:border-primary/40 focus:border-[#315B4B] focus:outline-none"
+                />
+              </div>
+              <div role="group" aria-label={isJa ? "状態で絞り込む" : "Filter conversations"} className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
+                {(
+                  [
+                    ["all", isJa ? "すべて" : "All", conversations.length],
+                    ["active", isJa ? "進行中" : "Active", activeCount],
+                    ["completed", isJa ? "完了" : "Completed", completedCount],
+                  ] as const
+                ).map(([value, label, count]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setListFilter(value)}
+                    aria-pressed={listFilter === value}
+                    className={`rounded-full px-2 py-1.5 text-xs font-bold transition-all sm:text-sm ${
+                      listFilter === value ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {label} <span className="tabular-nums opacity-70">{count}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <ul className="flex-1 overflow-y-auto overscroll-contain divide-y divide-border/70">
-              {conversations.map(({ conversation, other, last, post }) => {
+              {shownConversations.length === 0 && (
+                <li className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  {isJa ? "該当する会話はありません。" : "No conversations match."}
+                </li>
+              )}
+              {shownConversations.map(({ conversation, other, last, post, request }) => {
                 const isSelected = selectedId === conversation.id;
+                const completed = isDone(request?.status);
+                const lastFromMe = last?.senderId === myId;
                 const unread = isSelected ? 0 : unreadByConvo[conversation.id] ?? 0;
                 return (
                   <li key={conversation.id}>
@@ -158,16 +208,25 @@ function ChatMasterDetail() {
                           <h3 className={`text-base text-foreground truncate ${unread > 0 ? "font-black" : "font-bold"}`}>
                             {other?.fullName ?? (isJa ? "地域の仲間" : "Community Member")}
                           </h3>
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1 shrink-0">
-                            <Clock className="h-3 w-3" />
-                            {formatWhen(last ? last.createdAt : conversation.createdAt)}
-                          </span>
+                          <time
+                            dateTime={last ? last.createdAt : conversation.createdAt}
+                            className={`shrink-0 text-[11px] ${unread > 0 ? "font-bold text-primary" : "text-muted-foreground"}`}
+                          >
+                            {timeAgo(last ? last.createdAt : conversation.createdAt)}
+                          </time>
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5 mb-1 min-w-0">
-                          {other && (
-                            <span className="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded bg-[#E7EEE4] text-[#315B4B]">
-                              {groupLabel(other.userGroup)}
+                          {completed ? (
+                            <span className="inline-flex shrink-0 items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {isJa ? "完了" : "Completed"}
                             </span>
+                          ) : (
+                            other && (
+                              <span className="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded bg-[#E7EEE4] text-[#315B4B]">
+                                {groupLabel(other.userGroup)}
+                              </span>
+                            )
                           )}
                           {post && (
                             <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded truncate">
@@ -181,7 +240,16 @@ function ChatMasterDetail() {
                               unread > 0 ? "text-foreground font-semibold" : "text-muted-foreground"
                             }`}
                           >
-                            {last ? last.body : isJa ? "やり取りを開始しましょう" : "Say hello!"}
+                            {last ? (
+                              <>
+                                {lastFromMe && <span className="font-semibold text-foreground/70">{isJa ? "あなた: " : "You: "}</span>}
+                                {last.body}
+                              </>
+                            ) : isJa ? (
+                              "やり取りを開始しましょう"
+                            ) : (
+                              "Say hello!"
+                            )}
                           </p>
                           {unread > 0 && (
                             <span
