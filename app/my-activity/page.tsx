@@ -13,6 +13,7 @@ import {
   Star,
   ArrowRight,
   PlusCircle,
+  Sparkles,
   Pin,
   ArrowUpRight,
   ArrowDownLeft,
@@ -88,60 +89,57 @@ function ActivityContent() {
     <div className="pb-12 sm:pb-16">
       {/* ---------- Header ---------- */}
       <section className="border-b border-border bg-gradient-to-b from-card to-background">
-        <div className="page-container max-w-6xl pt-8 sm:pt-12 space-y-6">
-          <div className="space-y-1 animate-fade-up">
-            <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">My Activity Hub</h1>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
-              Track your currently open posts, pending requests, active in-progress exchanges, and completed history.
-            </p>
+        <div className="page-container max-w-6xl pt-8 pb-6 sm:pt-12 sm:pb-8 space-y-6">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between animate-fade-up">
+            <div className="space-y-1">
+              <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">My Activity Hub</h1>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
+                Track your currently open posts, pending requests, active in-progress exchanges, and completed history.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 md:flex md:shrink-0">
+              <Button asChild className="group gap-1.5 font-bold">
+                <Link href="/quick-post">
+                  <Sparkles className="h-4 w-4 text-amber-200 transition-transform group-hover:rotate-12" />
+                  Quick Post
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="gap-1.5 font-semibold">
+                <Link href="/posts/new">
+                  <PlusCircle className="h-4 w-4" />
+                  Standard Post
+                </Link>
+              </Button>
+            </div>
           </div>
 
-          {/* Summary tiles double as tab shortcuts on larger screens */}
-          <div className="hidden md:grid grid-cols-5 gap-3 animate-fade-up [animation-delay:100ms]">
-            {tabs.map(({ id, label, count, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => selectTab(id)}
-                className={`group rounded-xl border-2 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 ${
-                  activeTab === id ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/30"
-                }`}
-              >
-                <Icon className={`h-5 w-5 mb-2 ${activeTab === id ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
-                <div className="text-2xl font-black tabular-nums text-foreground">{count}</div>
-                <div className="text-xs font-semibold text-muted-foreground">{label}</div>
-              </button>
-            ))}
-          </div>
-
-          {/* Tabs */}
+          {/* Summary tiles are the section switcher on every screen size */}
           <div
             role="tablist"
             aria-label="Activity sections"
-            className="-mx-4 px-4 sm:mx-0 sm:px-0 flex overflow-x-auto gap-1 sm:gap-4 scrollbar-none snap-x"
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 animate-fade-up [animation-delay:100ms]"
           >
-            {tabs.map(({ id, label, count, icon: Icon }) => {
+            {tabs.map(({ id, label, count, icon: Icon }, i) => {
               const isActive = activeTab === id;
               return (
                 <button
                   key={id}
                   type="button"
                   role="tab"
+                  id={`tab-${id}`}
                   aria-selected={isActive}
+                  aria-controls="activity-panel"
                   onClick={() => selectTab(id)}
-                  className={`snap-start flex items-center gap-1.5 pb-3 pt-1 px-2 font-bold text-sm sm:text-base border-b-4 transition-colors duration-200 shrink-0 whitespace-nowrap ${
-                    isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`group relative rounded-xl border-2 p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 sm:p-4 ${
+                    isActive ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/30"
+                  } ${i === tabs.length - 1 ? "col-span-2 sm:col-span-1" : ""}`}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {label}
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums ${
-                      isActive ? "bg-primary/10 text-primary" : "bg-muted"
-                    }`}
-                  >
-                    {count}
-                  </span>
+                  <Icon
+                    className={`mb-2 h-5 w-5 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`}
+                  />
+                  <div className="text-2xl font-black tabular-nums text-foreground">{count}</div>
+                  <div className={`text-xs font-semibold ${isActive ? "text-primary" : "text-muted-foreground"}`}>{label}</div>
+                  {isActive && <span className="absolute inset-x-4 -bottom-[2px] h-1 rounded-full bg-primary" aria-hidden="true" />}
                 </button>
               );
             })}
@@ -149,18 +147,11 @@ function ActivityContent() {
         </div>
       </section>
 
-      <div key={activeTab} role="tabpanel" className="page-container max-w-6xl pt-6 sm:pt-8 space-y-4 animate-fade-in">
+      <div key={activeTab} id="activity-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="page-container max-w-6xl pt-6 sm:pt-8 space-y-4 animate-fade-in">
         {/* 1. MY POSTS */}
         {activeTab === "posts" && (
           <>
-            <SectionHeader title="Your Community Posts">
-              <Button asChild size="sm" className="gap-1.5 font-bold">
-                <Link href="/posts/new">
-                  <PlusCircle className="h-4 w-4" />
-                  New Post
-                </Link>
-              </Button>
-            </SectionHeader>
+            <SectionHeader title="Your Community Posts" subtitle="Open posts you've shared with neighbours" />
             {myPosts.length === 0 ? (
               <Empty icon={Compass} text="You haven't created any posts yet.">
                 <Button asChild>
