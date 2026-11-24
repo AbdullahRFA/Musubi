@@ -58,7 +58,6 @@ export function PhilosophySlider() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const wheelDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
 
   // Measure container width responsively
   useEffect(() => {
@@ -93,16 +92,16 @@ export function PhilosophySlider() {
   // Mobile (<640px): ~86% with slight next-card hint
   const cardWidth = useMemo(() => {
     if (containerWidth >= 1024) {
-      return Math.min(containerWidth * 0.68, 820);
+      return Math.min(containerWidth * 0.64, 940);
     }
     if (containerWidth >= 640) {
-      return containerWidth * 0.80;
+      return containerWidth * 0.8;
     }
     return containerWidth * 0.86;
   }, [containerWidth]);
 
   const gap = useMemo(() => {
-    if (containerWidth >= 1024) return 24;
+    if (containerWidth >= 1024) return 32;
     if (containerWidth >= 640) return 16;
     return 12;
   }, [containerWidth]);
@@ -183,18 +182,30 @@ export function PhilosophySlider() {
     };
   }, [isTransitioning, trackIndex, handleTransitionEnd]);
 
-  // Autoplay rotation (5s); pauses on hover or interaction
+  // Autoplay: next slide every 5 s. Pauses only while a card is being dragged
+  // (hovering no longer pauses it — the large cards are almost always under
+  // the mouse). Any slide change restarts the 5 s countdown. Skipped for
+  // people who ask their device to reduce motion.
+  const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
-    if (isHovered || isDragging) {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduceMotion(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging || reduceMotion) {
       resetTimer();
       return;
     }
     timerRef.current = setInterval(() => {
-      nextSlide();
+      if (document.visibilityState === "visible") nextSlide();
     }, 5000);
 
     return () => resetTimer();
-  }, [isHovered, isDragging, nextSlide, resetTimer]);
+  }, [isDragging, reduceMotion, nextSlide, resetTimer, trackIndex]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback(
@@ -313,13 +324,9 @@ export function PhilosophySlider() {
     <div
       ref={containerRef}
       className="relative w-full overflow-hidden select-none"
-      onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
-        setIsHovered(false);
         if (isPointerDown.current) handleMouseUp();
       }}
-      onFocus={() => setIsHovered(true)}
-      onBlur={() => setIsHovered(false)}
       onKeyDown={handleKeyDown}
       onWheel={handleWheel}
       role="region"
@@ -379,7 +386,7 @@ export function PhilosophySlider() {
                 {/* Single-Column Card Container */}
                 <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-border bg-card shadow-lift flex flex-col h-full transition-shadow duration-300">
                   {/* Full-width edge-to-edge image across entire card width */}
-                  <div className="relative w-full aspect-[16/9] max-h-[340px] overflow-hidden bg-muted">
+                  <div className="relative w-full aspect-[16/9] max-h-[460px] overflow-hidden bg-muted">
                     <img
                       src={slide.image}
                       alt={title}
@@ -390,11 +397,11 @@ export function PhilosophySlider() {
                   </div>
 
                   {/* Bottom card footer: bold title & description matching site card typography */}
-                  <div className="p-5 sm:p-6 space-y-1.5 sm:space-y-2 bg-card flex-1 flex flex-col justify-center">
-                    <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
+                  <div className="p-5 sm:p-7 lg:p-8 space-y-1.5 sm:space-y-2.5 bg-card flex-1 flex flex-col justify-center">
+                    <h3 className="text-xl sm:text-2xl lg:text-[1.75rem] font-black text-foreground tracking-tight">
                       {title}
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed">
                       {desc}
                     </p>
                   </div>
