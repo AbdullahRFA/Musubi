@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { templatesByCategory } from "@/lib/templates";
 import { CATEGORIES, EXCHANGE_METHODS, AVAILABILITY, PLACES, DEMO_AMOUNTS } from "@/lib/constants";
+import { AvailabilityPicker } from "@/components/profile/AvailabilityPicker";
 import { postSchema } from "@/lib/validators";
 import { money } from "@/lib/utils";
 import { useSession } from "@/lib/services/authService";
@@ -52,6 +53,13 @@ export default function QuickPostWizardPage() {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState(session?.location || PLACES[0].name);
   const [availability, setAvailability] = useState(session?.availability || AVAILABILITY[0]);
+  // Use the member's own location & availability once their profile has loaded
+  const [touchedPlace, setTouchedPlace] = useState(false);
+  useEffect(() => {
+    if (!session || touchedPlace) return;
+    if (session.location) setLocation(session.location);
+    if (session.availability) setAvailability(session.availability);
+  }, [session?.id, session?.location, session?.availability, touchedPlace]); // eslint-disable-line react-hooks/exhaustive-deps
   const [exchangeMethod, setExchangeMethod] = useState<ExchangeMethod>("free");
   const [amount, setAmount] = useState<number>(DEMO_AMOUNTS[0]);
 
@@ -331,35 +339,40 @@ export default function QuickPostWizardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1.5">
                   <label htmlFor="qp-location" className="text-sm font-bold text-foreground">
                     Neighborhood / Location
                   </label>
-                  <select id="qp-location" value={location} onChange={(e) => setLocation(e.target.value)} className={inputClass}>
-                    {PLACES.map((p) => (
-                      <option key={p.name} value={p.name}>
-                        {p.name}
+                  <select
+                    id="qp-location"
+                    value={location}
+                    onChange={(e) => {
+                      setTouchedPlace(true);
+                      setLocation(e.target.value);
+                    }}
+                    className={inputClass}
+                  >
+                    {Array.from(new Set([session?.location, ...PLACES.map((p) => p.name)].filter((x): x is string => Boolean(x)))).map((name) => (
+                      <option key={name} value={name}>
+                        {name === session?.location ? `📍 ${name} (my location)` : name}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="qp-availability" className="text-sm font-bold text-foreground">
+                  <label className="text-sm font-bold text-foreground">
                     When are you available?
                   </label>
-                  <select
-                    id="qp-availability"
+                  <AvailabilityPicker
+                    idPrefix="qp-avail"
+                    compact
                     value={availability}
-                    onChange={(e) => setAvailability(e.target.value)}
-                    className={inputClass}
-                  >
-                    {AVAILABILITY.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(next) => {
+                      setTouchedPlace(true);
+                      setAvailability(next);
+                    }}
+                  />
                 </div>
               </div>
 

@@ -1024,6 +1024,34 @@ export const JA_DICT: Record<string, string> = {
   "Payments": "支払い",
   "Support": "サポート",
 
+  /* ------------------------------------------------------------ location & availability */
+  "Your location": "あなたの場所",
+  "Set where you are so neighbours nearby can find you.": "近くのご近所さんが見つけられるよう、場所を設定しましょう。",
+  "Use my current location": "現在地を使う",
+  "Pick on map": "地図で選ぶ",
+  "Hide map": "地図を閉じる",
+  "Clear pin": "ピンを消す",
+  "Tap the map or drag the pin to your area.": "地図をタップするか、ピンをドラッグしてお住まいの地域に合わせてください。",
+  "Area name shown to neighbours": "ご近所さんに表示する地域名",
+  "e.g. Urakami, Nagasaki": "例：長崎市 浦上",
+  "For your safety we only save an approximate area (about 1 km), never your exact address.": "安全のため、保存するのはおおよその地域（約1km）だけで、正確な住所は保存しません。",
+  "Your browser can't share your location. Please pick it on the map instead.": "お使いのブラウザは位置情報を共有できません。地図で選んでください。",
+  "Location permission was denied. You can allow it in your browser settings, or pick your area on the map.": "位置情報の許可が拒否されました。ブラウザの設定で許可するか、地図で地域を選んでください。",
+  "We couldn't find your location. Please pick it on the map instead.": "現在地を取得できませんでした。地図で選んでください。",
+  "Please set your location or add at least one neighborhood.": "場所を設定するか、地域を1つ以上追加してください。",
+  "Add a specific date & time": "日時を指定して追加",
+  "Date (day / month / year)": "日付（日／月／年）",
+  "From (optional)": "開始時刻（任意）",
+  "Until (optional)": "終了時刻（任意）",
+  "Will show as:": "表示：",
+  "Add time": "追加する",
+  "Specific dates and times": "指定した日時",
+  "Please choose a date.": "日付を選んでください。",
+  "Please choose today or a future date.": "今日以降の日付を選んでください。",
+  "Please add a start time too.": "開始時刻も入力してください。",
+  "The end time must be after the start time.": "終了時刻は開始時刻より後にしてください。",
+  "You've already added this time.": "この日時はすでに追加しています。",
+
   /* ------------------------------------------------------------ errors & validation */
   "Something went wrong.": "問題が発生しました。",
   "Sorry, something went wrong. Please try again.": "申し訳ありません。問題が発生しました。もう一度お試しください。",
@@ -1177,6 +1205,9 @@ export const JA_DICT: Record<string, string> = {
  * themselves translated when they're known words (categories, dates…).
  */
 export const JA_PATTERNS: [string, string][] = [
+  ["📍 {0} (my location)", "📍 {0}（現在の場所）"],
+  ["Near {0}", "{0}付近"],
+  ["You can add up to {n0} specific times.", "指定日時は{0}件まで追加できます。"],
   ["© {n0} Tsunagu Generations. All rights reserved.", "© {0} つなぐジェネレーションズ　無断転載を禁じます。"],
   ["{0} ({n1} unread)", "{0}（未読{1}件）"],
   ["{0} {n1}, tap to remove yours", "{0} {1}（タップで取り消し）"],

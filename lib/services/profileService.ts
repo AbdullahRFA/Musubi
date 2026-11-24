@@ -28,6 +28,8 @@ export type ProfilePatch = Partial<
     | "contactMethod"
     | "phone"
     | "avatarUrl"
+    | "lat"
+    | "lng"
   >
 >;
 
@@ -316,8 +318,9 @@ export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
     bio: (patch.bio ?? me.bio).trim(),
     location,
     neighborhoods,
-    lat: place?.lat ?? (location === me.location ? me.lat : null),
-    lng: place?.lng ?? (location === me.location ? me.lng : null),
+    // A pin the member set themselves wins; otherwise use the known area's centre
+    lat: "lat" in patch ? (patch.lat ?? place?.lat ?? null) : (place?.lat ?? (location === me.location ? me.lat : null)),
+    lng: "lng" in patch ? (patch.lng ?? place?.lng ?? null) : (place?.lng ?? (location === me.location ? me.lng : null)),
     phone: patch.contactMethod === "chat" ? null : (patch.phone ?? me.phone),
     interests: patch.interests ?? me.interests,
     skills: patch.skills ?? me.skills,
