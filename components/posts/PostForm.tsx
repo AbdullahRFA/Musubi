@@ -3,7 +3,9 @@
 import type { UseFormReturn } from "react-hook-form";
 import { AlertCircle, Check, Lightbulb, type LucideIcon } from "lucide-react";
 import type { PostValues } from "@/lib/validators";
-import { CATEGORIES, EXCHANGE_METHODS, AVAILABILITY, PLACES, DEMO_AMOUNTS } from "@/lib/constants";
+import { CATEGORIES, EXCHANGE_METHODS, PLACES, DEMO_AMOUNTS } from "@/lib/constants";
+import { useSession } from "@/lib/services/authService";
+import { AvailabilityPicker } from "@/components/profile/AvailabilityPicker";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { DemoPaymentBanner } from "@/components/common/DemoPaymentBanner";
@@ -89,7 +91,15 @@ export function PostForm({
     formState: { errors },
   } = form;
 
+  const session = useSession();
   const exchangeMethod = watch("exchangeMethod");
+  const availability = watch("availability") || "Flexible";
+  const currentLocation = watch("location");
+  // The member's own area first, then the known neighbourhoods (and keep an
+  // existing post's custom location selectable)
+  const locationOptions = Array.from(
+    new Set([session?.location, currentLocation, ...PLACES.map((p) => p.name)].filter((x): x is string => Boolean(x && x.trim()))),
+  );
   const selectedAmount = watch("amount");
   const titleLen = watch("title")?.length ?? 0;
   const descLen = watch("description")?.length ?? 0;
@@ -169,26 +179,23 @@ export function PostForm({
               />
             </Field>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field id="pf-location" label="Location / Neighborhood" error={errors.location?.message}>
-                <select id="pf-location" {...register("location")} className={selectClass}>
-                  {PLACES.map((p) => (
-                    <option key={p.name} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field id="pf-availability" label="Availability" error={errors.availability?.message}>
-                <select id="pf-availability" {...register("availability")} className={selectClass}>
-                  {AVAILABILITY.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-            </div>
+            <Field id="pf-location" label="Location / Neighborhood" error={errors.location?.message}>
+              <select id="pf-location" {...register("location")} className={selectClass}>
+                {locationOptions.map((name) => (
+                  <option key={name} value={name}>
+                    {name === session?.location ? `📍 ${name} (my location)` : name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field id="pf-availability" label="Availability" error={errors.availability?.message}>
+              <AvailabilityPicker
+                idPrefix="pf-avail"
+                compact
+                value={availability}
+                onChange={(next) => setValue("availability", next, { shouldDirty: true, shouldValidate: true })}
+              />
+            </Field>
 
             {/* Exchange arrangement */}
             <fieldset className="space-y-3 pt-5 border-t border-border/80">

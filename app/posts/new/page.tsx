@@ -36,6 +36,16 @@ export default function CreatePostPage() {
     },
   });
 
+  // The profile may load after this page: use the member's own location and
+  // availability as defaults once it arrives (unless they've already changed them)
+  useEffect(() => {
+    if (!session) return;
+    const { dirtyFields } = form.formState;
+    if (!dirtyFields.location && session.location) form.setValue("location", session.location);
+    if (!dirtyFields.availability && session.availability) form.setValue("availability", session.availability);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id, session?.location, session?.availability]);
+
   // Prefill from a draft written by the Tsunagu Guide assistant (one-time hand-off)
   const [fromAssistant, setFromAssistant] = useState(false);
   useEffect(() => {

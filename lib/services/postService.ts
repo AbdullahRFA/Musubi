@@ -270,8 +270,9 @@ export async function createPost(input: PostInput): Promise<Post> {
     category: input.category,
     skill: input.skill.trim(),
     location: input.location,
-    lat: place?.lat ?? null,
-    lng: place?.lng ?? null,
+    // Known area → its centre; the member's own location → their saved pin
+    lat: place?.lat ?? (input.location === me.location ? me.lat : null),
+    lng: place?.lng ?? (input.location === me.location ? me.lng : null),
     availability: input.availability,
     post_type: input.postType,
     exchange_method: input.exchangeMethod,
@@ -333,8 +334,9 @@ export async function updatePost(id: string, input: PostInput): Promise<Post> {
     category: input.category,
     skill: input.skill.trim(),
     location: input.location,
-    lat: place?.lat ?? null,
-    lng: place?.lng ?? null,
+    // Known area → its centre; the member's own location → their saved pin
+    lat: place?.lat ?? (input.location === me.location ? me.lat : null),
+    lng: place?.lng ?? (input.location === me.location ? me.lng : null),
     availability: input.availability,
     post_type: input.postType,
     exchange_method: input.exchangeMethod,

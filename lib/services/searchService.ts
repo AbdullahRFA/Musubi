@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useEffect } from "react";
+import { availabilityMatches } from "@/lib/availability";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Block, Post, Profile, SearchFilters, SearchResult } from "@/lib/types";
 import { hiddenFrom } from "@/lib/services/shared";
@@ -78,7 +79,7 @@ export function searchContent(
       if (filters.location && item.post.location !== filters.location) return false;
       if (filters.skill && !has(item.post.skill, filters.skill.toLowerCase())) return false;
       if (filters.exchangeMethod && item.post.exchangeMethod !== filters.exchangeMethod) return false;
-      if (filters.availability && item.post.availability !== filters.availability) return false;
+      if (filters.availability && !availabilityMatches(item.post.availability, filters.availability)) return false;
       if (filters.userGroup && item.author.userGroup !== filters.userGroup) return false;
       if (!q) return true;
       return postScore(item.post, item.author, q) > 0;
@@ -98,7 +99,7 @@ export function searchContent(
               const areas = person.neighborhoods?.length ? person.neighborhoods : [person.location];
               if (!areas.includes(filters.location)) return false;
             }
-            if (filters.availability && person.availability !== filters.availability) return false;
+            if (filters.availability && !availabilityMatches(person.availability, filters.availability)) return false;
             if (filters.userGroup && person.userGroup !== filters.userGroup) return false;
             if (filters.skill) {
               const blob = [...person.skills, ...person.servicesOffered].join(" ").toLowerCase();

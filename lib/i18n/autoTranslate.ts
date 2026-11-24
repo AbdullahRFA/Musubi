@@ -38,8 +38,23 @@ const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 const MONTHS: Record<string, number> = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Sept: 9, Oct: 10, Nov: 11, Dec: 12 };
 
 /** Dates, relative times and other formats produced by the app's helpers. */
+const WEEKDAYS: Record<string, string> = { Mon: "月", Tue: "火", Wed: "水", Thu: "木", Fri: "金", Sat: "土", Sun: "日" };
+
 function translateFormat(s: string): string | null {
-  let m = s.match(/^(\d{1,2}) ([A-Z][a-z]{2,3}) (\d{4})$/); // 24 Nov 2026
+  // Availability with several slots: "Weekends; Sat 30 Nov 2026, 14:00–16:00"
+  if (s.includes("; ")) {
+    const parts = s.split("; ").map((p) => JA_DICT[p.trim()] ?? translateFormat(p.trim()) ?? p.trim());
+    return parts.join("、");
+  }
+  // Custom availability slot: "Sat 30 Nov 2026", "…, 14:00–16:00", "…, from 14:00"
+  let m = s.match(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (\d{1,2}) ([A-Z][a-z]{2,3}) (\d{4})(?:, (?:(\d{1,2}:\d{2})–(\d{1,2}:\d{2})|from (\d{1,2}:\d{2})))?$/);
+  if (m && MONTHS[m[3]]) {
+    const day = `${m[4]}年${MONTHS[m[3]]}月${m[2]}日(${WEEKDAYS[m[1]]})`;
+    if (m[5]) return `${day} ${m[5]}〜${m[6]}`;
+    if (m[7]) return `${day} ${m[7]}から`;
+    return day;
+  }
+  m = s.match(/^(\d{1,2}) ([A-Z][a-z]{2,3}) (\d{4})$/); // 24 Nov 2026
   if (m && MONTHS[m[2]]) return `${m[3]}年${MONTHS[m[2]]}月${m[1]}日`;
   m = s.match(/^(\d{1,2}) ([A-Z][a-z]{2,3})$/); // 24 Nov
   if (m && MONTHS[m[2]]) return `${MONTHS[m[2]]}月${m[1]}日`;

@@ -33,13 +33,14 @@ import {
   SUGGESTED_SKILLS,
   SUGGESTED_SERVICES,
   SUGGESTED_INTERESTS,
-  AVAILABILITY,
   detectGeneration, MIN_AGE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { AuthGuard } from "@/components/common/AuthGuard";
 import { useProfileCompletion } from "@/lib/profileCompletion";
 import { TagPicker, AgeGroupBadge } from "@/components/profile/TagPicker";
+import { AvailabilityPicker } from "@/components/profile/AvailabilityPicker";
+import { MyLocationPicker, type MyLocation } from "@/components/profile/MyLocationPicker";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -56,6 +57,8 @@ export default function EditProfilePage() {
 
   // Neighborhoods state (up to 5)
   const [neighborhoods, setNeighborhoods] = useState<string[]>([]);
+  // The member's own (approximate) location: GPS / map pin + area name
+  const [myLocation, setMyLocation] = useState<MyLocation>({ name: "", lat: null, lng: null });
 
   // Skills & Needs states
   const [skills, setSkills] = useState<string[]>([]);
@@ -98,6 +101,7 @@ export default function EditProfilePage() {
       });
 
       if (session.age) setAge(session.age);
+      setMyLocation({ name: session.location || "", lat: session.lat ?? null, lng: session.lng ?? null });
       if (session.neighborhoods && session.neighborhoods.length > 0) {
         setNeighborhoods(session.neighborhoods);
       } else if (session.location) {
@@ -167,8 +171,12 @@ export default function EditProfilePage() {
 
   const onSubmit = async (values: ProfileValues) => {
     setError(null);
-    if (neighborhoods.length === 0) {
-      setError("Please add at least one neighborhood.");
+    // The member's own area is their primary location and also counts as a neighbourhood
+    const areaName = myLocation.name.trim();
+    const finalNeighborhoods =
+      areaName && !neighborhoods.includes(areaName) && neighborhoods.length < 5 ? [areaName, ...neighborhoods] : neighborhoods;
+    if (finalNeighborhoods.length === 0) {
+      setError("Please set your location or add at least one neighborhood.");
       return;
     }
 
@@ -179,8 +187,10 @@ export default function EditProfilePage() {
         fullName: values.fullName,
         email: values.email || session?.email,
         age: numericAge,
-        neighborhoods,
-        location: neighborhoods[0] || values.location || session?.location || "",
+        neighborhoods: finalNeighborhoods,
+        location: areaName || finalNeighborhoods[0] || values.location || session?.location || "",
+        lat: myLocation.lat,
+        lng: myLocation.lng,
         bio: values.bio || "",
         availability: values.availability || "Flexible",
         contactMethod: values.contactMethod,
@@ -379,6 +389,7 @@ export default function EditProfilePage() {
 
             {/* Location */}
             <FormSection icon={MapPin} title="Location">
+              <MyLocationPicker value={myLocation} onChange={setMyLocation} />
               <TagPicker
                 label="Your Neighborhoods"
                 description="Select neighborhoods you live in or frequently connect with"
@@ -452,28 +463,11 @@ export default function EditProfilePage() {
             {/* Availability */}
             <FormSection icon={CalendarClock} title="Availability">
               <p className="-mt-2 text-sm text-muted-foreground">When are you usually free to meet or help?</p>
-              <div role="radiogroup" aria-label="Availability" className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {AVAILABILITY.map((slot) => {
-                  const selected = availability === slot;
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => setValue("availability", slot, { shouldDirty: true })}
-                      className={`flex items-center justify-between gap-2 min-h-[48px] rounded-xl border-2 px-4 py-2.5 text-left text-sm font-bold transition-all duration-200 ${
-                        selected
-                          ? "border-primary bg-primary/5 text-primary shadow-soft"
-                          : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-muted/60"
-                      }`}
-                    >
-                      {slot}
-                      {selected && <Check className="h-4 w-4 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
+              <AvailabilityPicker
+                idPrefix="pe-avail"
+                value={availability}
+                onChange={(next) => setValue("availability", next, { shouldDirty: true })}
+              />
             </FormSection>
 
             {/* Interests */}
