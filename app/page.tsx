@@ -55,13 +55,21 @@ const STEPS: { icon: LucideIcon; title: string; desc: string; badge: string }[] 
   },
 ];
 
-const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: string; tags: string[] }[] = [
+const CATEGORIES: {
+  icon: LucideIcon;
+  iconClass: string;
+  title: string;
+  desc: string;
+  tags: string[];
+  image: string;
+}[] = [
   {
     icon: HandHelping,
     iconClass: "bg-[#E7EEE4] text-primary",
     title: "Daily Assistance",
     desc: "Practical help with grocery runs, errands, light parcel carrying, and daily neighborhood tasks.",
     tags: ["Grocery Runs", "Errands", "Neighborhood Help"],
+    image: "/images/landing-section3/landing-section3-img1.jpg",
   },
   {
     icon: Smartphone,
@@ -69,6 +77,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Technology Help",
     desc: "Patient guidance on smartphone navigation, video calls with family, email setup, and digital devices.",
     tags: ["Smartphones", "Video Calls", "Digital Apps"],
+    image: "/images/landing-section3/landing-section3-img2.jpg",
   },
   {
     icon: HeartHandshake,
@@ -76,6 +85,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Companionship",
     desc: "Warm and friendly conversation over tea, park strolls, reminiscing, and sharing joyful moments.",
     tags: ["Tea Chats", "Walking", "Shared Hobbies"],
+    image: "/images/landing-section3/landing-section3-img3.jpg",
   },
   {
     icon: BookOpen,
@@ -83,6 +93,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Learning & Skills",
     desc: "Traditional home cooking, calligraphy, origami, language practice, history, and craft techniques.",
     tags: ["Home Cooking", "Handicrafts", "Languages"],
+    image: "/images/landing-section3/landing-section3-img4.jpg",
   },
   {
     icon: Flower2,
@@ -90,6 +101,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Home Assistance",
     desc: "Balcony gardening tips, plant watering during trips, book organization, and seasonal home tidying.",
     tags: ["Gardening", "Plant Care", "Home Organization"],
+    image: "/images/landing-section3/landing-section3-img5.jpg",
   },
   {
     icon: Users,
@@ -97,6 +109,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Community & Local Activities",
     desc: "Join neighborhood events, cultural activities, community gardening, and local group activities to build friendships and stay connected.",
     tags: ["Local Events", "Cultural Activities", "Community Groups"],
+    image: "/images/landing-section3/landing-section3-img6.jpg",
   },
 ];
 
@@ -296,41 +309,74 @@ export default function HomePage() {
           subtitle={t("categories.subtitle", "Explore the diverse areas of mutual exchange supported across our community.")}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
           {CATEGORIES.map((cat, i) => {
             const Icon = cat.icon;
             return (
               <Link
                 key={cat.title}
                 href="/posts"
-                className="card-hover group rounded-2xl border-2 border-border bg-card p-6 shadow-xs flex flex-col gap-4 animate-fade-up"
+                className="card-hover group rounded-3xl border-2 border-border bg-card shadow-xs flex flex-col overflow-hidden animate-fade-up transition-all duration-300 hover:border-primary/80 hover:shadow-xl"
                 style={{ animationDelay: `${(i % 3) * 100}ms` }}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div
-                    className={`h-12 w-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${cat.iconClass}`}
-                  >
-                    <Icon className="h-6 w-6" />
+                {/* Category Image Header */}
+                <div className="relative w-full h-52 sm:h-56 overflow-hidden bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cat.image}
+                    alt={cat.title}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (!img.src.includes(".jpg.jpg")) {
+                        img.src = `${cat.image}.jpg`;
+                      }
+                    }}
+                  />
+                  {/* Gradient shadow overlay for aesthetic depth */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-85 group-hover:opacity-60 transition-opacity duration-300" />
+
+                  {/* High-Contrast Category Icon Badge (Bright solid white card with bold icon) */}
+                  <div className="absolute bottom-3 left-3 h-13 w-13 rounded-2xl bg-white shadow-xl border-2 border-white/95 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${cat.iconClass} shadow-inner`}>
+                      <Icon className="h-5 w-5 stroke-[2.5]" />
+                    </div>
                   </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-primary" />
+
+                  {/* High-Contrast Action Arrow Badge (Bright solid white circular button) */}
+                  <div className="absolute top-3 right-3 h-11 w-11 rounded-full bg-white text-primary shadow-xl border-2 border-white/95 flex items-center justify-center transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:scale-110">
+                    <ArrowRight className="h-5 w-5 stroke-[2.5] transition-transform duration-300 group-hover:translate-x-0.5" />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-black text-foreground transition-colors group-hover:text-primary">
-                    {t(`categories.items.${i}.title`, cat.title)}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                    {t(`categories.items.${i}.desc`, cat.desc)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-3 border-t border-border/60">
-                  {cat.tags.map((tag, j) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground"
-                    >
-                      {t(`categories.items.${i}.tags.${j}`, tag)}
-                    </span>
-                  ))}
+
+                {/* Category Body */}
+                <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground transition-colors group-hover:text-primary flex items-center justify-between">
+                      <span>{t(`categories.items.${i}.title`, cat.title)}</span>
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                      {t(`categories.items.${i}.desc`, cat.desc)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pt-3 border-t border-border/60">
+                    <div className="flex flex-wrap gap-1.5">
+                      {cat.tags.map((tag, j) => (
+                        <span
+                          key={tag}
+                          className="rounded-full bg-muted/80 px-2.5 py-0.5 text-[11px] font-semibold text-foreground group-hover:bg-[#E7EEE4] group-hover:text-[#315B4B] transition-colors"
+                        >
+                          {t(`categories.items.${i}.tags.${j}`, tag)}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-xs sm:text-sm font-bold text-primary group-hover:text-[#234336] transition-colors">
+                      <span>{language === "ja" ? "投稿を見る" : "Explore posts"}</span>
+                      <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+                    </div>
+                  </div>
                 </div>
               </Link>
             );
