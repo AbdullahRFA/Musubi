@@ -128,14 +128,15 @@ export function detectGeneration(age: number): {
   userGroup: UserGroup;
   label: string;
   shortLabel: string;
-  ageGroup: AgeGroup;
+  /** null for members aged 15–17: the stored age groups start at 18. */
+  ageGroup: AgeGroup | null;
 } {
   const isOlder = age >= 60;
   const userGroup: UserGroup = isOlder ? "og" : "yg";
   const label = isOlder ? "Older Generation (60+)" : "Younger Generation (<60)";
   const shortLabel = isOlder ? "Older Generation" : "Younger Generation";
-  const ageGroup: AgeGroup =
-    age >= 65 ? "65+" : age >= 50 ? "50-64" : age >= 30 ? "30-49" : "18-29";
+  const ageGroup: AgeGroup | null =
+    age >= 65 ? "65+" : age >= 50 ? "50-64" : age >= 30 ? "30-49" : age >= 18 ? "18-29" : null;
   return { userGroup, label, shortLabel, ageGroup };
 }
 
