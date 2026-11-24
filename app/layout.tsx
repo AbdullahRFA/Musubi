@@ -16,10 +16,17 @@ export const viewport: Viewport = {
   themeColor: "#fffaf3",
 };
 
+const SITE_DESCRIPTION =
+  "An intergenerational community platform connecting older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.";
+
 export const metadata: Metadata = {
-  title: "Tsunagu Generations — Connecting the Past to the Present",
-  description:
-    "An intergenerational community platform connecting older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://hackathon-alpha-snowy.vercel.app"),
+  title: { default: "Musubi — Connecting the Past to the Present", template: "%s · Musubi" },
+  description: SITE_DESCRIPTION,
+  applicationName: "Musubi",
+  appleWebApp: { title: "Musubi", capable: true, statusBarStyle: "default" },
+  openGraph: { type: "website", siteName: "Musubi", title: "Musubi — tying generations together", description: SITE_DESCRIPTION },
+  twitter: { card: "summary_large_image", title: "Musubi — tying generations together", description: SITE_DESCRIPTION },
 };
 
 export default function RootLayout({

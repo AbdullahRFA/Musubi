@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { LogoMark } from "@/components/common/Logo";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/services/authService";
 import { useDemoReady } from "@/lib/services/demoService";
@@ -20,8 +21,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center p-8">
         <div className="text-center space-y-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-          <p className="text-muted-foreground font-medium">Loading Tsunagu Generations...</p>
+          <LogoMark className="mx-auto h-14 w-14 animate-pulse" />
+          <p className="text-muted-foreground font-medium">Loading Musubi...</p>
         </div>
       </div>
     );

@@ -3,7 +3,7 @@ export type Language = "en" | "ja";
 export const translations = {
   en: {
     // Brand
-    brandName: "Tsunagu Generations",
+    brandName: "Musubi",
     brandSubtitle: "Connecting the Past to the Present",
     brandDescription:
       "An intergenerational community exchange platform connecting older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.",
@@ -46,7 +46,7 @@ export const translations = {
       headingWith: "with the",
       headingEnergy: "energy of today.",
       subtitle:
-        "Tsunagu Generations brings older and younger generations together to share knowledge, exchange practical help, and build meaningful companionship.",
+        "Musubi brings older and younger generations together to share knowledge, exchange practical help, and build meaningful companionship.",
       exploreBtn: "Explore Community Posts",
       joinBtn: "Join Our Community",
       nowPlaying: "Now Playing:",
@@ -109,9 +109,9 @@ export const translations = {
       ],
     },
 
-    // How Tsunagu Works Section
+    // How Musubi Works Section
     howItWorks: {
-      title: "How Tsunagu Works",
+      title: "How Musubi Works",
       subtitle:
         "A simple, respectful four-step process designed to make connecting effortless and safe for all ages.",
       steps: [
@@ -130,7 +130,7 @@ export const translations = {
         {
           num: "03",
           title: "Connect & Coordinate",
-          desc: "Chat securely within Tsunagu. Agree on the date, time, and comfortable public location for your exchange.",
+          desc: "Chat securely within Musubi. Agree on the date, time, and comfortable public location for your exchange.",
           badge: "In-app private messaging",
         },
         {
@@ -184,7 +184,7 @@ export const translations = {
     cta: {
       title: "Everyone has something to share. Everyone has something to gain.",
       subtitle:
-        "Join your local Tsunagu community today. Whether you wish to share wisdom, lend an everyday hand, or connect with a neighbor, there is a place for you.",
+        "Join your local Musubi community today. Whether you wish to share wisdom, lend an everyday hand, or connect with a neighbor, there is a place for you.",
       getStarted: "Get Started",
     },
 
@@ -201,7 +201,7 @@ export const translations = {
       contact: "Contact",
       search: "Search",
       language: "Language:",
-      copyright: "© 2026 Tsunagu Generations. All rights reserved.",
+      copyright: "© 2026 Musubi. All rights reserved.",
       tagline: "Connecting the Past to the Present",
     },
 
@@ -338,7 +338,7 @@ export const translations = {
       ],
     },
 
-    // How Tsunagu Works Section
+    // How Musubi Works Section
     howItWorks: {
       title: "ツナグの使い方",
       subtitle: "誰でも安心して利用できる、シンプルで安全な4つのステップ。",
@@ -429,7 +429,7 @@ export const translations = {
       contact: "お問い合わせ",
       search: "検索",
       language: "言語設定:",
-      copyright: "© 2026 Tsunagu Generations. All rights reserved.",
+      copyright: "© 2026 Musubi. All rights reserved.",
       tagline: "過去の知恵と現在のエネルギーを繋ぐ",
     },
 

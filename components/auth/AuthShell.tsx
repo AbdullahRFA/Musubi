@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useState } from "react";
+import { LogoMark } from "@/components/common/Logo";
 import { Input, type InputProps } from "@/components/ui/input";
 import { AlertCircle, Eye, EyeOff, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,11 @@ export function AuthShell({
       <div className="w-full max-w-md animate-fade-up">
         <div className="rounded-3xl border border-white/60 bg-card/75 p-6 shadow-lift backdrop-blur-xl supports-[backdrop-filter]:bg-card/65 min-[400px]:p-8">
           <div className="mb-6 space-y-2 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
-              <Icon className="h-6 w-6" />
+            <div className="mx-auto flex items-center justify-center gap-3">
+              <LogoMark className="h-12 w-12" title="Musubi" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                <Icon className="h-6 w-6" />
+              </div>
             </div>
             <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">{title}</h1>
             <p className="mx-auto max-w-sm text-sm text-muted-foreground">{description}</p>

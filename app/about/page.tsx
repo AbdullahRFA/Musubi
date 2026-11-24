@@ -72,14 +72,14 @@ export default function AboutSafetyPage() {
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-14 sm:py-20 text-center space-y-5">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-xs sm:text-sm font-bold text-primary animate-fade-up">
             <HeartHandshake className="h-4 w-4" />
-            <span>About Tsunagu Generations</span>
+            <span>About Musubi</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tracking-tight leading-tight text-balance animate-fade-up [animation-delay:100ms]">
             Connecting the Wisdom of the Past with the{" "}
             <span className="bg-gradient-to-r from-primary to-[#c2410c] bg-clip-text text-transparent">Energy of Today</span>
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto animate-fade-up [animation-delay:200ms]">
-            Tsunagu (繋ぐ, meaning &apos;to bridge or connect&apos;) is a grassroots community platform created to overcome
+            Musubi (結び, meaning &apos;tying together&apos;) is a grassroots community platform created to overcome
             generational isolation by enabling two-way knowledge exchange, daily help, and genuine local companionship.
           </p>
           <nav
@@ -153,7 +153,7 @@ export default function AboutSafetyPage() {
         <section id="faq" className="space-y-6 scroll-mt-24">
           <SectionTitle icon={HelpCircle}>Frequently Asked Questions</SectionTitle>
           <p className="-mt-2 text-sm text-muted-foreground">
-            Tip: you can also ask these questions to Tsunagu Guide (the chat button) by typing or speaking — common
+            Tip: you can also ask these questions to Musubi Guide (the chat button) by typing or speaking — common
             questions are answered instantly.
           </p>
           <div className="space-y-8">

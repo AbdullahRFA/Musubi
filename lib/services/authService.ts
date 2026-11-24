@@ -219,7 +219,7 @@ export async function signUp(input: {
 
   // Minimum age to join (mirrors the register form)
   if (typeof input.age !== "number" || !Number.isInteger(input.age) || input.age < MIN_AGE) {
-    throw new ServiceError(`You must be at least ${MIN_AGE} years old to join Tsunagu Generations.`);
+    throw new ServiceError(`You must be at least ${MIN_AGE} years old to join Musubi.`);
   }
 
   // Same rule as the register / reset / change password forms

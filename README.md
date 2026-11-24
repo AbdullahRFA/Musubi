@@ -1,6 +1,8 @@
 <div align="center">
 
-# Tsunagu Generations（つなぐ）
+<img src="public/brand/musubi-logo.svg" alt="Musubi logo" width="320" />
+
+# Musubi（結び）
 
 **Connecting the wisdom of the past with the energy of today.**
 
@@ -41,7 +43,7 @@ A bilingual (English / 日本語) community platform for Nagasaki that connects 
 
 ## 🌸 Overview
 
-Japan's ageing society leaves many older residents isolated, while younger people often lack local roots and traditional knowledge. **Tsunagu**（繋ぐ, *"to connect"*）is a two-way exchange: older members share cooking, calligraphy, origami and local history; younger members help with smartphones, video calls, errands and heavy lifting — and everyone gains company.
+Japan's ageing society leaves many older residents isolated, while younger people often lack local roots and traditional knowledge. **Musubi**（結び, *"tying together"*）is a two-way exchange: older members share cooking, calligraphy, origami and local history; younger members help with smartphones, video calls, errands and heavy lifting — and everyone gains company.
 
 | | |
 | --- | --- |
@@ -78,7 +80,7 @@ Japan's ageing society leaves many older residents isolated, while younger peopl
 - Skills, needs, interests, neighbourhoods, avatar and contact preference (chat or consented phone).
 
 ### Help, safety & accessibility
-- **Tsunagu Guide** — an assistant that answers FAQs instantly offline (EN/JA) and uses **Google Gemini** for finding helpers and drafting posts; supports voice input and spoken replies.
+- **Musubi Guide** — an assistant that answers FAQs instantly offline (EN/JA) and uses **Google Gemini** for finding helpers and drafting posts; supports voice input and spoken replies.
 - **Report & block** on every post and profile; blocked members disappear from search, chat and connections.
 - **Full English ⇄ Japanese switch**, larger-text mode, notifications with sound and badges.
 - **Accounts** — email/password and Google sign-in, forgot/reset/change password, minimum age 15.
@@ -158,7 +160,7 @@ flowchart LR
 │   ├── ui/                    # Button, Card, Input, Dialog, Badge
 │   ├── common/                # Header, Footer, BottomNav, AuthGuard, AutoTranslator…
 │   ├── posts/ search/ chat/ connections/ transactions/ profile/ maps/
-│   ├── assistant/             # Tsunagu Guide widget
+│   ├── assistant/             # Musubi Guide widget
 │   └── notifications/         # Bell, messenger menu, toasts
 ├── lib/
 │   ├── services/              # Auth, posts, requests, chat, connections, DMs, payments…
@@ -332,10 +334,10 @@ The app is deployed on **Vercel** from the `main` branch.
 
 ## 👥 Contributors
 
-Built for a hackathon by the Tsunagu Generations team. See the full list on the repository's **[contributors page](https://github.com/fariha-rahman-saba/hackathon/graphs/contributors)**.
+Built for a hackathon by the Musubi team. See the full list on the repository's **[contributors page](https://github.com/fariha-rahman-saba/hackathon/graphs/contributors)**.
 
 <div align="center">
 
-**つなぐ — bridging generations, one neighbourly exchange at a time.**
+**結び — bridging generations, one neighbourly exchange at a time.**
 
 </div>

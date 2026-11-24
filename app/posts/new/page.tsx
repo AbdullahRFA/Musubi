@@ -46,7 +46,7 @@ export default function CreatePostPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.id, session?.location, session?.availability]);
 
-  // Prefill from a draft written by the Tsunagu Guide assistant (one-time hand-off)
+  // Prefill from a draft written by the Musubi Guide assistant (one-time hand-off)
   const [fromAssistant, setFromAssistant] = useState(false);
   useEffect(() => {
     try {
@@ -99,7 +99,7 @@ export default function CreatePostPage() {
         title="Create a Community Request"
         description={
           fromAssistant
-            ? "Tsunagu Guide filled this in for you. Please check every detail, change anything you like, then press Publish."
+            ? "Musubi Guide filled this in for you. Please check every detail, change anything you like, then press Publish."
             : "Request assistance, practical guidance, or companionship from neighbors across generations."
         }
         submitLabel="Publish Post"

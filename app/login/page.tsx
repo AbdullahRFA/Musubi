@@ -100,7 +100,7 @@ function LoginContent() {
     <AuthShell
       icon={LogIn}
       title="Welcome back"
-      description="Log in to your Tsunagu Generations account"
+      description="Log in to your Musubi account"
       footer={
         <>
           Don&apos;t have an account?{" "}

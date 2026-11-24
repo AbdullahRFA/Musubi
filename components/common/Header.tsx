@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Logo } from "@/components/common/Logo";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, memo } from "react";
 import {
@@ -157,18 +158,11 @@ export const Header = memo(function Header() {
           <Link
             href="/"
             className="flex flex-col group rounded-md min-w-0"
-            aria-label="Tsunagu Generations Home"
+            aria-label="Musubi Home"
             data-no-translate
           >
-            <div className="flex items-center gap-1.5">
-              <span className="font-black text-[18px] sm:text-[24px] lg:text-[27px] tracking-tight text-primary transition-colors duration-200 group-hover:text-[#7c2d12] leading-none">
-                Tsunagu
-              </span>
-              <span className="font-bold text-[16px] sm:text-[20px] lg:text-[22.5px] text-foreground truncate leading-none">
-                Generations
-              </span>
-            </div>
-            <span className="text-[10px] text-muted-foreground font-medium hidden lg:inline mt-0.5">
+            <Logo className="transition-transform duration-300 group-hover:scale-[1.03]" />
+            <span className="text-[10px] text-muted-foreground font-medium hidden lg:inline mt-0.5 pl-[2.75rem]">
               {t("brandSubtitle")}
             </span>
           </Link>

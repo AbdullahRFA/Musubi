@@ -107,7 +107,7 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
     <section
       className={`relative w-full min-h-[calc(100svh-3.5rem)] sm:min-h-[calc(100svh-4rem)] flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1C332A] via-[#243F34] to-[#14231D] text-white ${className}`}
       role="region"
-      aria-label="Tsunagu Generations hero with full background video"
+      aria-label="Musubi hero with full background video"
     >
       {/* 1. Edge-to-Edge Background Videos (Stacked with Crossfade) */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0">
