@@ -129,6 +129,7 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
               idx === activeIndex ? "opacity-100 z-10" : "opacity-0 z-0"
             }`}
+            style={{ filter: "brightness(1.18) contrast(1.05) saturate(1.08)" }}
           />
         ))}
       </div>
@@ -141,8 +142,8 @@ export function HeroBackgroundVideo({ children, className = "" }: HeroBackground
       />
 
       {/* 3. Subtle Light Overlay — Keeps Video Bright, Vibrant & Clear */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-black/10 z-10 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 z-10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/18 to-black/5 z-10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10 z-10 pointer-events-none" />
 
       {/* 4. Top Decorative / Category Tracker Bar */}
       <div className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-5 sm:pt-8 flex items-center justify-between gap-3">

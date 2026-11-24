@@ -88,17 +88,17 @@ export function PhilosophySlider() {
   }, []);
 
   // Compute responsive card width:
-  // Desktop (lg+): ~76% (capped at 1060px) for clear side peeks
-  // Tablet (md): ~84% for subtle side peeks
-  // Mobile (<640px): ~90% with slight side hint
+  // Desktop (lg+): ~68% of container (capped at 820px) — proportional to site grid
+  // Tablet (md): ~80% for modest side peeks
+  // Mobile (<640px): ~86% with slight next-card hint
   const cardWidth = useMemo(() => {
     if (containerWidth >= 1024) {
-      return Math.min(containerWidth * 0.76, 1060);
+      return Math.min(containerWidth * 0.68, 820);
     }
     if (containerWidth >= 640) {
-      return containerWidth * 0.84;
+      return containerWidth * 0.80;
     }
-    return containerWidth * 0.90;
+    return containerWidth * 0.86;
   }, [containerWidth]);
 
   const gap = useMemo(() => {
@@ -379,22 +379,22 @@ export function PhilosophySlider() {
                 {/* Single-Column Card Container */}
                 <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-border bg-card shadow-lift flex flex-col h-full transition-shadow duration-300">
                   {/* Full-width edge-to-edge image across entire card width */}
-                  <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] lg:aspect-[18/9] max-h-[460px] overflow-hidden bg-muted">
+                  <div className="relative w-full aspect-[16/9] max-h-[340px] overflow-hidden bg-muted">
                     <img
                       src={slide.image}
                       alt={title}
                       draggable={false}
-                      className="h-full w-full object-cover object-center pointer-events-none select-none transition-transform duration-500 hover:scale-105"
+                      className="h-full w-full object-cover object-center pointer-events-none select-none"
                       loading={realIndex === 0 ? "eager" : "lazy"}
                     />
                   </div>
 
-                  {/* Bottom card footer: only bold title & description text with clean padding */}
-                  <div className="p-5 sm:p-7 lg:p-8 space-y-2 sm:space-y-3 bg-card flex-1 flex flex-col justify-center">
-                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight text-balance">
+                  {/* Bottom card footer: bold title & description matching site card typography */}
+                  <div className="p-5 sm:p-6 space-y-1.5 sm:space-y-2 bg-card flex-1 flex flex-col justify-center">
+                    <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
                       {title}
                     </h3>
-                    <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed text-balance">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {desc}
                     </p>
                   </div>
@@ -409,7 +409,7 @@ export function PhilosophySlider() {
       {/* 2. External Navigation & Controls Bar Directly Below Carousel      */}
       {/* ================================================================= */}
       <div
-        className="mx-auto px-2 sm:px-4 mt-6 sm:mt-8 flex items-center justify-between"
+        className="mx-auto px-4 sm:px-6 lg:px-8 mt-5 sm:mt-6 flex items-center justify-between"
         style={{
           width: `${cardWidth}px`,
           maxWidth: "100%",
