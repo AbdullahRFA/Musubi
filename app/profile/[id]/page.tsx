@@ -29,7 +29,6 @@ import { initials, formatDay } from "@/lib/utils";
 import { RatingStars } from "@/components/common/RatingStars";
 import { Button } from "@/components/ui/button";
 import { ReportDialog } from "@/components/common/ReportDialog";
-import { SafetyBanner } from "@/components/common/SafetyBanner";
 
 export default function PublicProfilePage() {
   const params = useParams();
@@ -211,8 +210,6 @@ export default function PublicProfilePage() {
           </div>
         </div>
       </section>
-
-      <SafetyBanner />
 
       {/* ---------- Skills & needs ---------- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">

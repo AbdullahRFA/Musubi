@@ -150,8 +150,6 @@ export const REPORT_REASONS = [
 
 export const DEMO_AMOUNTS = [10, 15, 20, 25];
 
-export const SAFETY_TEXT =
-  "Completed activities and ratings help you decide but are not a guarantee of safety.";
 
 export const DEMO_PAYMENT_BANNER = "DEMO payment – no real money is processed.";
 

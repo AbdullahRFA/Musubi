@@ -19,7 +19,6 @@ import { formatWhen, initials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { AuthGuard } from "@/components/common/AuthGuard";
-import { SafetyBanner } from "@/components/common/SafetyBanner";
 
 export default function RequestsPage() {
   const router = useRouter();
@@ -157,8 +156,6 @@ export default function RequestsPage() {
         </section>
 
         <div className="page-container max-w-5xl pt-6 sm:pt-8 space-y-5">
-          <SafetyBanner />
-
           {actionError && (
             <div role="alert" className="flex items-start gap-2 rounded-lg bg-destructive/10 p-4 text-sm text-destructive font-medium border border-destructive/20 animate-in fade-in">
               <AlertCircle className="h-5 w-5 shrink-0" />
