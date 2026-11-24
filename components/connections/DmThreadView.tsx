@@ -137,7 +137,7 @@ function MessageBubble({
               <>
                 {message.imagePath && <DmPhoto path={message.imagePath} onOpen={onOpenPhoto} />}
                 {message.body && (
-                  <p className={`whitespace-pre-wrap break-words text-[15px] leading-relaxed ${message.imagePath ? "px-2.5 pt-1.5" : ""}`}>{message.body}</p>
+                  <p data-no-translate className={`whitespace-pre-wrap break-words text-[15px] leading-relaxed ${message.imagePath ? "px-2.5 pt-1.5" : ""}`}>{message.body}</p>
                 )}
               </>
             )}

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   Shield,
@@ -16,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { FAQS, FAQ_TOPICS, type FaqTopic } from "@/lib/assistant/faq";
 import { FormattedReply } from "@/components/assistant/FormattedReply";
+import { useLanguage } from "@/lib/i18n";
 
 const SAFETY_PRINCIPLES = [
   {
@@ -55,6 +58,9 @@ function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: Re
 }
 
 export default function AboutSafetyPage() {
+  // The FAQ is bilingual in lib/assistant/faq.ts — show it in the chosen language
+  const { language } = useLanguage();
+  const lang = language === "ja" ? "ja" : "en";
   return (
     <div className="pb-12 sm:pb-16">
       {/* Hero */}
@@ -153,7 +159,7 @@ export default function AboutSafetyPage() {
           <div className="space-y-8">
             {(Object.keys(FAQ_TOPICS) as FaqTopic[]).map((topic) => (
               <div key={topic} className="space-y-3">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{FAQ_TOPICS[topic].en}</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{FAQ_TOPICS[topic][lang]}</h3>
                 {FAQS.filter((f) => f.topic === topic).map((faq) => (
                   <details
                     key={faq.id}
@@ -161,19 +167,19 @@ export default function AboutSafetyPage() {
                     className="group rounded-xl border-2 border-border bg-card transition-colors duration-200 open:border-primary/30 open:shadow-soft hover:border-primary/30 scroll-mt-24"
                   >
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 sm:p-5 font-bold text-base sm:text-lg text-foreground [&::-webkit-details-marker]:hidden">
-                      <span>{faq.question.en}</span>
+                      <span>{faq.question[lang]}</span>
                       <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180 group-open:text-primary" />
                     </summary>
                     <div className="px-4 sm:px-5 pb-5 -mt-1 space-y-3">
                       <div className="text-sm sm:text-base text-muted-foreground">
-                        <FormattedReply text={faq.answer.en} />
+                        <FormattedReply text={faq.answer[lang]} />
                       </div>
                       {faq.link && (
                         <Link
                           href={faq.link.href}
                           className="group/link inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline underline-offset-4"
                         >
-                          {faq.link.label.en}
+                          {faq.link.label[lang]}
                           <ArrowRight className="h-4 w-4 transition-transform group-hover/link:translate-x-0.5" />
                         </Link>
                       )}

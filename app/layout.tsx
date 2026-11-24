@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { NotificationToast } from "@/components/notifications/NotificationToast";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
+import { AutoTranslator } from "@/components/common/AutoTranslator";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -43,6 +44,7 @@ export default function RootLayout({
             <Footer />
             <BottomNav />
             <AssistantWidget />
+            <AutoTranslator />
           </LanguageProvider>
         </AuthProvider>
       </body>
