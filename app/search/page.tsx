@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { Search, Users, Compass, RefreshCcw, Sparkles, SlidersHorizontal, SearchX } from "lucide-react";
 import { useSearch, useSkillOptions, EMPTY_FILTERS } from "@/lib/services/searchService";
 import { CATEGORIES, EXCHANGE_METHODS, AVAILABILITY, PLACES } from "@/lib/constants";
@@ -10,33 +10,79 @@ import { PostCard } from "@/components/posts/PostCard";
 import { PersonCard } from "@/components/search/PersonCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadMoreControls, CardSkeleton } from "@/components/common/LoadMore";
+import { usePostsLoaded } from "@/lib/services/postService";
+
+/** Results revealed per "See more" click. */
+const PAGE_SIZE = 6;
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const initialCategory = searchParams.get("category") || "";
-  const initialQuery = searchParams.get("q") || "";
 
-  const [query, setQuery] = useState(initialQuery);
-  const [filters, setFilters] = useState<SearchFilters>({
-    ...EMPTY_FILTERS,
-    category: initialCategory,
+  // Search text and filters live in the URL so refresh, Back and sharing work
+  const [query, setQuery] = useState(searchParams.get("q") || "");
+  const [filters, setFilters] = useState<SearchFilters>(() => {
+    const next = { ...EMPTY_FILTERS };
+    (Object.keys(EMPTY_FILTERS) as (keyof SearchFilters)[]).forEach((key) => {
+      next[key] = searchParams.get(key) || "";
+    });
+    return next;
   });
 
-  const [activeTab, setActiveTab] = useState<"posts" | "people">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "people">(
+    searchParams.get("tab") === "people" ? "people" : "posts"
+  );
+  const autoSwitchedRef = useRef(false);
 
+  const loaded = usePostsLoaded();
   const skillOptions = useSkillOptions();
   const searchResults = useSearch(query, filters);
 
-  // If no posts match but people do, auto-switch to people tab per SRS algorithm
+  // SRS: if no posts match but people do, show people — and switch back to
+  // posts once posts match again (only when we switched automatically)
   useEffect(() => {
-    if (searchResults.preferPeople) {
+    if (searchResults.preferPeople && activeTab === "posts") {
+      autoSwitchedRef.current = true;
       setActiveTab("people");
+    } else if (!searchResults.preferPeople && autoSwitchedRef.current && searchResults.posts.length > 0) {
+      autoSwitchedRef.current = false;
+      setActiveTab("posts");
     }
-  }, [searchResults.preferPeople]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchResults.preferPeople, searchResults.posts.length]);
+
+  // Keep the URL in sync (replace, so typing doesn't flood the history)
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    (Object.keys(filters) as (keyof SearchFilters)[]).forEach((key) => {
+      if (filters[key]) params.set(key, filters[key]);
+    });
+    if (activeTab === "people") params.set("tab", "people");
+    const qs = params.toString();
+    window.history.replaceState(null, "", qs ? `/search?${qs}` : "/search");
+  }, [query, filters, activeTab]);
+
+  // "See more" / "See less": 6 at a time per tab, reset when the search changes
+  const [postsShown, setPostsShown] = useState(PAGE_SIZE);
+  const [peopleShown, setPeopleShown] = useState(PAGE_SIZE);
+  const searchKey = JSON.stringify([query.trim(), filters]);
+  useEffect(() => {
+    setPostsShown(PAGE_SIZE);
+    setPeopleShown(PAGE_SIZE);
+  }, [searchKey]);
+  const resultsTopRef = useRef<HTMLDivElement | null>(null);
+  const collapse = (setter: (n: number) => void) => () => {
+    setter(PAGE_SIZE);
+    requestAnimationFrame(() => resultsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+  const visiblePosts = searchResults.posts.slice(0, postsShown);
+  const visiblePeople = searchResults.people.slice(0, peopleShown);
 
   const handleReset = () => {
     setQuery("");
     setFilters(EMPTY_FILTERS);
+    autoSwitchedRef.current = false;
     setActiveTab("posts");
   };
 
@@ -177,7 +223,10 @@ function SearchContent() {
                 id={`tab-${id}`}
                 aria-selected={selected}
                 aria-controls={`panel-${id}`}
-                onClick={() => setActiveTab(id)}
+                onClick={() => {
+                  autoSwitchedRef.current = false;
+                  setActiveTab(id);
+                }}
                 className={`flex items-center gap-2 pb-3 font-bold text-base sm:text-lg border-b-4 -mb-[2px] transition-colors duration-200 ${
                   selected ? active : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
@@ -195,15 +244,33 @@ function SearchContent() {
         </div>
 
         {/* ---------- Panels ---------- */}
-        <div role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} aria-live="polite">
-          {activeTab === "posts" ? (
+        <div
+          ref={resultsTopRef}
+          role="tabpanel"
+          id={`panel-${activeTab}`}
+          aria-labelledby={`tab-${activeTab}`}
+          className="scroll-mt-24 space-y-5"
+        >
+          {!loaded ? (
+            <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          ) : activeTab === "posts" ? (
             searchResults.posts.length === 0 ? (
               <EmptyState
-                title="No posts found matching your search."
+                title={hasAnything ? "No open posts match your search." : "No open posts right now."}
+                hint={hasAnything ? "Try a different word, remove a filter, or look for people who can help." : undefined}
                 action={
                   searchResults.people.length > 0 ? (
-                    <Button onClick={() => setActiveTab("people")}>
-                      View {searchResults.people.length} matching people instead
+                    <Button
+                      onClick={() => {
+                        autoSwitchedRef.current = false;
+                        setActiveTab("people");
+                      }}
+                    >
+                      View {searchResults.people.length} matching {searchResults.people.length === 1 ? "person" : "people"}
                     </Button>
                   ) : hasAnything ? (
                     <Button variant="outline" onClick={handleReset}>
@@ -213,17 +280,28 @@ function SearchContent() {
                 }
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
-                {searchResults.posts.map((post, i) => (
-                  <div key={post.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
-                    <PostCard post={post} />
-                  </div>
-                ))}
-              </div>
+              <>
+                <ResultCount shown={visiblePosts.length} total={searchResults.posts.length} noun="open post" />
+                <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  {visiblePosts.map((post, i) => (
+                    <div key={post.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i % PAGE_SIZE, 8) * 50}ms` }}>
+                      <PostCard post={post} />
+                    </div>
+                  ))}
+                </div>
+                <LoadMoreControls
+                  shown={visiblePosts.length}
+                  total={searchResults.posts.length}
+                  pageSize={PAGE_SIZE}
+                  onMore={() => setPostsShown((n) => n + PAGE_SIZE)}
+                  onLess={collapse(setPostsShown)}
+                />
+              </>
             )
           ) : searchResults.people.length === 0 ? (
             <EmptyState
-              title="No people found matching your search."
+              title="No people match your search."
+              hint="Try a broader word, or clear the filters to browse everyone."
               action={
                 hasAnything ? (
                   <Button variant="outline" onClick={handleReset}>
@@ -233,13 +311,24 @@ function SearchContent() {
               }
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
-              {searchResults.people.map((person, i) => (
-                <div key={person.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
-                  <PersonCard person={person} />
-                </div>
-              ))}
-            </div>
+            <>
+              <ResultCount shown={visiblePeople.length} total={searchResults.people.length} noun="person" plural="people" />
+              <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {visiblePeople.map((person, i) => (
+                  <div key={person.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i % PAGE_SIZE, 8) * 50}ms` }}>
+                    <PersonCard person={person} />
+                  </div>
+                ))}
+              </div>
+              <LoadMoreControls
+                shown={visiblePeople.length}
+                total={searchResults.people.length}
+                pageSize={PAGE_SIZE}
+                onMore={() => setPeopleShown((n) => n + PAGE_SIZE)}
+                onLess={collapse(setPeopleShown)}
+                noun="people"
+              />
+            </>
           )}
         </div>
       </div>
@@ -247,13 +336,22 @@ function SearchContent() {
   );
 }
 
-function EmptyState({ title, action }: { title: string; action?: React.ReactNode }) {
+function ResultCount({ shown, total, noun, plural }: { shown: number; total: number; noun: string; plural?: string }) {
+  return (
+    <p className="text-sm font-semibold text-muted-foreground" aria-live="polite">
+      Showing {shown} of {total} {total === 1 ? noun : plural ?? `${noun}s`}
+    </p>
+  );
+}
+
+function EmptyState({ title, hint, action }: { title: string; hint?: string; action?: React.ReactNode }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-border bg-card px-6 py-14 text-center space-y-4 animate-fade-in">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
         <SearchX className="h-7 w-7 text-muted-foreground" />
       </div>
       <p className="text-lg font-semibold text-foreground">{title}</p>
+      {hint && <p className="mx-auto max-w-md text-sm text-muted-foreground">{hint}</p>}
       {action}
     </div>
   );

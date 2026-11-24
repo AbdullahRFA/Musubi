@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Sparkles, PlusCircle, RefreshCcw, Search, SearchX, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, PlusCircle, RefreshCcw, Search, SearchX, ChevronDown } from "lucide-react";
 import { usePosts, usePostsLoaded } from "@/lib/services/postService";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { useSession } from "@/lib/services/authService";
 import { CATEGORIES, EXCHANGE_METHODS } from "@/lib/constants";
 import { PostCard } from "@/components/posts/PostCard";
 import { Button } from "@/components/ui/button";
+import { LoadMoreControls, CardSkeleton } from "@/components/common/LoadMore";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 
@@ -36,34 +37,6 @@ function ChipCount({ n, active }: { n: number; active: boolean }) {
     >
       {n}
     </span>
-  );
-}
-
-function PostCardSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-2xl border-2 border-border bg-card">
-      <div className="h-1.5 w-full bg-muted" />
-      <div className="space-y-4 p-5 animate-pulse">
-        <div className="flex gap-2">
-          <div className="h-6 w-20 rounded-full bg-muted" />
-          <div className="h-6 w-24 rounded-full bg-muted" />
-        </div>
-        <div className="h-6 w-4/5 rounded bg-muted" />
-        <div className="space-y-2">
-          <div className="h-4 w-full rounded bg-muted" />
-          <div className="h-4 w-11/12 rounded bg-muted" />
-          <div className="h-4 w-2/3 rounded bg-muted" />
-        </div>
-        <div className="flex items-center gap-2.5 pt-2">
-          <div className="h-9 w-9 rounded-full bg-muted" />
-          <div className="h-4 w-32 rounded bg-muted" />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="h-10 rounded-lg bg-muted" />
-          <div className="h-10 rounded-lg bg-muted" />
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -180,7 +153,6 @@ export default function PostsDirectoryPage() {
     setVisible(PAGE_SIZE);
     requestAnimationFrame(() => listTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
-  const canShowLess = shownPosts.length > PAGE_SIZE;
 
   // Move keyboard / screen-reader focus to the first newly revealed card
   useEffect(() => {
@@ -368,7 +340,7 @@ export default function PostsDirectoryPage() {
         {!loaded ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
-              <PostCardSkeleton key={i} />
+              <CardSkeleton key={i} />
             ))}
           </div>
         ) : filteredPosts.length === 0 ? (
@@ -416,52 +388,13 @@ export default function PostsDirectoryPage() {
             </div>
 
             {/* ---------- Pagination ---------- */}
-            <div className="flex flex-col items-center gap-3 pt-2 pb-16 md:pb-4">
-              {(remaining > 0 || canShowLess) && (
-                <div className="flex w-full flex-col items-stretch justify-center gap-2.5 min-[480px]:w-auto min-[480px]:flex-row min-[480px]:items-center">
-                  {remaining > 0 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="lg"
-                      onClick={showMore}
-                      className="group min-w-[13rem] gap-2 rounded-full font-bold"
-                    >
-                      See more
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">
-                        {remaining} more
-                      </span>
-                      <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
-                    </Button>
-                  )}
-                  {canShowLess && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="lg"
-                      onClick={showLess}
-                      className="group gap-2 rounded-full font-semibold text-muted-foreground hover:text-foreground"
-                    >
-                      See less
-                      <ChevronUp className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
-                    </Button>
-                  )}
-                </div>
-              )}
-              {filteredPosts.length > PAGE_SIZE && (
-                <>
-                  <div className="h-1.5 w-48 overflow-hidden rounded-full bg-muted" aria-hidden="true">
-                    <div
-                      className="h-full rounded-full bg-primary transition-[width] duration-500 ease-smooth"
-                      style={{ width: `${(shownPosts.length / filteredPosts.length) * 100}%` }}
-                    />
-                  </div>
-                  {remaining === 0 && (
-                    <p className="text-sm font-semibold text-muted-foreground">You&apos;ve seen all {filteredPosts.length} posts.</p>
-                  )}
-                </>
-              )}
-            </div>
+            <LoadMoreControls
+              shown={shownPosts.length}
+              total={filteredPosts.length}
+              pageSize={PAGE_SIZE}
+              onMore={showMore}
+              onLess={showLess}
+            />
           </>
         )}
       </div>
