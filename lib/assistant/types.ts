@@ -40,6 +40,8 @@ export interface AssistantMessage extends Partial<Omit<AssistantResponse, "reply
   error?: boolean;
   /** "faq" when answered instantly from the stored FAQ (no AI call). */
   source?: "faq" | "ai";
+  /** Marker shown when the user stopped a slow answer (not sent to the AI). */
+  stopped?: boolean;
 }
 
 /** sessionStorage key used to hand a draft to the post form. */

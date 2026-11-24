@@ -263,7 +263,7 @@ ${postsContext}`;
   });
 
   try {
-    const request = {
+    const genRequest = {
       contents: history.map((m) => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],
@@ -274,6 +274,8 @@ ${postsContext}`;
         responseJsonSchema: RESPONSE_JSON_SCHEMA,
         maxOutputTokens: 4096,
         temperature: 0.6,
+        // Stop waiting as soon as the visitor presses Stop (or leaves)
+        abortSignal: request.signal,
       },
     };
 
@@ -285,10 +287,15 @@ ${postsContext}`;
     outer: for (let pass = 0; pass < 2; pass++) {
       if (pass > 0) await new Promise((r) => setTimeout(r, 1500));
       for (const model of MODELS) {
+        // Visitor stopped the answer: don't spend quota on more fallbacks
+        if (request.signal.aborted) {
+          return new NextResponse(null, { status: 499 });
+        }
         try {
-          response = await ai.models.generateContent({ model, ...request });
+          response = await ai.models.generateContent({ model, ...genRequest });
           break outer;
         } catch (err) {
+          if (request.signal.aborted) return new NextResponse(null, { status: 499 });
           lastError = err;
           const busy = err instanceof ApiError && (err.status === 429 || err.status === 404 || err.status >= 500);
           if (!busy) throw err;
