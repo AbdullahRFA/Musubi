@@ -14,6 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExchangeBadge, PostTypeBadge, POST_TYPE_ACCENT } from "@/components/posts/PostBadges";
 import { ReportDialog } from "@/components/common/ReportDialog";
+import { timeAgo } from "@/components/notifications/notificationStyles";
+
+/** "just now", "5m ago", "2d ago", or a date for older posts. */
+function postedAgo(iso: string) {
+  const t = timeAgo(iso);
+  if (t === "now") return "just now";
+  return /^\d+[mhd]$/.test(t) ? `${t} ago` : t;
+}
 
 export const PostCard = memo(function PostCard({ post }: { post: Post }) {
   const author = usePublicProfile(post.authorId);
@@ -58,14 +66,24 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
       <div className={`h-1.5 w-full ${POST_TYPE_ACCENT[post.postType] ?? POST_TYPE_ACCENT.request}`} />
 
       <CardHeader className="p-4 sm:p-5 pb-2 sm:pb-3 space-y-2.5">
-        <div className="flex flex-wrap items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <PostTypeBadge type={post.postType} />
             <Badge variant="outline" className="text-[11px] sm:text-xs font-semibold bg-muted/60 text-foreground border-border py-0.5 px-2.5">
               {post.category}
             </Badge>
           </div>
-          <ExchangeBadge method={post.exchangeMethod} amount={post.amount} />
+          {!isOwner && (
+            <button
+              type="button"
+              onClick={() => (session ? setReportOpen(true) : router.push("/login"))}
+              className="-mr-1.5 -mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+              aria-label={`Report post: ${post.title}`}
+              title="Report this post"
+            >
+              <Flag className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <Link href={`/posts/${post.id}`} className="block">
@@ -78,8 +96,8 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
       <CardContent className="p-4 sm:p-5 pt-0 sm:pt-0 space-y-3 flex-1">
         <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{post.description}</p>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-3 border-t border-border/70 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1 font-semibold text-foreground min-w-0 max-w-full">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-3 border-t border-border/70 text-xs text-muted-foreground">
+          <span className="inline-flex min-w-0 max-w-full items-center gap-1 font-semibold text-foreground">
             <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
             <span className="truncate">{post.location}</span>
           </span>
@@ -87,68 +105,52 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
             <Clock className="h-3.5 w-3.5 text-secondary shrink-0" />
             <span>{post.availability}</span>
           </span>
-          {!isOwner && (
-            <button
-              type="button"
-              onClick={() => (session ? setReportOpen(true) : router.push("/login"))}
-              className="ml-auto inline-flex min-h-[32px] items-center gap-1 rounded-full px-2.5 font-semibold text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              aria-label={`Report post: ${post.title}`}
-              title="Report this post"
-            >
-              <Flag className="h-3.5 w-3.5" />
-              Report
-            </button>
-          )}
+          <ExchangeBadge method={post.exchangeMethod} amount={post.amount} />
         </div>
       </CardContent>
 
       <CardFooter className="p-4 sm:p-5 pt-3 sm:pt-3 border-t border-border/70 mt-auto flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between w-full gap-3">
-          {author ? (
-            <Link
-              href={`/profile/${author.id}`}
-              className="group/author flex items-center gap-2 min-w-0 flex-1"
-            >
-              <div className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-xs font-bold ring-2 ring-card shadow-xs shrink-0 overflow-hidden transition-transform duration-200 group-hover/author:scale-105">
-                {author.avatarUrl ? (
-                  <img src={author.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                ) : (
-                  initials(author.fullName)
-                )}
-              </div>
-              <div className="flex flex-col text-left min-w-0">
-                <span className="text-sm font-bold text-foreground truncate group-hover/author:text-primary transition-colors">
-                  {author.fullName}
-                </span>
-                <span className="text-[11px] font-medium text-muted-foreground truncate">
-                  {author.userGroup === "og" ? "Older Generation" : "Younger Generation"}
-                </span>
-              </div>
-            </Link>
-          ) : (
-            <div className="text-xs text-muted-foreground flex-1">Neighbor in Nagasaki</div>
-          )}
+        {author ? (
+          <Link href={`/profile/${author.id}`} className="group/author flex w-full min-w-0 items-center gap-2.5">
+            <div className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-xs font-bold ring-2 ring-card shadow-xs shrink-0 overflow-hidden transition-transform duration-200 group-hover/author:scale-105">
+              {author.avatarUrl ? (
+                <img src={author.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+              ) : (
+                initials(author.fullName)
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-foreground transition-colors group-hover/author:text-primary">
+                {author.fullName}
+              </p>
+              <p className="truncate text-[11px] font-medium text-muted-foreground">
+                {author.userGroup === "og" ? "Older Generation" : "Younger Generation"} · {postedAgo(post.createdAt)}
+              </p>
+            </div>
+          </Link>
+        ) : (
+          <p className="w-full text-xs text-muted-foreground">Neighbor in Nagasaki · {postedAgo(post.createdAt)}</p>
+        )}
 
-          <div className="flex items-center gap-2 shrink-0 w-full min-[400px]:w-auto">
-            {!isOwner && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setRespondOpen((v) => !v)}
-                aria-expanded={respondOpen}
-                className={`flex-1 min-[400px]:flex-none font-semibold gap-1.5 px-3 ${respondOpen ? "border-primary/50 bg-primary/5" : ""}`}
-              >
-                <MessageCircle className="h-4 w-4 text-primary shrink-0" />
-                Respond
-              </Button>
-            )}
-            <Button asChild size="sm" className="group/view flex-1 min-[400px]:flex-none font-bold gap-1.5 px-3">
-              <Link href={`/posts/${post.id}`}>
-                View
-                <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover/view:translate-x-0.5" />
-              </Link>
+        <div className={`grid w-full gap-2 ${isOwner ? "grid-cols-1" : "grid-cols-2"}`}>
+          {!isOwner && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRespondOpen((v) => !v)}
+              aria-expanded={respondOpen}
+              className={`font-semibold gap-1.5 px-3 ${respondOpen ? "border-primary/50 bg-primary/5" : ""}`}
+            >
+              <MessageCircle className="h-4 w-4 text-primary shrink-0" />
+              Respond
             </Button>
-          </div>
+          )}
+          <Button asChild size="sm" className="group/view font-bold gap-1.5 px-3">
+            <Link href={`/posts/${post.id}`}>
+              {isOwner ? "View your post" : "View"}
+              <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover/view:translate-x-0.5" />
+            </Link>
+          </Button>
         </div>
 
         {/* Inline response drawer */}
