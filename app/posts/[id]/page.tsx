@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MapPin,
   Clock,
@@ -19,6 +19,11 @@ import {
   Inbox,
   SearchX,
   Flag,
+  PartyPopper,
+  BarChart3,
+  PlusCircle,
+  Sparkles,
+  PenLine,
 } from "lucide-react";
 import { usePost, closePost, deletePost } from "@/lib/services/postService";
 import { usePublicProfile } from "@/lib/services/profileService";
@@ -35,6 +40,7 @@ import { DynamicMap } from "@/components/maps/DynamicMap";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog } from "@/components/ui/dialog";
 import { ExchangeBadge, PostTypeBadge, POST_TYPE_ACCENT } from "@/components/posts/PostBadges";
 
 export default function PostDetailPage() {
@@ -51,6 +57,20 @@ export default function PostDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"close" | "delete" | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [justCreated, setJustCreated] = useState(false);
+
+  // Arrived right after publishing (?created=1): celebrate once, then tidy the URL
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("created") === "1") {
+      setJustCreated(true);
+      url.searchParams.delete("created");
+      window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+  }, []);
 
   if (!post) {
     return (
@@ -91,30 +111,32 @@ export default function PostDetailPage() {
     }
   };
 
-  const handleClose = async () => {
-    if (confirm("Are you sure you want to close this post? Any pending requests will be declined.")) {
-      try {
+  const runConfirmed = async () => {
+    if (!confirmAction) return;
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      if (confirmAction === "close") {
         await closePost(post.id);
-      } catch (err: any) {
-        alert(err?.message || "Failed to close post.");
+        setConfirmAction(null);
+      } else {
+        await deletePost(post.id);
+        setConfirmAction(null);
+        router.push("/posts");
       }
+    } catch (err: any) {
+      setActionError(err?.message || `Failed to ${confirmAction} the post.`);
+    } finally {
+      setActionBusy(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (confirm("Are you sure you want to permanently delete this post?")) {
-      try {
-        await deletePost(post.id);
-        router.push("/posts");
-      } catch (err: any) {
-        alert(err?.message || "Failed to delete post.");
-      }
-    }
-  };
+  const pendingRequests = requests.filter((r) => r.status === "pending").length;
+  const canEdit = post.status === "open" || post.status === "in_progress";
 
   const isOffer = post.postType === "offer";
 
-  const AuthorAvatar = ({ className }: { className: string }) =>
+  const authorAvatar = (className: string) =>
     author ? (
       <div
         className={`rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold overflow-hidden shrink-0 ${className}`}
@@ -139,7 +161,33 @@ export default function PostDetailPage() {
         <span className="truncate">{post.category}</span>
       </nav>
 
-      <SafetyBanner />
+      {justCreated && isOwner && (
+        <div
+          role="status"
+          className="flex flex-col gap-3 rounded-2xl border-2 border-success/30 bg-success/5 p-4 sm:flex-row sm:items-center sm:justify-between animate-fade-up"
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+              <PartyPopper className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-bold text-foreground">Your post is live!</p>
+              <p className="text-sm text-muted-foreground">
+                Neighbours can now see it and respond. We&apos;ll notify you when someone sends a request.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setJustCreated(false)}
+            className="self-end rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:self-auto"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {!isOwner && <SafetyBanner />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
         {/* ---------- Main column ---------- */}
@@ -192,13 +240,13 @@ export default function PostDetailPage() {
                 </span>
               </div>
 
-              {/* Compact author row on mobile / tablet */}
-              {author && (
+              {/* Compact author row on mobile / tablet (not needed on your own post) */}
+              {author && !isOwner && (
                 <Link
                   href={`/profile/${author.id}`}
                   className="lg:hidden group flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3 transition-colors hover:bg-muted/60"
                 >
-                  <AuthorAvatar className="h-10 w-10 text-sm" />
+                  {authorAvatar("h-10 w-10 text-sm")}
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
                       {author.fullName}
@@ -248,22 +296,24 @@ export default function PostDetailPage() {
             {isOwner && (
               <footer className="border-t border-border bg-muted/20 px-5 sm:px-7 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2">
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <Link href={`/posts/${post.id}/edit`}>
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Link>
-                  </Button>
+                  {canEdit && (
+                    <Button asChild variant="outline" size="sm" className="gap-1.5">
+                      <Link href={`/posts/${post.id}/edit`}>
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Link>
+                    </Button>
+                  )}
                   {post.status === "open" && (
                     <>
-                      <Button variant="outline" size="sm" onClick={handleClose} className="gap-1.5 text-muted-foreground">
+                      <Button variant="outline" size="sm" onClick={() => setConfirmAction("close")} className="gap-1.5 text-muted-foreground">
                         <XCircle className="h-4 w-4" />
                         Close
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={handleDelete}
+                        onClick={() => setConfirmAction("delete")}
                         className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -275,8 +325,10 @@ export default function PostDetailPage() {
                 <Button asChild variant="secondary" size="sm" className="gap-1.5">
                   <Link href="/requests">
                     <Inbox className="h-4 w-4" />
-                    Incoming Requests
-                    <span className="rounded-full bg-white/20 px-2 text-xs font-bold">{requests.length}</span>
+                    {pendingRequests > 0 ? "Review requests" : "Incoming requests"}
+                    <span className="rounded-full bg-white/20 px-2 text-xs font-bold tabular-nums" aria-label={`${pendingRequests} waiting`}>
+                      {pendingRequests}
+                    </span>
                   </Link>
                 </Button>
               </footer>
@@ -388,11 +440,88 @@ export default function PostDetailPage() {
         </div>
 
         {/* ---------- Sidebar (desktop) ---------- */}
-        <aside className="hidden lg:block lg:sticky lg:top-24 space-y-4">
-          {author && (
+        <aside className={`${isOwner ? "block" : "hidden lg:block"} lg:sticky lg:top-24 space-y-4`}>
+          {isOwner && (
+            <>
+              {/* Your post at a glance */}
+              <section className="rounded-2xl border-2 border-border bg-card p-5 shadow-sm space-y-4 animate-fade-up [animation-delay:150ms]">
+                <h2 className="flex items-center gap-2 text-base font-extrabold text-foreground">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Your post at a glance
+                </h2>
+                <dl className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-muted/50 p-3 text-center">
+                    <dt className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Waiting</dt>
+                    <dd className="text-2xl font-black tabular-nums text-foreground">{pendingRequests}</dd>
+                  </div>
+                  <div className="rounded-xl bg-muted/50 p-3 text-center">
+                    <dt className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">All requests</dt>
+                    <dd className="text-2xl font-black tabular-nums text-foreground">{requests.length}</dd>
+                  </div>
+                </dl>
+                <p className="text-sm text-muted-foreground">
+                  {post.status === "open"
+                    ? pendingRequests > 0
+                      ? "Someone wants to help! Review and accept a request to start chatting."
+                      : "No requests yet. Neighbours usually respond within a day or two."
+                    : post.status === "in_progress"
+                    ? "You've accepted a neighbour. Coordinate in Messages, then mark it completed."
+                    : "This post is no longer accepting requests."}
+                </p>
+                <Button asChild variant="outline" size="sm" className="w-full gap-1.5">
+                  <Link href="/requests">
+                    <Inbox className="h-4 w-4" />
+                    Manage requests
+                  </Link>
+                </Button>
+              </section>
+
+              {/* Create another post */}
+              <section className="relative overflow-hidden rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/[0.06] to-amber-100/40 p-5 shadow-sm space-y-4 animate-fade-up [animation-delay:200ms]">
+                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl" aria-hidden="true" />
+                <div className="relative space-y-1">
+                  <h2 className="flex items-center gap-2 text-base font-extrabold text-foreground">
+                    <PlusCircle className="h-5 w-5 text-primary" />
+                    Create another post
+                  </h2>
+                  <p className="text-sm text-muted-foreground">Need help with something else, or want to offer a skill?</p>
+                </div>
+                <div className="relative grid gap-2">
+                  <Link
+                    href="/quick-post"
+                    className="group flex items-center gap-3 rounded-xl bg-primary p-3.5 text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-glow"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
+                      <Sparkles className="h-5 w-5 text-amber-200" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">Quick Post</span>
+                      <span className="block text-xs text-primary-foreground/80">Ready-made templates, almost no typing</span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                  <Link
+                    href="/posts/new"
+                    className="group flex items-center gap-3 rounded-xl border-2 border-border bg-card p-3.5 text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-soft"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
+                      <PenLine className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">Standard Post</span>
+                      <span className="block text-xs text-muted-foreground">Write every detail yourself</span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                </div>
+              </section>
+            </>
+          )}
+
+          {author && !isOwner && (
             <div className="rounded-2xl border-2 border-border bg-card shadow-sm p-6 space-y-5 animate-fade-up [animation-delay:150ms]">
               <div className="text-center space-y-2">
-                <AuthorAvatar className="mx-auto h-20 w-20 text-2xl ring-4 ring-muted shadow-soft" />
+                {authorAvatar("mx-auto h-20 w-20 text-2xl ring-4 ring-muted shadow-soft")}
                 <h2 className="text-xl font-bold text-foreground">{author.fullName}</h2>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <span
@@ -454,6 +583,32 @@ export default function PostDetailPage() {
         targetId={post.id}
         targetLabel={`“${post.title}”`}
       />
+
+      <Dialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => !actionBusy && !open && (setConfirmAction(null), setActionError(null))}
+        title={confirmAction === "delete" ? "Delete this post?" : "Close this post?"}
+        description={
+          confirmAction === "delete"
+            ? "The post will be removed permanently. This can't be undone."
+            : "Neighbours will no longer be able to respond, and any pending requests will be declined."
+        }
+      >
+        {actionError && (
+          <p role="alert" className="mb-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            {actionError}
+          </p>
+        )}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" disabled={actionBusy} onClick={() => setConfirmAction(null)}>
+            Keep post
+          </Button>
+          <Button type="button" variant="destructive" disabled={actionBusy} onClick={runConfirmed} className="font-bold">
+            {actionBusy && <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />}
+            {confirmAction === "delete" ? "Delete post" : "Close post"}
+          </Button>
+        </div>
+      </Dialog>
 
       {/* Sticky respond CTA on mobile for non-owners */}
       {!isOwner && post.status === "open" && session && !myExistingRequest && (

@@ -29,6 +29,7 @@ import { createPost } from "@/lib/services/postService";
 import type { Category, ExchangeMethod, PostType, RequirementTemplate } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { AuthGuard } from "@/components/common/AuthGuard";
+import { ProfileGate } from "@/components/posts/ProfileGate";
 import { ExchangeBadge, PostTypeBadge, POST_TYPE_ACCENT } from "@/components/posts/PostBadges";
 
 export default function QuickPostWizardPage() {
@@ -91,7 +92,7 @@ export default function QuickPostWizardPage() {
         templateId: selectedTemplate.id,
       });
 
-      router.push(`/posts/${created.id}`);
+      router.push(`/posts/${created.id}?created=1`);
     } catch (err: any) {
       setError(err?.message || "Failed to create quick post.");
       setSubmitting(false);
@@ -146,6 +147,7 @@ export default function QuickPostWizardPage() {
 
   return (
     <AuthGuard>
+      <ProfileGate>
       <div ref={topRef} className="page-container max-w-3xl py-6 sm:py-10 space-y-6 scroll-mt-20">
         {/* ---------- Stepper ---------- */}
         <div className="space-y-4">
@@ -463,6 +465,7 @@ export default function QuickPostWizardPage() {
           </StepShell>
         )}
       </div>
+      </ProfileGate>
     </AuthGuard>
   );
 }
