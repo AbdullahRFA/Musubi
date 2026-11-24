@@ -7,6 +7,7 @@ import type { Post, PostStatus } from "@/lib/types";
 import { hiddenFrom, requireUser, ServiceError, userById } from "@/lib/services/shared";
 import { pushNotification } from "@/lib/services/notificationService";
 import { createClient } from "@/lib/supabase/client";
+import { getProfileCompletion } from "@/lib/profileCompletion";
 
 export type PostInput = Omit<Post, "id" | "authorId" | "lat" | "lng" | "status" | "createdAt" | "updatedAt">;
 
@@ -222,6 +223,12 @@ export function useMyPosts(): Post[] {
  */
 export async function createPost(input: PostInput): Promise<Post> {
   const me = requireUser();
+  const completion = getProfileCompletion(me);
+  if (!completion.complete) {
+    throw new ServiceError(
+      `Please complete your profile before posting: ${completion.missing.map((m) => m.label.toLowerCase()).join(", ")}.`
+    );
+  }
   const place = placeByName(input.location);
   const supabase = createClient();
 
