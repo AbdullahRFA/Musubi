@@ -34,8 +34,7 @@ import {
   SUGGESTED_SERVICES,
   SUGGESTED_INTERESTS,
   AVAILABILITY,
-  detectGeneration,
-} from "@/lib/constants";
+  detectGeneration, MIN_AGE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { AuthGuard } from "@/components/common/AuthGuard";
@@ -117,7 +116,7 @@ export default function EditProfilePage() {
   // Automatic Generation Detection
   const detectedGroup = useMemo(() => {
     const num = Number(age);
-    if (!num || num < 13 || num > 120) return null;
+    if (!num || num < MIN_AGE || num > 120) return null;
     return detectGeneration(num);
   }, [age]);
 
@@ -352,7 +351,7 @@ export default function EditProfilePage() {
                     id="pe-age"
                     type="number"
                     inputMode="numeric"
-                    min={13}
+                    min={MIN_AGE}
                     max={120}
                     value={age}
                     onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}

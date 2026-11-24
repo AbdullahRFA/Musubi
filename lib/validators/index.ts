@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MIN_AGE } from "@/lib/constants";
 
 const categories = [
   "Cooking",
@@ -35,7 +36,7 @@ export const registerSchema = z.object({
     z
       .number({ required_error: "Please enter your age.", invalid_type_error: "Please enter your age as a number." })
       .int("Please enter your age as a whole number.")
-      .min(13, "You must be at least 13 years old to join.")
+      .min(MIN_AGE, `You must be at least ${MIN_AGE} years old to join.`)
       .max(120, "Please enter a valid age.")
   ),
   neighborhood: z.string().trim().optional(),
@@ -45,7 +46,7 @@ export const registerSchema = z.object({
 export const profileSchema = z.object({
   fullName: z.string().trim().min(2, "Please enter your full name.").max(80),
   email: z.string().trim().email("Enter a valid email address.").optional(),
-  age: z.coerce.number().min(13).max(120).nullable().optional(),
+  age: z.coerce.number().min(MIN_AGE, `Must be at least ${MIN_AGE}`).max(120).nullable().optional(),
   userGroup: z.enum(["og", "yg"]).optional(),
   ageGroup: z.enum(["18-29", "30-49", "50-64", "65+"]).or(z.literal("")).optional(),
   location: z.string().trim().optional(),
@@ -102,7 +103,7 @@ export const reportSchema = z.object({
 });
 
 export const onboardingSchema = z.object({
-  age: z.coerce.number().min(13, "Must be at least 13").max(120, "Please enter a valid age").optional(),
+  age: z.coerce.number().min(MIN_AGE, `Must be at least ${MIN_AGE}`).max(120, "Please enter a valid age").optional(),
   ageGroup: z.enum(["18-29", "30-49", "50-64", "65+"]).optional(),
   location: z.string().optional(),
   neighborhoods: z.array(z.string().trim().min(1)).min(1, "Please select at least 1 neighborhood.").max(5, "Select up to 5 neighborhoods.").optional(),

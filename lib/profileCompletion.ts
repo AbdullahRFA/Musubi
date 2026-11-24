@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Profile } from "@/lib/types";
+import { MIN_AGE } from "@/lib/constants";
 
 export const MIN_BIO_LENGTH = 20;
 
@@ -20,7 +21,7 @@ export function getProfileCompletion(profile: Profile | null | undefined) {
   const neighbourhoods = profile?.neighborhoods?.length ? profile.neighborhoods : profile?.location ? [profile.location] : [];
   const items: CompletionItem[] = [
     { id: "name", label: "Your full name", done: (profile?.fullName?.trim().length ?? 0) >= 2 },
-    { id: "age", label: "Your age", done: typeof profile?.age === "number" && profile.age >= 13 },
+    { id: "age", label: "Your age", done: typeof profile?.age === "number" && profile.age >= MIN_AGE },
     { id: "neighbourhood", label: "At least one neighbourhood", done: neighbourhoods.length > 0 },
     {
       id: "bio",

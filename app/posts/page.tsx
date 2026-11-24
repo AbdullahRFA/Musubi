@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Sparkles, PlusCircle, RefreshCcw, Search, SearchX, ChevronDown } from "lucide-react";
+import { Sparkles, PlusCircle, RefreshCcw, Search, SearchX, ChevronDown, ChevronUp } from "lucide-react";
 import { usePosts, usePostsLoaded } from "@/lib/services/postService";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { useSession } from "@/lib/services/authService";
@@ -173,6 +173,14 @@ export default function PostsDirectoryPage() {
     focusIndexRef.current = shownPosts.length; // first card of the next batch
     setVisible((v) => v + PAGE_SIZE);
   };
+
+  // Collapse back to the first page and bring the list into view again
+  const listTopRef = useRef<HTMLDivElement | null>(null);
+  const showLess = () => {
+    setVisible(PAGE_SIZE);
+    requestAnimationFrame(() => listTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+  const canShowLess = shownPosts.length > PAGE_SIZE;
 
   // Move keyboard / screen-reader focus to the first newly revealed card
   useEffect(() => {
@@ -390,7 +398,7 @@ export default function PostsDirectoryPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
+            <div ref={listTopRef} className="grid scroll-mt-24 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
               {shownPosts.map((post, i) => {
                 const isFirstNew = focusIndexRef.current !== null && i === focusIndexRef.current;
                 return (
@@ -409,32 +417,49 @@ export default function PostsDirectoryPage() {
 
             {/* ---------- Pagination ---------- */}
             <div className="flex flex-col items-center gap-3 pt-2 pb-16 md:pb-4">
-              {remaining > 0 ? (
+              {(remaining > 0 || canShowLess) && (
+                <div className="flex w-full flex-col items-stretch justify-center gap-2.5 min-[480px]:w-auto min-[480px]:flex-row min-[480px]:items-center">
+                  {remaining > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      onClick={showMore}
+                      className="group min-w-[13rem] gap-2 rounded-full font-bold"
+                    >
+                      See more
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">
+                        {remaining} more
+                      </span>
+                      <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
+                    </Button>
+                  )}
+                  {canShowLess && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="lg"
+                      onClick={showLess}
+                      className="group gap-2 rounded-full font-semibold text-muted-foreground hover:text-foreground"
+                    >
+                      See less
+                      <ChevronUp className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
+                    </Button>
+                  )}
+                </div>
+              )}
+              {filteredPosts.length > PAGE_SIZE && (
                 <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="lg"
-                    onClick={showMore}
-                    className="group min-w-[14rem] gap-2 rounded-full font-bold"
-                  >
-                    See more
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">
-                      {remaining} more
-                    </span>
-                    <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
-                  </Button>
                   <div className="h-1.5 w-48 overflow-hidden rounded-full bg-muted" aria-hidden="true">
                     <div
                       className="h-full rounded-full bg-primary transition-[width] duration-500 ease-smooth"
                       style={{ width: `${(shownPosts.length / filteredPosts.length) * 100}%` }}
                     />
                   </div>
+                  {remaining === 0 && (
+                    <p className="text-sm font-semibold text-muted-foreground">You&apos;ve seen all {filteredPosts.length} posts.</p>
+                  )}
                 </>
-              ) : (
-                filteredPosts.length > PAGE_SIZE && (
-                  <p className="text-sm font-semibold text-muted-foreground">You&apos;ve seen all {filteredPosts.length} posts.</p>
-                )
               )}
             </div>
           </>

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Profile, UserGroup } from "@/lib/types";
 import { ServiceError, requireUser } from "@/lib/services/shared";
-import { detectGeneration, placeByName } from "@/lib/constants";
+import { detectGeneration, placeByName, MIN_AGE } from "@/lib/constants";
 
 /**
  * Maps Supabase snake_case profiles table row to the domain Profile type
@@ -216,6 +216,11 @@ export async function signUp(input: {
   userGroup?: UserGroup;
 }): Promise<{ profile: Profile; needsEmailConfirmation: boolean }> {
   const normalized = input.email.trim().toLowerCase();
+
+  // Minimum age to join (mirrors the register form)
+  if (typeof input.age !== "number" || !Number.isInteger(input.age) || input.age < MIN_AGE) {
+    throw new ServiceError(`You must be at least ${MIN_AGE} years old to join Tsunagu Generations.`);
+  }
 
   // Same rule as the register / reset / change password forms
   if (input.password.length < 8 || !/[A-Za-z]/.test(input.password) || !/\d/.test(input.password)) {

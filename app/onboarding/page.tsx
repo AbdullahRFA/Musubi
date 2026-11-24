@@ -9,8 +9,7 @@ import {
   POPULAR_NEIGHBORHOODS,
   SUGGESTED_SKILLS,
   SUGGESTED_SERVICES,
-  detectGeneration,
-} from "@/lib/constants";
+  detectGeneration, MIN_AGE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { MIN_BIO_LENGTH } from "@/lib/profileCompletion";
@@ -80,7 +79,7 @@ export default function OnboardingPage() {
   // Automatic generation detection based on age rule (60+ older, <60 younger)
   const detectedGroup = useMemo(() => {
     const num = Number(age);
-    if (!num || num < 13 || num > 120) return null;
+    if (!num || num < MIN_AGE || num > 120) return null;
     return detectGeneration(num);
   }, [age]);
 
@@ -199,7 +198,7 @@ export default function OnboardingPage() {
                     id="onboarding-age"
                     type="number"
                     inputMode="numeric"
-                    min={13}
+                    min={MIN_AGE}
                     max={120}
                     value={age}
                     onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}

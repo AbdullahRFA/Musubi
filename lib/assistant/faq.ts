@@ -121,8 +121,8 @@ export const FAQS: FaqEntry[] = [
       ja: ["誰が参加", "誰でも使える", "年齢制限", "何歳から", "高齢者だけ", "若い人も"],
     },
     answer: {
-      en: "Anyone aged 13 or older can join. Members aged 60 and over are shown as Older Generation, and members under 60 as Younger Generation. This is set automatically from your age, and it never limits what you can do.",
-      ja: "13歳以上なら誰でも参加できます。60歳以上の方は「シニア世代」、60歳未満の方は「若い世代」と表示されます。年齢から自動で決まり、できることに制限はありません。",
+      en: "Anyone aged 15 or older can join. Members aged 60 and over are shown as Older Generation, and members under 60 as Younger Generation. This is set automatically from your age, and it never limits what you can do.",
+      ja: "15歳以上なら誰でも参加できます。60歳以上の方は「シニア世代」、60歳未満の方は「若い世代」と表示されます。年齢から自動で決まり、できることに制限はありません。",
     },
     related: ["og-yg", "register"],
   },
