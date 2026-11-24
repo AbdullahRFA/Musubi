@@ -343,14 +343,16 @@ export function AssistantWidget() {
           }}
           className={`${hideOnPhone ? "hidden md:inline-flex" : "inline-flex"} fixed right-4 ${
             raiseOnPhone ? "bottom-[calc(9rem+env(safe-area-inset-bottom))]" : "bottom-[calc(5rem+env(safe-area-inset-bottom))]"
-          } md:bottom-6 md:right-6 z-[45] items-center gap-2 rounded-full bg-gradient-to-br from-[#315B4B] to-[#234336] pl-3 pr-4 py-3 text-white shadow-lift ring-4 ring-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:scale-95 animate-fade-up`}
+          } md:bottom-6 md:right-6 z-[45] group items-center rounded-full bg-gradient-to-br from-[#315B4B] to-[#234336] p-2.5 hover:pr-4 focus-visible:pr-4 text-white shadow-lift ring-4 ring-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:scale-95 animate-fade-up`}
           aria-label={t.open}
         >
           <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
             <Bot className="h-5 w-5" />
             <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-400 ring-2 ring-[#315B4B] animate-pulse" />
           </span>
-          <span className="hidden min-[400px]:inline text-sm font-bold">{t.open}</span>
+          <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-bold opacity-0 transition-all duration-300 group-hover:ml-1 group-hover:max-w-[12rem] group-hover:opacity-100 group-focus-visible:ml-1 group-focus-visible:max-w-[12rem] group-focus-visible:opacity-100">
+            {t.open}
+          </span>
         </button>
       )}
 
