@@ -550,7 +550,7 @@ export function ChatThreadView({ conversationId, onBack, showBackButton = false 
                                 : `border border-border bg-white text-foreground ${startsGroup ? "rounded-2xl rounded-tl-md" : "rounded-2xl rounded-l-md"}`
                             }`}
                           >
-                            <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                            <p data-no-translate className="whitespace-pre-wrap break-words">{m.body}</p>
                           </div>
                           {!isMe && (
                             <button

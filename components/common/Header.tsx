@@ -158,6 +158,7 @@ export const Header = memo(function Header() {
             href="/"
             className="flex flex-col group rounded-md min-w-0"
             aria-label="Tsunagu Generations Home"
+            data-no-translate
           >
             <div className="flex items-center gap-1.5">
               <span className="font-black text-[18px] sm:text-[24px] lg:text-[27px] tracking-tight text-primary transition-colors duration-200 group-hover:text-[#7c2d12] leading-none">
