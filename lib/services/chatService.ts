@@ -489,8 +489,9 @@ export function useThread(conversationId: string) {
     const blocks = useAppStore.getState().blocks;
     if (hiddenFrom(blocks, userId, otherId)) return null;
     const request = requests.find((item) => item.id === conversation.requestId) ?? null;
-    // Task completion: chat is closed once both parties mark done
-    if (!request || request.status !== "accepted") return null;
+    // Accepted chats are live; completed ones stay readable (history + review),
+    // and sendMessage() still rejects new messages for them.
+    if (!request || (request.status !== "accepted" && request.status !== "completed")) return null;
     const post = request.postId ? posts.find((item) => item.id === request.postId) ?? null : null;
     const thread = messages
       .filter((message) => message.conversationId === conversation.id)
