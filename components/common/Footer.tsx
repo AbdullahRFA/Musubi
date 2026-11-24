@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Logo } from "@/components/common/Logo";
 import { Heart, Shield, HelpCircle, Globe, Mail, ArrowUpRight, type LucideIcon } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
@@ -63,8 +64,7 @@ export function Footer() {
           {/* Brand & Vision */}
           <div className="space-y-4 sm:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2">
-              <span className="font-extrabold text-2xl text-primary">Tsunagu</span>
-              <span className="font-bold text-xl text-foreground">Generations</span>
+              <Logo />
             </Link>
             <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
               {t(
@@ -104,7 +104,7 @@ export function Footer() {
         {/* Copyright & tagline bar */}
         <div className="mt-10 pt-6 border-t border-border flex flex-col-reverse sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground text-center sm:text-left">
           <span className="font-medium">
-            {t("footer.copyright", "© 2026 Tsunagu Generations. All rights reserved.")}
+            {t("footer.copyright", "© 2026 Musubi. All rights reserved.")}
           </span>
           <span className="inline-flex items-center gap-1.5 italic font-semibold text-primary">
             <Heart className="h-3.5 w-3.5 fill-primary/20" />

@@ -355,7 +355,7 @@ export default function PostDetailPage() {
                     Interested in connecting with {author?.fullName || "this neighbor"}?
                   </p>
                   <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                    Please log in or create a free Tsunagu Generations account to send a service request, exchange
+                    Please log in or create a free Musubi account to send a service request, exchange
                     skills, or coordinate a meetup.
                   </p>
                   <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-2 pt-2 max-w-sm mx-auto">

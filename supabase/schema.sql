@@ -1,5 +1,5 @@
 -- ==============================================================================
--- Tsunagu Generations - Database Schema (Supabase / PostgreSQL)
+-- Musubi - Database Schema (Supabase / PostgreSQL)
 -- ==============================================================================
 
 -- Enable UUID extension

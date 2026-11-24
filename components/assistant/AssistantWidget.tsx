@@ -41,11 +41,11 @@ const AUTO_SPEAK_KEY = "tsunagu_assistant_autospeak";
 
 const COPY = {
   en: {
-    open: "Ask Tsunagu Guide",
-    title: "Tsunagu Guide",
+    open: "Ask Musubi Guide",
+    title: "Musubi Guide",
     subtitle: "Your friendly helper",
     welcome:
-      "Hello! I'm Tsunagu Guide. I can show you how the website works, help you find a neighbour who can help, or write a post for you. You can type, or press the microphone and just talk.",
+      "Hello! I'm Musubi Guide. I can show you how the website works, help you find a neighbour who can help, or write a post for you. You can type, or press the microphone and just talk.",
     starters: ["How does this website work?", "Find someone to help with my smartphone", "Help me write a post", "Is it safe to meet people?"],
     placeholder: "Type your question...",
     listening: "Listening... speak now",
@@ -68,11 +68,11 @@ const COPY = {
     hideQuestions: "Hide common questions",
   },
   ja: {
-    open: "つなぐガイドに聞く",
-    title: "つなぐガイド",
+    open: "むすびガイドに聞く",
+    title: "むすびガイド",
     subtitle: "やさしいお手伝い役",
     welcome:
-      "こんにちは！つなぐガイドです。サイトの使い方のご案内、お手伝いしてくれるご近所さん探し、投稿の作成をお手伝いします。文字で入力するか、マイクを押して話しかけてください。",
+      "こんにちは！むすびガイドです。サイトの使い方のご案内、お手伝いしてくれるご近所さん探し、投稿の作成をお手伝いします。文字で入力するか、マイクを押して話しかけてください。",
     starters: ["このサイトの使い方を教えて", "スマホを手伝ってくれる人を探したい", "投稿を作るのを手伝って", "人と会うのは安全？"],
     placeholder: "質問を入力してください...",
     listening: "聞いています... お話しください",

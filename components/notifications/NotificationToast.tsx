@@ -19,7 +19,7 @@ import type { Notification } from "@/lib/types";
 import { fetchConversations } from "@/lib/services/chatService";
 
 const TOAST_MS = 6000;
-const BASE_TITLE = "Tsunagu Generations";
+const BASE_TITLE = "Musubi";
 
 /**
  * Global live-notification engine (Messenger / Facebook style):
@@ -28,7 +28,7 @@ const BASE_TITLE = "Tsunagu Generations";
  *   they arrived) and plays a sound, shows a toast and, when the tab is in
  *   the background, a system notification
  * - Messages for the conversation currently open are marked read silently
- * - Mirrors the unread count in the browser tab title, e.g. "(3) Tsunagu"
+ * - Mirrors the unread count in the browser tab title, e.g. "(3) Musubi"
  */
 export function NotificationToast() {
   const sessionUserId = useAppStore((state) => state.sessionUserId);

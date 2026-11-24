@@ -1,5 +1,5 @@
 /**
- * Domain types for Tsunagu Generations.
+ * Domain types for Musubi.
  * Field names are camelCase in the app. supabase/schema.sql uses snake_case.
  * Phase 2 services should map between the two without changing these shapes
  * where a UI-facing type is noted.

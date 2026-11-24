@@ -44,7 +44,7 @@ const STEPS: { icon: LucideIcon; title: string; desc: string; badge: string }[] 
   {
     icon: MessageSquare,
     title: "Connect & Coordinate",
-    desc: "Chat securely within Tsunagu. Agree on the date, time, and comfortable public location for your exchange.",
+    desc: "Chat securely within Musubi. Agree on the date, time, and comfortable public location for your exchange.",
     badge: "In-app private messaging",
   },
   {
@@ -254,7 +254,7 @@ export default function HomePage() {
         />
         <div className="relative page-container space-y-10 sm:space-y-12">
           <SectionHeading
-            title={t("howItWorks.title", "How Tsunagu Works")}
+            title={t("howItWorks.title", "How Musubi Works")}
             subtitle={t(
               "howItWorks.subtitle",
               "A simple, respectful four-step process designed to make connecting effortless and safe for all ages."

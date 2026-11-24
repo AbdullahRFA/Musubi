@@ -1,7 +1,7 @@
 import type { Category, PostType, RequirementTemplate } from "@/lib/types";
 
 /**
- * Quick-post templates for Tsunagu Generations v2.
+ * Quick-post templates for Musubi v2.
  * Supports both OFFER and REQUEST workflows across all 6 core categories.
  */
 export const REQUIREMENT_TEMPLATES: RequirementTemplate[] = [

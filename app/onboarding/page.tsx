@@ -124,7 +124,7 @@ export default function OnboardingPage() {
       value: "chat" as const,
       icon: MessageSquare,
       title: "In-App Chat (Recommended)",
-      body: "Chat securely within Tsunagu after requests are accepted.",
+      body: "Chat securely within Musubi after requests are accepted.",
     },
     {
       value: "phone" as const,

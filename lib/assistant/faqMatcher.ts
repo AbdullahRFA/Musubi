@@ -1,5 +1,5 @@
 /**
- * Instant, offline FAQ matching for the Tsunagu Guide.
+ * Instant, offline FAQ matching for the Musubi Guide.
  *
  * Runs entirely in the browser. When a question confidently matches a stored
  * FAQ we answer immediately; otherwise (or for personal "find / write for me"

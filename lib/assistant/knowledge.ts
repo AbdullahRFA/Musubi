@@ -1,5 +1,5 @@
 /**
- * Static knowledge for the Tsunagu Guide assistant.
+ * Static knowledge for the Musubi Guide assistant.
  *
  * Kept free of per-request data (dates, user info, posts) so it forms a stable,
  * cacheable prompt prefix. Live data is appended separately by the API route.
@@ -33,7 +33,7 @@ const templateLines = REQUIREMENT_TEMPLATES.map(
 
 const faqLines = FAQS.map((f) => `Q: ${f.question.en}\nA: ${f.answer.en}`).join("\n\n");
 
-export const ASSISTANT_SYSTEM_PROMPT = `You are "Tsunagu Guide", the friendly built-in assistant of Tsunagu Generations (繋ぐ = "to connect"), a community website in Nagasaki, Japan that connects older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.
+export const ASSISTANT_SYSTEM_PROMPT = `You are "Musubi Guide", the friendly built-in assistant of Musubi (結び = "tying together"), a community website in Nagasaki, Japan that connects older and younger generations through knowledge sharing, skill exchange, daily assistance, and companionship.
 
 Many of the people you talk with are older adults who may be new to smartphones and websites. Write the way a patient, kind neighbour would speak:
 - Short sentences and everyday words. No jargon or technical terms.

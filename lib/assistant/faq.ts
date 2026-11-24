@@ -1,5 +1,5 @@
 /**
- * Stored FAQ for the Tsunagu Guide.
+ * Stored FAQ for the Musubi Guide.
  *
  * Questions that match one of these entries are answered instantly in the
  * browser — no AI call, no cost, no waiting. Each entry lists several ways
@@ -37,7 +37,7 @@ export type FaqTopic =
   | "help";
 
 export const FAQ_TOPICS: Record<FaqTopic, Record<FaqLang, string>> = {
-  about: { en: "About Tsunagu", ja: "つなぐについて" },
+  about: { en: "About Musubi", ja: "むすびについて" },
   account: { en: "Account & login", ja: "アカウント・ログイン" },
   profile: { en: "Your profile", ja: "プロフィール" },
   posts: { en: "Posts", ja: "投稿" },
@@ -56,14 +56,14 @@ export const FAQS: FaqEntry[] = [
   {
     id: "what-is",
     topic: "about",
-    question: { en: "What is Tsunagu Generations?", ja: "つなぐジェネレーションズとは？" },
+    question: { en: "What is Musubi?", ja: "むすびとは？" },
     patterns: {
-      en: ["what is tsunagu", "what is this website", "what is this site", "what is this app", "tell me about tsunagu", "what do you do", "about this website", "what is tsunagu generations"],
-      ja: ["つなぐとは", "このサイトは何", "このサイトについて", "つなぐジェネレーションズとは", "何のサイト", "どんなサイト"],
+      en: ["what is musubi", "what is this website", "what is this site", "what is this app", "tell me about musubi", "what do you do", "about this website", "what is musubi generations"],
+      ja: ["むすびとは", "このサイトは何", "このサイトについて", "むすびとは", "何のサイト", "どんなサイト"],
     },
     answer: {
-      en: "Tsunagu Generations is a free community website in Nagasaki that connects older and younger neighbours. People share knowledge, help each other with everyday tasks, learn new skills, and enjoy each other's company. Everyone can both help and ask for help.",
-      ja: "つなぐジェネレーションズは、長崎のシニア世代と若い世代をつなぐ無料の地域コミュニティサイトです。知識を分かち合ったり、日常の困りごとを助け合ったり、新しいことを学んだり、一緒の時間を楽しんだりできます。誰でも「助ける側」にも「助けてもらう側」にもなれます。",
+      en: "Musubi is a free community website in Nagasaki that connects older and younger neighbours. People share knowledge, help each other with everyday tasks, learn new skills, and enjoy each other's company. Everyone can both help and ask for help.",
+      ja: "むすびは、長崎のシニア世代と若い世代をつなぐ無料の地域コミュニティサイトです。知識を分かち合ったり、日常の困りごとを助け合ったり、新しいことを学んだり、一緒の時間を楽しんだりできます。誰でも「助ける側」にも「助けてもらう側」にもなれます。",
     },
     link: { href: "/about", label: { en: "About us", ja: "私たちについて" } },
     related: ["how-it-works", "services", "is-free"],
@@ -73,7 +73,7 @@ export const FAQS: FaqEntry[] = [
     topic: "about",
     question: { en: "How does this website work?", ja: "このサイトの使い方は？" },
     patterns: {
-      en: ["how does this website work", "how does it work", "how do i use this website", "how to use this site", "how does tsunagu work", "explain how it works", "what are the steps", "how do i get started", "getting started"],
+      en: ["how does this website work", "how does it work", "how do i use this website", "how to use this site", "how does musubi work", "explain how it works", "what are the steps", "how do i get started", "getting started"],
       ja: ["使い方", "このサイトの使い方を教えて", "どうやって使う", "仕組み", "始め方", "流れを教えて"],
     },
     answer: {
@@ -107,7 +107,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["無料", "お金はかかる", "料金", "費用", "有料", "会費"],
     },
     answer: {
-      en: "Yes. Joining and using Tsunagu Generations is completely free. Many exchanges are free or a skill swap. Some posts show a paid amount, but payments on this site are only demonstrations, and no real money is ever taken.",
+      en: "Yes. Joining and using Musubi is completely free. Many exchanges are free or a skill swap. Some posts show a paid amount, but payments on this site are only demonstrations, and no real money is ever taken.",
       ja: "はい、登録も利用も完全に無料です。多くのやり取りは無料か、スキルの交換です。金額が表示される投稿もありますが、このサイトの支払いはデモだけで、実際のお金は一切動きません。",
     },
     related: ["exchange-types", "demo-payment"],
@@ -149,7 +149,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["どの地域", "どこで使える", "長崎だけ", "対応地域", "エリア"],
     },
     answer: {
-      en: "Tsunagu Generations is for neighbourhoods in Nagasaki, such as Hamamachi, Urakami and Meganebashi. You can choose up to five neighbourhoods in your profile so people nearby can find you.",
+      en: "Musubi is for neighbourhoods in Nagasaki, such as Hamamachi, Urakami and Meganebashi. You can choose up to five neighbourhoods in your profile so people nearby can find you.",
       ja: "長崎の浜町、浦上、眼鏡橋などの地域が対象です。プロフィールで最大5つの地域を選ぶと、近くの方に見つけてもらいやすくなります。",
     },
     related: ["edit-profile"],
@@ -551,8 +551,8 @@ export const FAQS: FaqEntry[] = [
       ja: ["本当のお金", "支払い", "クレジットカード", "銀行", "デモ支払い", "お金を払う"],
     },
     answer: {
-      en: "No. Payments on Tsunagu Generations are only demonstrations, clearly marked DEMO. You never enter a card or bank details, and no real money is taken. Never share bank details with anyone.",
-      ja: "いいえ。つなぐジェネレーションズの支払いはすべてデモで、「デモ」と表示されています。カードや銀行の情報を入力することはなく、実際のお金は一切動きません。銀行情報は誰にも教えないでください。",
+      en: "No. Payments on Musubi are only demonstrations, clearly marked DEMO. You never enter a card or bank details, and no real money is taken. Never share bank details with anyone.",
+      ja: "いいえ。むすびの支払いはすべてデモで、「デモ」と表示されています。カードや銀行の情報を入力することはなく、実際のお金は一切動きません。銀行情報は誰にも教えないでください。",
     },
     link: { href: "/transactions", label: { en: "Demo payments", ja: "デモ支払い" } },
   },
@@ -668,8 +668,8 @@ export const FAQS: FaqEntry[] = [
       ja: ["何ができる", "あなたは誰", "何を手伝える", "助けて"],
     },
     answer: {
-      en: "I am Tsunagu Guide. I can explain how the website works, answer common questions, find posts that match what you need, and write a post for you to review. Just tell me what you need in your own words.",
-      ja: "私はつなぐガイドです。サイトの使い方の説明、よくある質問へのお答え、ぴったりの投稿探し、投稿の下書き作りをお手伝いします。困っていることを、ご自分の言葉で教えてください。",
+      en: "I am Musubi Guide. I can explain how the website works, answer common questions, find posts that match what you need, and write a post for you to review. Just tell me what you need in your own words.",
+      ja: "私はむすびガイドです。サイトの使い方の説明、よくある質問へのお答え、ぴったりの投稿探し、投稿の下書き作りをお手伝いします。困っていることを、ご自分の言葉で教えてください。",
     },
     related: ["how-it-works", "create-post", "voice"],
   },
