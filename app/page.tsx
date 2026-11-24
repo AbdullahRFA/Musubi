@@ -16,54 +16,17 @@ import {
   CheckCircle2,
   Smartphone,
   Users,
-  ShieldCheck,
-  MapPin,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/services/authService";
 import { HeroBackgroundVideo } from "@/components/home/HeroBackgroundVideo";
+import { PhilosophySlider } from "@/components/home/PhilosophySlider";
 import { useLanguage } from "@/lib/i18n";
 
 /* -------------------------------------------------------------------------- */
 /* Static content definitions (text is resolved through i18n at render time)  */
 /* -------------------------------------------------------------------------- */
-
-interface PhilosophyCard {
-  icon: LucideIcon;
-  iconClass: string;
-  tagClass: string;
-  title: string;
-  desc: string;
-  tag: string;
-}
-
-const PHILOSOPHY: PhilosophyCard[] = [
-  {
-    icon: BookOpen,
-    iconClass: "bg-[#E7EEE4] text-primary",
-    tagClass: "text-primary",
-    title: "Knowledge Sharing",
-    desc: "Pass down traditional recipes, cultural crafts, calligraphy, gardening wisdom, and life stories, while younger members exchange modern skills, digital tools, and fresh viewpoints.",
-    tag: "Reciprocal learning",
-  },
-  {
-    icon: HandHelping,
-    iconClass: "bg-amber-100 text-amber-800",
-    tagClass: "text-amber-800",
-    title: "Mutual Support",
-    desc: "Help with everyday tasks such as smartphone settings, video calling, grocery errands, minor household chores, or seasonal preparation—provided with patience and neighborhood goodwill.",
-    tag: "Practical assistance",
-  },
-  {
-    icon: HeartHandshake,
-    iconClass: "bg-rose-100 text-rose-700",
-    tagClass: "text-rose-700",
-    title: "Companionship",
-    desc: "Build genuine intergenerational friendships through casual conversation over tea, peaceful neighborhood walks, listening, and sharing hobbies that alleviate social isolation.",
-    tag: "Social connection",
-  },
-];
 
 const STEPS: { icon: LucideIcon; title: string; desc: string; badge: string }[] = [
   {
@@ -92,13 +55,21 @@ const STEPS: { icon: LucideIcon; title: string; desc: string; badge: string }[] 
   },
 ];
 
-const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: string; tags: string[] }[] = [
+const CATEGORIES: {
+  icon: LucideIcon;
+  iconClass: string;
+  title: string;
+  desc: string;
+  tags: string[];
+  image: string;
+}[] = [
   {
     icon: HandHelping,
     iconClass: "bg-[#E7EEE4] text-primary",
     title: "Daily Assistance",
     desc: "Practical help with grocery runs, errands, light parcel carrying, and daily neighborhood tasks.",
     tags: ["Grocery Runs", "Errands", "Neighborhood Help"],
+    image: "/images/landing-section3/landing-section3-img1.jpg",
   },
   {
     icon: Smartphone,
@@ -106,6 +77,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Technology Help",
     desc: "Patient guidance on smartphone navigation, video calls with family, email setup, and digital devices.",
     tags: ["Smartphones", "Video Calls", "Digital Apps"],
+    image: "/images/landing-section3/landing-section3-img2.jpg",
   },
   {
     icon: HeartHandshake,
@@ -113,6 +85,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Companionship",
     desc: "Warm and friendly conversation over tea, park strolls, reminiscing, and sharing joyful moments.",
     tags: ["Tea Chats", "Walking", "Shared Hobbies"],
+    image: "/images/landing-section3/landing-section3-img3.jpg",
   },
   {
     icon: BookOpen,
@@ -120,6 +93,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Learning & Skills",
     desc: "Traditional home cooking, calligraphy, origami, language practice, history, and craft techniques.",
     tags: ["Home Cooking", "Handicrafts", "Languages"],
+    image: "/images/landing-section3/landing-section3-img4.jpg",
   },
   {
     icon: Flower2,
@@ -127,6 +101,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Home Assistance",
     desc: "Balcony gardening tips, plant watering during trips, book organization, and seasonal home tidying.",
     tags: ["Gardening", "Plant Care", "Home Organization"],
+    image: "/images/landing-section3/landing-section3-img5.jpg",
   },
   {
     icon: Users,
@@ -134,6 +109,7 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
     title: "Community & Local Activities",
     desc: "Join neighborhood events, cultural activities, community gardening, and local group activities to build friendships and stay connected.",
     tags: ["Local Events", "Cultural Activities", "Community Groups"],
+    image: "/images/landing-section3/landing-section3-img6.jpg",
   },
 ];
 
@@ -141,19 +117,12 @@ const CATEGORIES: { icon: LucideIcon; iconClass: string; title: string; desc: st
 /* Small presentational helpers                                               */
 /* -------------------------------------------------------------------------- */
 
-/** Highlighted phrase with a coloured underline bar used in the hero headline. */
+/** Highlighted phrase used in the hero headline. */
 function Highlight({ children, tone }: { children: React.ReactNode; tone: "amber" | "emerald" }) {
-  const styles =
-    tone === "amber"
-      ? { text: "text-amber-300", bar: "bg-[#E5B55E]" }
-      : { text: "text-emerald-300", bar: "bg-[#66C2A5]" };
+  const colorClass = tone === "amber" ? "text-amber-300" : "text-emerald-300";
   return (
-    <span className={`relative inline-block ${styles.text} drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]`}>
-      <span>{children}</span>
-      <span
-        className={`absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[4px] sm:h-[6px] ${styles.bar} rounded-full shadow-md`}
-        aria-hidden="true"
-      />
+    <span className={`inline-block ${colorClass} drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]`}>
+      {children}
     </span>
   );
 }
@@ -210,24 +179,13 @@ export default function HomePage() {
     );
   }
 
-  const trustPoints = [
-    { icon: ShieldCheck, label: t("hero.trust.0", language === "ja" ? "安全第一" : "Safety first") },
-    { icon: MapPin, label: t("hero.trust.1", language === "ja" ? "地域密着" : "Local neighbours") },
-    { icon: Users, label: t("hero.trust.2", language === "ja" ? "全世代歓迎" : "All ages welcome") },
-  ];
-
   return (
-    <div className="flex flex-col pb-12 sm:pb-16">
+    <div className="flex flex-col">
       {/* ================================================================== */}
       {/* HERO                                                               */}
       {/* ================================================================== */}
       <HeroBackgroundVideo>
-        <div className="max-w-4xl space-y-5 sm:space-y-8 text-left">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 backdrop-blur-md px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-white shadow-sm animate-fade-up">
-            <Sparkles className="h-4 w-4 text-amber-300 shrink-0" />
-            <span>{t("hero.badge", "Community Skill & Knowledge Exchange")}</span>
-          </div>
-
+        <div className="max-w-4xl space-y-6 sm:space-y-8 text-left">
           <h1
             className="text-[2rem] min-[400px]:text-4xl sm:text-5xl md:text-6xl xl:text-[4.25rem] font-black tracking-tight text-white leading-[1.15] sm:leading-[1.1] [text-shadow:_0_2px_14px_rgba(0,0,0,0.85)] text-balance animate-fade-up [animation-delay:100ms]"
           >
@@ -247,18 +205,11 @@ export default function HomePage() {
             )}
           </h1>
 
-          <p className="text-base sm:text-lg md:text-xl text-white/95 font-medium leading-relaxed max-w-2xl [text-shadow:_0_1px_8px_rgba(0,0,0,0.85)] animate-fade-up [animation-delay:200ms]">
-            {t(
-              "hero.subtitle",
-              "Tsunagu Generations brings older and younger generations together to share knowledge, exchange practical help, and build meaningful companionship."
-            )}
-          </p>
-
-          <div className="pt-1 sm:pt-2 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center gap-3 animate-fade-up [animation-delay:300ms]">
+          <div className="pt-2 sm:pt-4 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center gap-3.5 sm:gap-4 animate-fade-up [animation-delay:200ms]">
             <Button
               asChild
               size="lg"
-              className="group bg-[#315B4B] hover:bg-[#234336] text-white font-bold text-sm sm:text-base px-6 sm:px-8 rounded-xl shadow-xl border border-emerald-400/30 hover:-translate-y-0.5 hover:shadow-2xl"
+              className="group bg-[#315B4B] hover:bg-[#234336] text-white font-bold text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 rounded-xl shadow-xl border border-emerald-400/30 hover:-translate-y-0.5 hover:shadow-2xl"
             >
               <Link href="/posts">
                 <span>{t("hero.exploreBtn", "Explore Community Posts")}</span>
@@ -269,62 +220,28 @@ export default function HomePage() {
               asChild
               variant="outline"
               size="lg"
-              className="bg-white/10 hover:bg-white/20 border-white/40 hover:border-white text-white hover:text-white font-bold text-sm sm:text-base px-6 sm:px-8 rounded-xl backdrop-blur-md shadow-lg hover:-translate-y-0.5"
+              className="bg-white/10 hover:bg-white/20 border-white/40 hover:border-white text-white hover:text-white font-bold text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 rounded-xl backdrop-blur-md shadow-lg hover:-translate-y-0.5"
             >
               <Link href="/register">{t("hero.joinBtn", "Join Our Community")}</Link>
             </Button>
           </div>
-
-          <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-1 text-xs sm:text-sm text-white/90 font-semibold animate-fade-up [animation-delay:400ms]">
-            {trustPoints.map(({ icon: Icon, label }) => (
-              <li key={label} className="inline-flex items-center gap-1.5 [text-shadow:_0_1px_6px_rgba(0,0,0,0.8)]">
-                <Icon className="h-4 w-4 text-emerald-300" />
-                {label}
-              </li>
-            ))}
-          </ul>
         </div>
       </HeroBackgroundVideo>
 
       {/* ================================================================== */}
-      {/* PHILOSOPHY                                                         */}
+      {/* SECTION 2: SHOWCASE SLIDER                                         */}
       {/* ================================================================== */}
-      <section id="explore" className="page-container py-14 sm:py-20 space-y-10 scroll-mt-20">
+      <section id="explore" className="page-container pt-5 sm:pt-7 lg:pt-8 pb-14 sm:pb-20 space-y-6 sm:space-y-8 scroll-mt-20 overflow-hidden">
         <SectionHeading
-          badge={t("about.badge", "Our Core Philosophy")}
-          title={t("about.title", "Everyone Can Teach, Everyone Can Learn")}
+          badge={t("about.badge", "Community Connections")}
+          title={t("about.title", "Everyone Has Something to Share")}
           subtitle={t(
             "about.subtitle",
-            "Tsunagu Generations is founded on reciprocal community exchange. No user is locked into a permanent provider or receiver role—each generation brings valuable experience, curiosity, and care."
+            "Every generation has knowledge, experiences and ideas worth sharing. Discover the connections that bring our community together."
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-          {PHILOSOPHY.map((card, i) => {
-            const Icon = card.icon;
-            return (
-              <article
-                key={card.title}
-                className="card-hover group rounded-2xl border-2 border-border bg-card p-6 sm:p-8 shadow-xs flex flex-col justify-between gap-5 animate-fade-up"
-                style={{ animationDelay: `${i * 100}ms` }}
-              >
-                <div className="space-y-4">
-                  <div
-                    className={`h-12 w-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 ${card.iconClass}`}
-                  >
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-xl font-black text-foreground">{t(`about.cards.${i}.title`, card.title)}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`about.cards.${i}.desc`, card.desc)}</p>
-                </div>
-                <div className={`pt-3 border-t border-border/60 text-xs font-bold flex items-center gap-1 ${card.tagClass}`}>
-                  <span>{t(`about.cards.${i}.tag`, card.tag)}</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <PhilosophySlider />
       </section>
 
       {/* ================================================================== */}
@@ -390,90 +307,78 @@ export default function HomePage() {
           subtitle={t("categories.subtitle", "Explore the diverse areas of mutual exchange supported across our community.")}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
           {CATEGORIES.map((cat, i) => {
             const Icon = cat.icon;
             return (
               <Link
                 key={cat.title}
                 href="/posts"
-                className="card-hover group rounded-2xl border-2 border-border bg-card p-6 shadow-xs flex flex-col gap-4 animate-fade-up"
+                className="card-hover group rounded-3xl border-2 border-border bg-card shadow-xs flex flex-col overflow-hidden animate-fade-up transition-all duration-300 hover:border-primary/80 hover:shadow-xl"
                 style={{ animationDelay: `${(i % 3) * 100}ms` }}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div
-                    className={`h-12 w-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${cat.iconClass}`}
-                  >
-                    <Icon className="h-6 w-6" />
+                {/* Category Image Header */}
+                <div className="relative w-full h-52 sm:h-56 overflow-hidden bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cat.image}
+                    alt={cat.title}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (!img.src.includes(".jpg.jpg")) {
+                        img.src = `${cat.image}.jpg`;
+                      }
+                    }}
+                  />
+                  {/* Gradient shadow overlay for aesthetic depth */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-85 group-hover:opacity-60 transition-opacity duration-300" />
+
+                  {/* High-Contrast Category Icon Badge (Bright solid white card with bold icon) */}
+                  <div className="absolute bottom-3 left-3 h-13 w-13 rounded-2xl bg-white shadow-xl border-2 border-white/95 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${cat.iconClass} shadow-inner`}>
+                      <Icon className="h-5 w-5 stroke-[2.5]" />
+                    </div>
                   </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-primary" />
+
+                  {/* High-Contrast Action Arrow Badge (Bright solid white circular button) */}
+                  <div className="absolute top-3 right-3 h-11 w-11 rounded-full bg-white text-primary shadow-xl border-2 border-white/95 flex items-center justify-center transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:scale-110">
+                    <ArrowRight className="h-5 w-5 stroke-[2.5] transition-transform duration-300 group-hover:translate-x-0.5" />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-black text-foreground transition-colors group-hover:text-primary">
-                    {t(`categories.items.${i}.title`, cat.title)}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                    {t(`categories.items.${i}.desc`, cat.desc)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-3 border-t border-border/60">
-                  {cat.tags.map((tag, j) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground"
-                    >
-                      {t(`categories.items.${i}.tags.${j}`, tag)}
-                    </span>
-                  ))}
+
+                {/* Category Body */}
+                <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground transition-colors group-hover:text-primary flex items-center justify-between">
+                      <span>{t(`categories.items.${i}.title`, cat.title)}</span>
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                      {t(`categories.items.${i}.desc`, cat.desc)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pt-3 border-t border-border/60">
+                    <div className="flex flex-wrap gap-1.5">
+                      {cat.tags.map((tag, j) => (
+                        <span
+                          key={tag}
+                          className="rounded-full bg-muted/80 px-2.5 py-0.5 text-[11px] font-semibold text-foreground group-hover:bg-[#E7EEE4] group-hover:text-[#315B4B] transition-colors"
+                        >
+                          {t(`categories.items.${i}.tags.${j}`, tag)}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-xs sm:text-sm font-bold text-primary group-hover:text-[#234336] transition-colors">
+                      <span>{language === "ja" ? "投稿を見る" : "Explore posts"}</span>
+                      <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+                    </div>
+                  </div>
                 </div>
               </Link>
             );
           })}
-        </div>
-      </section>
-
-      {/* ================================================================== */}
-      {/* FINAL CTA                                                          */}
-      {/* ================================================================== */}
-      <section className="page-container">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#234336] via-[#2F5344] to-[#1c332a] text-white px-6 py-12 sm:px-12 sm:py-16 text-center shadow-lift">
-          {/* Decorative orbs */}
-          <div className="absolute -top-20 -left-20 h-64 w-64 rounded-full bg-amber-400/15 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-emerald-300/15 blur-3xl" aria-hidden="true" />
-
-          <div className="relative max-w-2xl mx-auto space-y-4">
-            <HeartHandshake className="h-10 w-10 mx-auto text-amber-300 animate-float" />
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight text-balance">
-              {t("cta.title", "Everyone has something to share. Everyone has something to gain.")}
-            </h2>
-            <p className="text-sm sm:text-base text-white/85 leading-relaxed">
-              {t(
-                "cta.subtitle",
-                "Join your local Tsunagu community today. Whether you wish to share wisdom, lend an everyday hand, or connect with a neighbor, there is a place for you."
-              )}
-            </p>
-          </div>
-
-          <div className="relative pt-7 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center justify-center gap-3">
-            <Button
-              asChild
-              size="lg"
-              className="group bg-amber-400 hover:bg-amber-300 text-stone-900 font-black rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              <Link href="/register">
-                <span>{t("cta.getStarted", "Get Started")}</span>
-                <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="bg-transparent border-white/40 hover:border-white hover:bg-white/10 text-white hover:text-white font-bold rounded-xl"
-            >
-              <Link href="/about">{t("footer.howItWorks", "How It Works")}</Link>
-            </Button>
-          </div>
         </div>
       </section>
     </div>

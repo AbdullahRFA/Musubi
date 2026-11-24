@@ -72,10 +72,24 @@ export const translations = {
 
     // About Our Platform Section
     about: {
-      badge: "Our Core Philosophy",
-      title: "Everyone Can Teach, Everyone Can Learn",
+      badge: "Community Connections",
+      title: "Everyone Has Something to Share",
       subtitle:
-        "Tsunagu Generations is founded on reciprocal community exchange. No user is locked into a permanent provider or receiver role—each generation brings valuable experience, curiosity, and care.",
+        "Every generation has knowledge, experiences and ideas worth sharing. Discover the connections that bring our community together.",
+      slides: [
+        {
+          title: "Knowledge Sharing",
+          desc: "Sharing traditional knowledge, creative skills and new ideas across generations.",
+        },
+        {
+          title: "Mutual Support",
+          desc: "Working together, exchanging practical skills and supporting everyday community life.",
+        },
+        {
+          title: "Companionship",
+          desc: "Building friendships through conversation, shared interests and meaningful moments.",
+        },
+      ],
       cards: [
         {
           title: "Knowledge Sharing",
@@ -287,10 +301,24 @@ export const translations = {
 
     // About Our Platform Section
     about: {
-      badge: "私たちの基本理念",
-      title: "誰もが教え、誰もが学べる場所",
+      badge: "コミュニティのつながり",
+      title: "誰もが分かち合えるものを持っている",
       subtitle:
-        "ツナグ・ジェネレーションズは、お互いに教え合い支え合う双方向の交流を大切にしています。一方的な支援ではなく、すべての世代が主役となって知恵と優しさを分かち合います。",
+        "どの世代にも、共有する価値のある知識、経験、アイデアがあります。私たちのコミュニティを結ぶ温かいつながりを見つけましょう。",
+      slides: [
+        {
+          title: "知識の共有",
+          desc: "世代を超えて、伝統的な知恵、創造的なスキル、そして新しいアイデアを分かち合います。",
+        },
+        {
+          title: "日常の助け合い",
+          desc: "力を合わせ、実践的なスキルを交換し、毎日の地域生活を支え合います。",
+        },
+        {
+          title: "心温まる交流",
+          desc: "会話や共通の趣味、かけがえのない時間を通じて、世代を超えた友情を育みます。",
+        },
+      ],
       cards: [
         {
           title: "知識とスキルの共有",
