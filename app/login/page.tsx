@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LogIn, Sparkles } from "lucide-react";
+import { LogIn, Sparkles, ChevronDown } from "lucide-react";
 import { loginSchema, type LoginValues } from "@/lib/validators";
-import { signIn, signInWithGoogle } from "@/lib/services/authService";
+import { signIn, signInWithGoogle, useSession } from "@/lib/services/authService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthShell, AuthError, AuthField, GoogleAuthButton, PasswordInput, Spinner } from "@/components/auth/AuthShell";
@@ -24,12 +24,23 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const session = useSession();
 
+  // Already signed in? Go straight to the community.
+  useEffect(() => {
+    if (session && !loading && demoLoading === null) router.replace("/posts");
+  }, [session, loading, demoLoading, router]);
+
+  // Errors forwarded from the OAuth callback. searchParams values are already
+  // decoded — decoding again would throw on a literal "%".
   useEffect(() => {
     const errorParam = searchParams.get("error");
-    if (errorParam) {
-      setError(decodeURIComponent(errorParam));
-    }
+    if (!errorParam) return;
+    setError(
+      errorParam === "no_code"
+        ? "Google sign-in was cancelled or didn't complete. Please try again."
+        : errorParam
+    );
   }, [searchParams]);
 
   const handleGoogleSignIn = async () => {
@@ -61,7 +72,7 @@ function LoginContent() {
     setLoading(true);
     try {
       await signIn(values.email, values.password);
-      router.push("/");
+      router.push("/posts");
     } catch (err: any) {
       setError(err?.message || "Failed to sign in. Please try again.");
     } finally {
@@ -76,7 +87,7 @@ function LoginContent() {
     setValue("password", "password123");
     try {
       await signIn(email, "password123");
-      router.push("/");
+      router.push("/posts");
     } catch (err: any) {
       setError(err?.message || "Demo sign-in failed. Please try again.");
       setDemoLoading(null);
@@ -117,6 +128,7 @@ function LoginContent() {
             autoComplete="email"
             inputMode="email"
             placeholder="you@example.com"
+            maxLength={254}
             {...register("email")}
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? "email-error" : undefined}
@@ -136,12 +148,11 @@ function LoginContent() {
           <PasswordInput
             id="password"
             autoComplete="current-password"
-            placeholder="••••••••"
+            placeholder="Your password"
             {...register("password")}
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? "password-error" : undefined}
           />
-          <p className="text-xs text-muted-foreground">In this demo MVP, any password with 4+ characters is accepted.</p>
         </AuthField>
 
         <Button type="submit" className="w-full font-bold" disabled={busy}>
@@ -154,13 +165,14 @@ function LoginContent() {
           )}
         </Button>
 
-        {/* Quick demo accounts */}
-        <div className="rounded-xl border border-dashed border-border bg-muted/40 p-3 sm:p-4 space-y-2.5">
-          <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wide">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Quick Demo Accounts (1-Click)
-          </span>
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2">
+        {/* Demo accounts: tucked away so the card stays simple */}
+        <details className="group rounded-xl border border-dashed border-border/80 bg-background/40 px-3 py-2 open:pb-3">
+          <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 py-1 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Try a demo account
+            <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-2 grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
             {DEMO_ACCOUNTS.map((acct) => (
               <Button
                 key={acct.email}
@@ -169,14 +181,14 @@ function LoginContent() {
                 size="sm"
                 disabled={busy}
                 onClick={() => quickDemoLogin(acct.email)}
-                className="justify-start font-medium hover:-translate-y-0.5"
+                className="justify-start font-medium"
               >
                 {demoLoading === acct.email ? <Spinner /> : <span className="text-base">{acct.emoji}</span>}
                 <span className="truncate">{acct.label}</span>
               </Button>
             ))}
           </div>
-        </div>
+        </details>
       </form>
     </AuthShell>
   );

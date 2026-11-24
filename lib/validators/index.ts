@@ -10,14 +10,34 @@ const categories = [
   "Community & Local Activities",
 ] as const;
 
+/** Shared rule for any NEW password (register, reset, change). Matches Supabase's minimum (6) with headroom. */
+const newPassword = z
+  .string()
+  .min(8, "Use at least 8 characters.")
+  .max(72, "Password is too long.")
+  .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), "Include at least one letter and one number.");
+
+const email = z.string().trim().min(1, "Please enter your email address.").email("Enter a valid email address.");
+
+/** Login only checks that a password was entered — never a length rule. */
 export const loginSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address."),
-  password: z.string().min(4, "Use at least 4 characters. Any password works in this demo."),
+  email,
+  password: z.string().min(1, "Please enter your password."),
 });
 
-export const registerSchema = loginSchema.extend({
+export const registerSchema = z.object({
   fullName: z.string().trim().min(2, "Please enter your full name.").max(80, "That name is too long."),
-  age: z.coerce.number({ invalid_type_error: "Please enter your age as a number." }).min(13, "Must be at least 13 years old.").max(120, "Please enter a valid age."),
+  email,
+  password: newPassword,
+  // Empty input must say "please enter", not "must be at least 13"
+  age: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : Number(v)),
+    z
+      .number({ required_error: "Please enter your age.", invalid_type_error: "Please enter your age as a number." })
+      .int("Please enter your age as a whole number.")
+      .min(13, "You must be at least 13 years old to join.")
+      .max(120, "Please enter a valid age.")
+  ),
   neighborhood: z.string().trim().optional(),
   userGroup: z.enum(["og", "yg"]).optional(),
 });
@@ -96,11 +116,6 @@ export const onboardingSchema = z.object({
 
 /* Passwords ---------------------------------------------------------------- */
 
-const newPassword = z
-  .string()
-  .min(8, "Use at least 8 characters.")
-  .max(72, "Password is too long.")
-  .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), "Include at least one letter and one number.");
 
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
