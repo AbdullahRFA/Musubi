@@ -8,14 +8,14 @@
 
 A bilingual (English / 日本語) community platform for Nagasaki that connects older and younger neighbours to share skills, help each other with everyday tasks, and build lasting friendships.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000?style=for-the-badge&logo=vercel)](https://hackathon-alpha-snowy.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000?style=for-the-badge&logo=vercel)](https://musubi-asmr.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%7C%20Auth%20%7C%20Realtime-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Tests](https://img.shields.io/badge/tests-89%20unit%2Bintegration%20%7C%2015%20E2E-success?style=for-the-badge)](#-testing)
 
-[Live demo](https://hackathon-alpha-snowy.vercel.app) · [Features](#-features) · [Getting started](#-getting-started) · [Architecture](#-architecture) · [Testing](#-testing)
+[Live demo](https://musubi-asmr.vercel.app) · [Features](#-features) · [Getting started](#-getting-started) · [Architecture](#-architecture) · [Testing](#-testing)
 
 </div>
 
