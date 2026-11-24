@@ -187,7 +187,7 @@ export default function HomePage() {
       <HeroBackgroundVideo>
         <div className="max-w-4xl space-y-6 sm:space-y-8 text-left">
           <h1
-            className="text-[2rem] min-[400px]:text-4xl sm:text-5xl md:text-6xl xl:text-[4.25rem] font-black tracking-tight text-white leading-[1.15] sm:leading-[1.1] [text-shadow:_0_2px_14px_rgba(0,0,0,0.85)] text-balance animate-fade-up [animation-delay:100ms]"
+            className="text-[2rem] min-[400px]:text-4xl sm:text-5xl md:text-6xl xl:text-[4.25rem] font-black tracking-tight text-white leading-[1.3] sm:leading-[1.24] [text-shadow:_0_2px_14px_rgba(0,0,0,0.85)] text-balance animate-fade-up [animation-delay:100ms]"
           >
             {language === "ja" ? (
               <>
@@ -227,22 +227,6 @@ export default function HomePage() {
           </div>
         </div>
       </HeroBackgroundVideo>
-
-      {/* ================================================================== */}
-      {/* SECTION 2: SHOWCASE SLIDER                                         */}
-      {/* ================================================================== */}
-      <section id="explore" className="page-container pt-5 sm:pt-7 lg:pt-8 pb-14 sm:pb-20 space-y-6 sm:space-y-8 scroll-mt-20 overflow-hidden">
-        <SectionHeading
-          badge={t("about.badge", "Community Connections")}
-          title={t("about.title", "Everyone Has Something to Share")}
-          subtitle={t(
-            "about.subtitle",
-            "Every generation has knowledge, experiences and ideas worth sharing. Discover the connections that bring our community together."
-          )}
-        />
-
-        <PhilosophySlider />
-      </section>
 
       {/* ================================================================== */}
       {/* HOW IT WORKS                                                       */}
@@ -380,6 +364,25 @@ export default function HomePage() {
             );
           })}
         </div>
+      </section>
+
+      {/* ================================================================== */}
+      {/* SHOWCASE SLIDER (last, before footer)                                */}
+      {/* ================================================================== */}
+      <section id="explore" className="w-full pt-14 sm:pt-20 pb-16 sm:pb-24 space-y-8 sm:space-y-10 scroll-mt-20 overflow-hidden border-t border-border">
+        <div className="page-container">
+        <SectionHeading
+          badge={t("about.badge", "Community Connections")}
+          title={t("about.title", "Everyone Has Something to Share")}
+          subtitle={t(
+            "about.subtitle",
+            "Every generation has knowledge, experiences and ideas worth sharing. Discover the connections that bring our community together."
+          )}
+        />
+        </div>
+
+        {/* Edge to edge, the same width as the hero banner */}
+        <PhilosophySlider />
       </section>
     </div>
   );
