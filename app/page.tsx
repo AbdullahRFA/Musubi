@@ -218,15 +218,17 @@ export default function HomePage() {
       {/* ================================================================== */}
       {/* SECTION 2: SHOWCASE SLIDER                                         */}
       {/* ================================================================== */}
-      <section id="explore" className="page-container py-14 sm:py-20 space-y-10 scroll-mt-20">
-        <SectionHeading
-          badge={t("about.badge", "Community Connections")}
-          title={t("about.title", "Everyone Has Something to Share")}
-          subtitle={t(
-            "about.subtitle",
-            "Every generation has knowledge, experiences and ideas worth sharing. Discover the connections that bring our community together."
-          )}
-        />
+      <section id="explore" className="w-full pt-16 sm:pt-24 lg:pt-28 pb-14 sm:pb-20 space-y-8 sm:space-y-10 scroll-mt-20 overflow-hidden">
+        <div className="page-container">
+          <SectionHeading
+            badge={t("about.badge", "Community Connections")}
+            title={t("about.title", "Everyone Has Something to Share")}
+            subtitle={t(
+              "about.subtitle",
+              "Every generation has knowledge, experiences and ideas worth sharing. Discover the connections that bring our community together."
+            )}
+          />
+        </div>
 
         <PhilosophySlider />
       </section>
