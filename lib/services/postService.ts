@@ -85,24 +85,67 @@ export async function getPostById(id: string): Promise<Post | null> {
 /**
  * Fetch all posts from Supabase ordered by creation date
  */
-export async function fetchPosts(): Promise<Post[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("posts")
-    .select("*")
-    .order("created_at", { ascending: false });
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const OPTIMISTIC_WINDOW_MS = 2 * 60 * 1000;
 
-  if (error || !data) return [];
-  const posts = data.map(rowToPost);
+let inFlight: Promise<Post[]> | null = null;
+let postsLoaded = false;
+const loadedListeners = new Set<() => void>();
 
-  useAppStore.setState((state) => {
-    const remoteIds = new Set(posts.map((p) => p.id));
-    // Keep local posts that aren't on server yet
-    const kept = state.posts.filter((p) => !remoteIds.has(p.id));
-    return { posts: [...posts, ...kept] };
-  });
+/**
+ * Fetches all posts from Supabase. The server is the source of truth: only a
+ * post the user created moments ago (real UUID, not yet returned by the
+ * server) is kept locally. Mock seed posts ("p1".."p20") persisted in the
+ * browser are dropped so they never appear as fake, un-respondable posts.
+ * Concurrent callers share one request.
+ */
+export function fetchPosts(): Promise<Post[]> {
+  if (inFlight) return inFlight;
+  inFlight = (async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
+      if (error || !data) return [];
+      const posts = data.map(rowToPost);
 
-  return posts;
+      useAppStore.setState((state) => {
+        const remoteIds = new Set(posts.map((p) => p.id));
+        const now = Date.now();
+        const optimistic = state.posts.filter(
+          (p) =>
+            !remoteIds.has(p.id) &&
+            UUID_RE.test(p.id) &&
+            now - new Date(p.createdAt).getTime() < OPTIMISTIC_WINDOW_MS
+        );
+        return { posts: [...posts, ...optimistic] };
+      });
+      return posts;
+    } finally {
+      inFlight = null;
+      if (!postsLoaded) {
+        postsLoaded = true;
+        loadedListeners.forEach((fn) => fn());
+      }
+    }
+  })();
+  return inFlight;
+}
+
+/** False until the first posts fetch has finished (for loading skeletons). */
+export function usePostsLoaded(): boolean {
+  const [loaded, setLoaded] = useState(postsLoaded);
+  useEffect(() => {
+    if (postsLoaded) {
+      setLoaded(true);
+      return;
+    }
+    const onLoad = () => setLoaded(true);
+    loadedListeners.add(onLoad);
+    return () => {
+      loadedListeners.delete(onLoad);
+    };
+  }, []);
+  return loaded;
 }
 
 /**
