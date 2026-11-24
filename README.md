@@ -342,5 +342,3 @@ Built for a hackathon by the Musubi team. See the full list on the repository's 
 
 </div>
 
-## Author
-
