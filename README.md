@@ -341,3 +341,6 @@ Built for a hackathon by the Musubi team. See the full list on the repository's 
 **結び — bridging generations, one neighbourly exchange at a time.**
 
 </div>
+
+## Author
+
