@@ -16,6 +16,7 @@ import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
+import { ConnectionButton } from "@/components/connections/ConnectionButton";
 
 export function PersonCard({ person }: { person: Profile }) {
   const session = useSession();
@@ -132,6 +133,7 @@ export function PersonCard({ person }: { person: Profile }) {
           <Button asChild variant="outline" size="sm" className={`font-semibold ${isMe ? "w-full" : "flex-1"}`}>
             <Link href={`/profile/${person.id}`}>Profile</Link>
           </Button>
+          {!isMe && <ConnectionButton userId={person.id} size="sm" className="flex-1 [&>*]:w-full" />}
 
           {!isMe &&
             (existingRequest ? (
@@ -154,7 +156,7 @@ export function PersonCard({ person }: { person: Profile }) {
                 className="flex-1 font-bold gap-1.5"
               >
                 <Send className="h-4 w-4 shrink-0" />
-                Connect
+                Ask for help
               </Button>
             ))}
         </CardFooter>
@@ -163,7 +165,7 @@ export function PersonCard({ person }: { person: Profile }) {
       <Dialog
         open={modalOpen}
         onOpenChange={(open) => !sending && setModalOpen(open)}
-        title={`Send Request to ${person.fullName}`}
+        title={`Ask ${person.fullName} for help`}
         description="Ask about learning from their expertise or propose a skill exchange."
         className="sm:max-w-lg"
       >

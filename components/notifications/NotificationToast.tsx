@@ -117,7 +117,7 @@ export function NotificationToast() {
     let inChatOnly = false;
 
     for (const n of unreadFresh) {
-      const convo = n.type === "message" ? conversationIdFromHref(n.href) : null;
+      const convo = n.type === "message" || n.type === "direct_message" ? conversationIdFromHref(n.href) : null;
       if (convo && convo === activeConvo && pageVisible) {
         // User is looking at this chat already — mark read, soft tick only
         markConversationRead(convo);
@@ -132,7 +132,7 @@ export function NotificationToast() {
       return;
     }
 
-    playAlertSound(toAlert.some((n) => n.type === "message") ? "message" : "notification");
+    playAlertSound(toAlert.some((n) => n.type === "message" || n.type === "direct_message") ? "message" : "notification");
 
     // Newest first, at most 3 stacked toasts
     setToasts((current) => [...toAlert.reverse(), ...current.filter((t) => !toAlert.some((a) => a.id === t.id))].slice(0, 3));
@@ -178,7 +178,7 @@ export function NotificationToast() {
       className="fixed top-[4.25rem] sm:top-20 inset-x-3 sm:inset-x-auto sm:right-4 sm:w-full sm:max-w-sm z-[55] space-y-2"
     >
       {toasts.map((toast) => {
-        const isMessage = toast.type === "message";
+        const isMessage = toast.type === "message" || toast.type === "direct_message";
         const open = () => {
           if (isMessage) {
             const convo = conversationIdFromHref(toast.href);

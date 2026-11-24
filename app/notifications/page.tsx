@@ -59,7 +59,7 @@ function NotificationRow({ n }: { n: Notification }) {
 
 export default function NotificationsPage() {
   // Chat messages live in Messages (like Facebook / Messenger), so they're excluded here
-  const notifications = useNotifications().filter((n) => n.type !== "message");
+  const notifications = useNotifications().filter((n) => n.type !== "message" && n.type !== "direct_message");
   const [sound, setSound] = useState(true);
   useEffect(() => setSound(isSoundEnabled()), []);
   const [filter, setFilter] = useState<"all" | "unread">("all");

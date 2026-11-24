@@ -8,6 +8,9 @@ import {
   MessageSquare,
   Star,
   XCircle,
+  UserPlus,
+  UserCheck,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 import type { NotificationType } from "@/lib/types";
@@ -22,7 +25,13 @@ export const NOTIFICATION_STYLE: Record<NotificationType, { icon: LucideIcon; cl
   completed: { icon: CheckCheck, className: "bg-emerald-50 text-emerald-700" },
   review: { icon: Star, className: "bg-amber-50 text-amber-600" },
   payment: { icon: Coins, className: "bg-blue-50 text-blue-700" },
+  connection_request: { icon: UserPlus, className: "bg-violet-50 text-violet-700" },
+  connection_accepted: { icon: UserCheck, className: "bg-emerald-50 text-emerald-700" },
+  direct_message: { icon: MessageCircle, className: "bg-[#E7EEE4] text-[#315B4B]" },
 };
+
+/** Notification types that represent chat messages (counted on chat badges, not the bell). */
+export const CHAT_NOTIFICATION_TYPES: NotificationType[] = ["message", "direct_message"];
 
 export function notificationStyle(type: NotificationType) {
   return NOTIFICATION_STYLE[type] ?? { icon: Bell, className: "bg-muted text-foreground" };

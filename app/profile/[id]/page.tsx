@@ -23,7 +23,8 @@ import {
 import { usePublicProfile } from "@/lib/services/profileService";
 import { useReviewsForUser } from "@/lib/services/reviewService";
 import { useSession } from "@/lib/services/authService";
-import { blockUser } from "@/lib/services/reportService";
+import { blockMember } from "@/lib/services/connectionService";
+import { ConnectionButton } from "@/components/connections/ConnectionButton";
 import { groupShort, GROUP_LABEL } from "@/lib/constants";
 import { initials, formatDay } from "@/lib/utils";
 import { RatingStars } from "@/components/common/RatingStars";
@@ -61,9 +62,9 @@ export default function PublicProfilePage() {
   const isMe = session?.id === profile.id;
 
   const handleBlock = async () => {
-    if (confirm(`Are you sure you want to block ${profile.fullName}? You will no longer see their posts or messages.`)) {
+    if (confirm(`Are you sure you want to block ${profile.fullName}? You will no longer see their posts or messages, and any connection between you will be removed.`)) {
       try {
-        await blockUser(profile.id);
+        await blockMember(profile.id);
         router.push("/posts");
       } catch (err: any) {
         alert(err?.message || "Failed to block user.");
@@ -112,6 +113,7 @@ export default function PublicProfilePage() {
                 </>
               ) : (
                 <>
+                  <ConnectionButton userId={profile.id} />
                   <Button
                     variant="ghost"
                     size="sm"

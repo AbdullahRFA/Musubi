@@ -147,7 +147,10 @@ export type NotificationType =
   | "activity"
   | "completed"
   | "review"
-  | "payment";
+  | "payment"
+  | "connection_request"
+  | "connection_accepted"
+  | "direct_message";
 
 export interface Notification {
   id: string;
@@ -243,4 +246,42 @@ export interface AppState {
   /** conversationId -> user ids who confirmed the safety tips */
   safetyAck: Record<string, string[]>;
   sessionUserId: string | null;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Connections & direct messages                                              */
+/* -------------------------------------------------------------------------- */
+
+export type ConnectionStatus = "pending" | "accepted" | "rejected";
+
+/** connections — a friend-style link between two members */
+export interface Connection {
+  id: string;
+  requesterId: string;
+  addresseeId: string;
+  status: ConnectionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** dm_messages — messages between connected members (separate from post chats) */
+export interface DirectMessage {
+  id: string;
+  connectionId: string;
+  senderId: string;
+  body: string | null;
+  imagePath: string | null;
+  editedAt: string | null;
+  deletedAt: string | null;
+  createdAt: string;
+}
+
+export const DM_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"] as const;
+export type DmReactionEmoji = (typeof DM_REACTIONS)[number];
+
+/** dm_reactions — one reaction per member per message */
+export interface DirectReaction {
+  messageId: string;
+  userId: string;
+  emoji: DmReactionEmoji;
 }
