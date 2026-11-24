@@ -76,6 +76,12 @@ const config: Config = {
           "60%": { transform: "rotate(-6deg)" },
           "75%": { transform: "rotate(3deg)" },
         },
+        blob: {
+          "0%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(6%, -8%) scale(1.08)" },
+          "66%": { transform: "translate(-6%, 6%) scale(0.95)" },
+          "100%": { transform: "translate(0, 0) scale(1)" },
+        },
         "badge-ping": {
           "75%, 100%": { transform: "scale(2)", opacity: "0" },
         },
@@ -86,6 +92,7 @@ const config: Config = {
         float: "float 6s ease-in-out infinite",
         shimmer: "shimmer 1.6s infinite",
         wiggle: "wiggle 0.9s ease-in-out 1",
+        blob: "blob 18s ease-in-out infinite",
         "badge-ping": "badge-ping 1s cubic-bezier(0, 0, 0.2, 1) 2",
       },
       transitionTimingFunction: {
