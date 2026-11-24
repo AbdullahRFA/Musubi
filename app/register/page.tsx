@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlus, ArrowRight, HeartHandshake, MailCheck } from "lucide-react";
 import { registerSchema, type RegisterValues } from "@/lib/validators";
 import { signUp, signInWithGoogle, useSession } from "@/lib/services/authService";
-import { detectGeneration } from "@/lib/constants";
+import { detectGeneration, MIN_AGE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -61,7 +61,7 @@ export default function RegisterPage() {
   // Live age-group preview (60+ Older Generation, under 60 Younger Generation)
   const detectedGroup = useMemo(() => {
     const n = Number(watchedAge);
-    if (!Number.isInteger(n) || n < 13 || n > 120) return null;
+    if (!Number.isInteger(n) || n < MIN_AGE || n > 120) return null;
     return detectGeneration(n);
   }, [watchedAge]);
 
@@ -192,7 +192,7 @@ export default function RegisterPage() {
             id="age"
             type="number"
             inputMode="numeric"
-            min={13}
+            min={MIN_AGE}
             max={120}
             step={1}
             placeholder="e.g. 68"
@@ -215,7 +215,8 @@ export default function RegisterPage() {
             </p>
           ) : (
             <p id="age-help" className="text-xs text-muted-foreground">
-              Used only to show your generation: 60 and over is Older Generation, under 60 is Younger Generation.
+              You must be {MIN_AGE} or older to join. Your age only sets your generation: 60 and over is Older
+              Generation, under 60 is Younger Generation.
             </p>
           )}
         </AuthField>
