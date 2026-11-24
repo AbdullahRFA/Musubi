@@ -44,7 +44,7 @@ const config: Config = {
         md: "0.7rem",
       },
       minHeight: {
-        tap: "3rem",
+        tap: "2.5rem",
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(36, 28, 22, 0.06)",

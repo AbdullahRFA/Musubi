@@ -74,7 +74,7 @@ export const Header = memo(function Header() {
   const postsLabel = session ? t("nav.posts") : t("nav.explore");
 
   const toggleBtn = (active: boolean, activeClass = "bg-card text-foreground") =>
-    `px-2 py-1 rounded-md text-xs font-semibold transition-all duration-200 ${
+    `px-2 py-1 rounded-md text-[13px] font-semibold transition-all duration-200 ${
       active ? `${activeClass} font-bold shadow-xs` : "text-muted-foreground hover:text-foreground hover:bg-card/60"
     }`;
 
@@ -139,11 +139,11 @@ export const Header = memo(function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 transition-shadow duration-300 ${
+      className={`site-header sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 transition-shadow duration-300 ${
         scrolled ? "shadow-soft" : ""
       }`}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8 h-14 sm:h-16">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8 h-[56px] sm:h-[68px] lg:h-[72px]">
         {/* Brand Logo */}
         <div className="flex items-center gap-3 lg:gap-6 min-w-0">
           <Link
@@ -152,14 +152,14 @@ export const Header = memo(function Header() {
             aria-label="Tsunagu Generations Home"
           >
             <div className="flex items-center gap-1.5">
-              <span className="font-black text-lg sm:text-2xl tracking-tight text-primary transition-colors duration-200 group-hover:text-[#7c2d12]">
+              <span className="font-black text-[18px] sm:text-[24px] lg:text-[27px] tracking-tight text-primary transition-colors duration-200 group-hover:text-[#7c2d12] leading-none">
                 Tsunagu
               </span>
-              <span className="font-bold text-base sm:text-xl text-foreground truncate">
+              <span className="font-bold text-[16px] sm:text-[20px] lg:text-[22.5px] text-foreground truncate leading-none">
                 Generations
               </span>
             </div>
-            <span className="text-[10px] text-muted-foreground font-medium hidden lg:inline -mt-0.5">
+            <span className="text-[10px] text-muted-foreground font-medium hidden lg:inline mt-0.5">
               {t("brandSubtitle")}
             </span>
           </Link>
@@ -174,13 +174,13 @@ export const Header = memo(function Header() {
                   key={link.href}
                   href={link.href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative inline-flex items-center gap-1.5 px-3 py-2 rounded-md font-medium text-sm transition-colors duration-200 after:absolute after:left-3 after:right-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
+                  className={`relative inline-flex items-center gap-1.5 px-[12px] py-[8px] rounded-md font-medium text-[15px] lg:text-[16px] transition-colors duration-200 after:absolute after:left-3 after:right-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
                     active
                       ? "text-primary font-bold after:scale-x-100"
                       : "text-foreground hover:bg-muted/70 hover:text-primary after:scale-x-0"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-[18px] w-[18px]" />
                   <span className="whitespace-nowrap">{link.label}</span>
                 </Link>
               );
@@ -209,14 +209,14 @@ export const Header = memo(function Header() {
                   className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-muted transition-colors duration-200"
                   title={t("nav.viewProfile")}
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground font-bold text-xs ring-2 ring-card shadow-xs overflow-hidden shrink-0">
+                  <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-secondary text-secondary-foreground font-bold text-[13px] ring-2 ring-card shadow-xs overflow-hidden shrink-0">
                     {session.avatarUrl ? (
                       <img src={session.avatarUrl} alt={session.fullName} className="h-full w-full object-cover" />
                     ) : (
                       initials(session.fullName)
                     )}
                   </div>
-                  <span className="hidden lg:inline text-xs font-bold text-foreground max-w-[100px] truncate">
+                  <span className="hidden lg:inline text-[13px] font-bold text-foreground max-w-[100px] truncate">
                     {session.fullName}
                   </span>
                 </Link>
@@ -224,21 +224,21 @@ export const Header = memo(function Header() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted rounded-full transition-colors duration-200"
+                  className="inline-flex h-[36px] w-[36px] items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted rounded-full transition-colors duration-200"
                   title={t("nav.signOut")}
                   aria-label={t("nav.signOut")}
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-[18px] w-[18px]" />
                 </button>
               </div>
             </>
           ) : (
             /* Logged Out Visitor Actions */
             <div className="hidden sm:flex items-center gap-2 shrink-0">
-              <Button asChild variant="ghost" size="sm" className="font-semibold">
+              <Button asChild variant="ghost" size="sm" className="font-semibold text-[14px] min-h-[36px] px-3">
                 <Link href="/login">{t("nav.login")}</Link>
               </Button>
-              <Button asChild variant="default" size="sm" className="font-semibold">
+              <Button asChild variant="default" size="sm" className="font-semibold text-[14px] min-h-[36px] px-3.5">
                 <Link href="/register">{t("nav.register")}</Link>
               </Button>
             </div>
@@ -248,12 +248,12 @@ export const Header = memo(function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden h-10 w-10 rounded-full hover:bg-muted text-foreground shrink-0 flex items-center justify-center transition-colors duration-200"
+            className="md:hidden h-[40px] w-[40px] rounded-full hover:bg-muted text-foreground shrink-0 flex items-center justify-center transition-colors duration-200"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-drawer"
           >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileMenuOpen ? <X className="h-[20px] w-[20px]" /> : <Menu className="h-[20px] w-[20px]" />}
           </button>
         </div>
       </div>
@@ -262,7 +262,7 @@ export const Header = memo(function Header() {
       {mobileMenuOpen && (
         <div
           id="mobile-drawer"
-          className="md:hidden absolute inset-x-0 top-full border-b border-border bg-card shadow-lift px-4 py-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100dvh-3.5rem)] overflow-y-auto"
+          className="md:hidden absolute inset-x-0 top-full border-b border-border bg-card shadow-lift px-4 py-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100dvh-56px)] overflow-y-auto"
         >
           <div className="grid grid-cols-1 min-[380px]:grid-cols-3 gap-2">
             {navLinks.map((link) => {
@@ -272,13 +272,13 @@ export const Header = memo(function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 min-[380px]:flex-col min-[380px]:justify-center p-3 rounded-xl border font-semibold text-sm transition-colors duration-200 ${
+                  className={`flex items-center gap-2 min-[380px]:flex-col min-[380px]:justify-center p-3 rounded-xl border font-semibold text-[14px] transition-colors duration-200 ${
                     pathname === link.href || pathname.startsWith(`${link.href}/`)
                       ? "border-primary/40 bg-primary/5 text-primary"
                       : "border-border bg-muted/40 text-foreground hover:bg-muted"
                   }`}
                 >
-                  <Icon className="h-5 w-5 text-primary" />
+                  <Icon className="h-[20px] w-[20px] text-primary" />
                   <span className="text-center">{link.label}</span>
                 </Link>
               );
@@ -287,7 +287,7 @@ export const Header = memo(function Header() {
 
           {/* Accessibility toggles */}
           <div className="sm:hidden flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/40 border border-border p-2.5">
-            <span className="text-xs font-semibold text-muted-foreground">
+            <span className="text-[12px] font-semibold text-muted-foreground">
               {t("nav.fontSize")} · {t("nav.languageSelector")}
             </span>
             <div className="flex items-center gap-1.5">{renderToggles()}</div>
@@ -300,7 +300,7 @@ export const Header = memo(function Header() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2.5 min-w-0"
               >
-                <div className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                <div className="h-[40px] w-[40px] rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-[14px] shrink-0 overflow-hidden">
                   {session.avatarUrl ? (
                     <img src={session.avatarUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -308,23 +308,23 @@ export const Header = memo(function Header() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-sm text-foreground truncate">{session.fullName}</div>
-                  <div className="text-xs text-muted-foreground">{t("nav.viewProfile")}</div>
+                  <div className="font-bold text-[14px] text-foreground truncate">{session.fullName}</div>
+                  <div className="text-[12px] text-muted-foreground">{t("nav.viewProfile")}</div>
                 </div>
               </Link>
-              <Button variant="outline" size="sm" onClick={handleSignOut} className="shrink-0 gap-1.5 hover:text-destructive hover:border-destructive/40">
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="shrink-0 gap-1.5 hover:text-destructive hover:border-destructive/40 text-[14px]">
                 <LogOut className="h-4 w-4" />
                 {t("nav.signOut")}
               </Button>
             </div>
           ) : (
             <div className="pt-3 border-t border-border grid grid-cols-2 gap-2">
-              <Button asChild variant="outline" className="w-full font-bold">
+              <Button asChild variant="outline" className="w-full font-bold text-[14px]">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                   {t("nav.login")}
                 </Link>
               </Button>
-              <Button asChild variant="default" className="w-full font-bold">
+              <Button asChild variant="default" className="w-full font-bold text-[14px]">
                 <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
                   {t("nav.register")}
                 </Link>
