@@ -33,7 +33,6 @@ import { exchangeLabel, groupShort } from "@/lib/constants";
 import { initials, formatDay } from "@/lib/utils";
 import { PostStatusBadge, RequestStatusBadge } from "@/components/common/StatusBadge";
 import { RatingStars } from "@/components/common/RatingStars";
-import { SafetyBanner } from "@/components/common/SafetyBanner";
 import { ReportDialog } from "@/components/common/ReportDialog";
 import { DemoPaymentBanner } from "@/components/common/DemoPaymentBanner";
 import { DynamicMap } from "@/components/maps/DynamicMap";
@@ -187,7 +186,6 @@ export default function PostDetailPage() {
         </div>
       )}
 
-      {!isOwner && <SafetyBanner />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
         {/* ---------- Main column ---------- */}

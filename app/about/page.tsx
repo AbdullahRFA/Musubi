@@ -11,7 +11,6 @@ import {
   Star,
   Mail,
   ArrowRight,
-  AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -141,14 +140,6 @@ export default function AboutSafetyPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed pl-7">{body}</p>
               </div>
             ))}
-          </div>
-
-          <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-300 p-4 text-sm text-amber-900 font-medium">
-            <AlertTriangle className="h-5 w-5 shrink-0 text-amber-700" />
-            <p>
-              Reminder: Completed activities and ratings help you decide but are not a guarantee of safety. Trust your
-              judgment at all times.
-            </p>
           </div>
         </section>
 
