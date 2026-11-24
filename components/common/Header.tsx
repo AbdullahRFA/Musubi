@@ -10,7 +10,9 @@ import {
   X,
   Compass,
   FileCheck2,
+  Users,
 } from "lucide-react";
+import { useUnreadConnectionRequestCount, useUnreadDmCount } from "@/lib/services/notificationService";
 import { useSession, signOut } from "@/lib/services/authService";
 import { MessagesMenu, NotificationsMenu } from "@/components/notifications/NavPanels";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,9 @@ export const Header = memo(function Header() {
 
   const [fontSize, setFontSize] = useState<"standard" | "large">("standard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const unreadDms = useUnreadDmCount();
+  const unreadConnectionRequests = useUnreadConnectionRequestCount();
+  const connectionBadge = unreadDms + unreadConnectionRequests;
   const [scrolled, setScrolled] = useState(false);
 
   // Elevate the header once the user scrolls
@@ -131,10 +136,13 @@ export const Header = memo(function Header() {
     </>
   );
 
-  const navLinks = [
+  const navLinks: { href: string; label: string; icon: typeof Compass; badge?: number }[] = [
     { href: "/posts", label: postsLabel, icon: Compass },
     { href: "/my-activity", label: t("nav.myActivity"), icon: FileCheck2 },
     { href: "/search", label: t("nav.search"), icon: Search },
+    ...(session
+      ? [{ href: "/connections", label: language === "ja" ? "つながり" : "Connections", icon: Users, badge: connectionBadge }]
+      : []),
   ];
 
   return (
@@ -182,6 +190,11 @@ export const Header = memo(function Header() {
                 >
                   <Icon className="h-4 w-4" />
                   <span className="whitespace-nowrap">{link.label}</span>
+                  {link.badge ? (
+                    <span className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold leading-none text-destructive-foreground tabular-nums" aria-label={`${link.badge} new`}>
+                      {link.badge > 9 ? "9+" : link.badge}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}
@@ -264,7 +277,7 @@ export const Header = memo(function Header() {
           id="mobile-drawer"
           className="md:hidden absolute inset-x-0 top-full border-b border-border bg-card shadow-lift px-4 py-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100dvh-3.5rem)] overflow-y-auto"
         >
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -280,6 +293,11 @@ export const Header = memo(function Header() {
                 >
                   <Icon className="h-5 w-5 text-primary" />
                   <span className="text-center">{link.label}</span>
+                  {link.badge ? (
+                    <span className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold leading-none text-destructive-foreground tabular-nums" aria-label={`${link.badge} new`}>
+                      {link.badge > 9 ? "9+" : link.badge}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}
