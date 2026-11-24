@@ -18,6 +18,22 @@ export function resetDemo() {
   replaceState(seedState());
 }
 
+let lastProfilesFetch = 0;
+
+/**
+ * All member profiles. Loads them from the database (at most once a minute,
+ * shared by every page) so names show correctly even when a page is opened
+ * directly — previously only Search/Connections loaded profiles, so other
+ * pages fell back to "Community Member".
+ */
 export function useUsers() {
+  const signedIn = useAppStore((state) => Boolean(state.sessionUserId));
+  useEffect(() => {
+    if (!signedIn || Date.now() - lastProfilesFetch < 60_000) return;
+    lastProfilesFetch = Date.now();
+    import("@/lib/services/profileService").then(({ fetchProfiles }) => fetchProfiles()).catch(() => {
+      lastProfilesFetch = 0;
+    });
+  }, [signedIn]);
   return useAppStore((state) => state.users);
 }

@@ -188,6 +188,7 @@ export function usePublicProfile(id: string): PublicProfile | null {
   const blocks = useAppStore((state) => state.blocks);
   const viewer = useSession();
   const [fetchedUser, setFetchedUser] = useState<Profile | null>(null);
+  const remoteCompleted = useCompletedExchangeCount(id);
 
   useEffect(() => {
     if (!id) return;
@@ -241,10 +242,46 @@ export function usePublicProfile(id: string): PublicProfile | null {
       phoneShared,
       averageRating: average(received.map((review) => review.rating)),
       reviewCount: received.length,
-      completedCount: activities.filter((activity) => activity.participantIds.includes(user.id)).length,
+      completedCount: Math.max(remoteCompleted ?? 0, activities.filter((activity) => activity.participantIds.includes(user.id)).length),
     };
     return profile;
-  }, [activities, blocks, fetchedUser, id, requests, reviews, users, viewer]);
+  }, [activities, blocks, fetchedUser, id, remoteCompleted, requests, reviews, users, viewer]);
+}
+
+/**
+ * Number of completed exchanges for any member, via the
+ * `completed_exchange_count` database function (activities themselves are
+ * private). Also loads my own activities so my shared exchanges count even
+ * before that function is installed. null = unknown.
+ */
+let lastActivityFetch = 0;
+
+export function useCompletedExchangeCount(userId: string | null | undefined): number | null {
+  const [count, setCount] = useState<number | null>(null);
+  const signedIn = useAppStore((state) => Boolean(state.sessionUserId));
+  const activityCount = useAppStore((state) => state.activities.length);
+
+  useEffect(() => {
+    // Shared by every profile card on a page: refresh my activities at most every 30 s
+    if (!signedIn || Date.now() - lastActivityFetch < 30_000) return;
+    lastActivityFetch = Date.now();
+    import("@/lib/services/requestService").then(({ fetchRequests }) => fetchRequests()).catch(() => {});
+  }, [signedIn]);
+
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    createClient()
+      .rpc("completed_exchange_count", { uid: userId })
+      .then(({ data, error }) => {
+        if (alive) setCount(!error && typeof data === "number" ? data : null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [userId, activityCount]);
+
+  return count;
 }
 
 /**
@@ -253,14 +290,15 @@ export function usePublicProfile(id: string): PublicProfile | null {
 export function useUserStats(userId: string) {
   const reviews = useAppStore((state) => state.reviews);
   const activities = useAppStore((state) => state.activities);
+  const remoteCompleted = useCompletedExchangeCount(userId);
   return useMemo(() => {
     const received = reviews.filter((review) => review.revieweeId === userId);
     return {
       averageRating: average(received.map((review) => review.rating)),
       reviewCount: received.length,
-      completedCount: activities.filter((activity) => activity.participantIds.includes(userId)).length,
+      completedCount: Math.max(remoteCompleted ?? 0, activities.filter((activity) => activity.participantIds.includes(userId)).length),
     };
-  }, [activities, reviews, userId]);
+  }, [activities, remoteCompleted, reviews, userId]);
 }
 
 /**

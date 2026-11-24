@@ -110,7 +110,11 @@ function jaCompact(text: string): string {
   // Japanese has no spaces; drop spacing/punctuation and common polite endings
   return normalise(text)
     .replace(/\s+/g, "")
-    .replace(/(ですか|でしょうか|ますか|ください|下さい|たいです|ですが|です|ます|ね|よ)$/g, "");
+    .replace(/(ですか|でしょうか|ますか|ください|下さい|たいです|ですが|です|ます|ね|よ)$/g, "")
+    // Question wording and particles vary ("パスワードを変更するには" vs "パスワードの変更"),
+    // so compare the content words only
+    .replace(/(どうすればいい|どうやって|どうすれば|するには|したいのですが|したい|する方法|の方法|方法|には|できる|すれば|とは|って)/g, "")
+    .replace(/[をのはがにへでもか]/g, "");
 }
 
 function bigrams(text: string): string[] {
@@ -146,6 +150,9 @@ const EN_AI_INTENT =
   /\b(find me|find someone|find somebody|search for|look(ing)? for|need (someone|somebody|a person|help with)|write (a|my|me)|draft|for me|recommend|suggest|match me|anyone who|someone who|somebody who|i need|i want someone|can someone|could someone)\b/;
 // Asking to find a person or to have something written always needs live data
 const JA_AI_INTENT = /(探して|探しています|探したい|書いて|作って|下書き|おすすめ|紹介して|くれる人|くれる方|いませんか|募集したい)/;
+// "How do I…?" questions are FAQ material even if they mention finding someone
+// (mirrors EN_HOW_QUESTION, e.g. 助けてくれる人の探し方は？)
+const JA_HOW_QUESTION = /(方法|やり方|し方|方は|どうやって|どうすれば|には[?？]?$)/;
 
 /**
  * True when the message asks the assistant to *do* something personal (find
@@ -155,7 +162,7 @@ const JA_AI_INTENT = /(探して|探しています|探したい|書いて|作�
 export function needsAi(text: string): boolean {
   const n = normalise(text);
   if (hasJapanese(text)) {
-    return JA_AI_INTENT.test(n);
+    return JA_AI_INTENT.test(n) && !JA_HOW_QUESTION.test(n);
   }
   if (EN_AI_INTENT.test(n) && !EN_HOW_QUESTION.test(n)) return true;
   // Long, story-like messages are usually personal requests

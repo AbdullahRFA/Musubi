@@ -9,3 +9,7 @@ tsconfig.tsbuildinfo
 next-env.d.ts
 .env.local
 
+
+# test artefacts
+/test-results/
+/playwright-report/
