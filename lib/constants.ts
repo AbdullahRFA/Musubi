@@ -30,6 +30,9 @@ export const EXCHANGE_METHODS: { value: ExchangeMethod; label: string; hint: str
 
 export const AGE_GROUPS: AgeGroup[] = ["18-29", "30-49", "50-64", "65+"];
 
+/** Minimum age to register and use Tsunagu Generations. */
+export const MIN_AGE = 15;
+
 export const AVAILABILITY = [
   "Weekday mornings",
   "Weekday afternoons",
@@ -147,8 +150,6 @@ export const REPORT_REASONS = [
 
 export const DEMO_AMOUNTS = [10, 15, 20, 25];
 
-export const SAFETY_TEXT =
-  "Completed activities and ratings help you decide but are not a guarantee of safety.";
 
 export const DEMO_PAYMENT_BANNER = "DEMO payment – no real money is processed.";
 

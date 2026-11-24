@@ -11,11 +11,11 @@ import {
   Star,
   Mail,
   ArrowRight,
-  AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FAQS, FAQ_TOPICS, type FaqTopic } from "@/lib/assistant/faq";
+import { FormattedReply } from "@/components/assistant/FormattedReply";
 
 const SAFETY_PRINCIPLES = [
   {
@@ -141,14 +141,6 @@ export default function AboutSafetyPage() {
               </div>
             ))}
           </div>
-
-          <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-300 p-4 text-sm text-amber-900 font-medium">
-            <AlertTriangle className="h-5 w-5 shrink-0 text-amber-700" />
-            <p>
-              Reminder: Completed activities and ratings help you decide but are not a guarantee of safety. Trust your
-              judgment at all times.
-            </p>
-          </div>
         </section>
 
         {/* FAQ */}
@@ -173,7 +165,9 @@ export default function AboutSafetyPage() {
                       <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180 group-open:text-primary" />
                     </summary>
                     <div className="px-4 sm:px-5 pb-5 -mt-1 space-y-3">
-                      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{faq.answer.en}</p>
+                      <div className="text-sm sm:text-base text-muted-foreground">
+                        <FormattedReply text={faq.answer.en} />
+                      </div>
                       {faq.link && (
                         <Link
                           href={faq.link.href}

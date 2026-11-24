@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
+import type { PostStatus } from "@/lib/types";
 import {
   Compass,
   Inbox,
@@ -13,12 +14,13 @@ import {
   Star,
   ArrowRight,
   PlusCircle,
+  Sparkles,
   Pin,
   ArrowUpRight,
   ArrowDownLeft,
   type LucideIcon,
 } from "lucide-react";
-import { usePosts } from "@/lib/services/postService";
+import { useMyPosts, reconcileMyPostStatuses } from "@/lib/services/postService";
 import { useMyRequests, confirmCompletion } from "@/lib/services/requestService";
 import { useMyActivities } from "@/lib/services/reviewService";
 import { useTransactions } from "@/lib/services/transactionService";
@@ -41,7 +43,9 @@ function ActivityContent() {
   const [activeTab, setActiveTab] = useState<TabId>(tabParam && TAB_IDS.includes(tabParam) ? tabParam : "posts");
 
   const session = useSession();
-  const allPosts = usePosts();
+  // All posts in any status (usePosts() returns only open posts, but an
+  // in-progress exchange's post is never "open")
+  const allPosts = useAppStore((state) => state.posts);
   const { incoming, outgoing, inProgress } = useMyRequests();
   const myActivities = useMyActivities();
   const transactions = useTransactions();
@@ -49,7 +53,38 @@ function ActivityContent() {
   const conversations = useAppStore((state) => state.conversations);
 
   // "my post - only currently requested posts"
-  const myPosts = allPosts.filter((p) => p.authorId === session?.id && p.status === "open");
+  const myPosts = useMyPosts();
+  const [postFilter, setPostFilter] = useState<"all" | PostStatus>("all");
+  const visibleMyPosts = postFilter === "all" ? myPosts : myPosts.filter((p) => p.status === postFilter);
+  const postStatusCounts = {
+    all: myPosts.length,
+    open: myPosts.filter((p) => p.status === "open").length,
+    in_progress: myPosts.filter((p) => p.status === "in_progress").length,
+    completed: myPosts.filter((p) => p.status === "completed").length,
+    closed: myPosts.filter((p) => p.status === "closed").length,
+  };
+
+  // Fix posts left "in progress" after the helper confirmed completion last
+  const requestsSignature = [...incoming, ...outgoing, ...inProgress].map((r) => `${r.id}:${r.status}`).join(",");
+  useEffect(() => {
+    reconcileMyPostStatuses();
+  }, [requestsSignature, myPosts.length]);
+
+  // Highlight the exchange the member just accepted (from the Requests page)
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = searchParams.get("highlight");
+    if (!id) return;
+    setHighlightId(id);
+    const scroll = window.setTimeout(() => {
+      document.getElementById(`exchange-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+    const clear = window.setTimeout(() => setHighlightId(null), 4000);
+    return () => {
+      window.clearTimeout(scroll);
+      window.clearTimeout(clear);
+    };
+  }, [searchParams]);
   const allRequests = [...incoming, ...outgoing];
 
   const getUser = (id: string) => allUsers.find((u) => u.id === id);
@@ -88,60 +123,57 @@ function ActivityContent() {
     <div className="pb-12 sm:pb-16">
       {/* ---------- Header ---------- */}
       <section className="border-b border-border bg-gradient-to-b from-card to-background">
-        <div className="page-container max-w-6xl pt-8 sm:pt-12 space-y-6">
-          <div className="space-y-1 animate-fade-up">
-            <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">My Activity Hub</h1>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
-              Track your currently open posts, pending requests, active in-progress exchanges, and completed history.
-            </p>
+        <div className="page-container max-w-6xl pt-8 pb-6 sm:pt-12 sm:pb-8 space-y-6">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between animate-fade-up">
+            <div className="space-y-1">
+              <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">My Activity Hub</h1>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
+                Track your currently open posts, pending requests, active in-progress exchanges, and completed history.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 md:flex md:shrink-0">
+              <Button asChild className="group gap-1.5 font-bold">
+                <Link href="/quick-post">
+                  <Sparkles className="h-4 w-4 text-amber-200 transition-transform group-hover:rotate-12" />
+                  Quick Post
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="gap-1.5 font-semibold">
+                <Link href="/posts/new">
+                  <PlusCircle className="h-4 w-4" />
+                  Standard Post
+                </Link>
+              </Button>
+            </div>
           </div>
 
-          {/* Summary tiles double as tab shortcuts on larger screens */}
-          <div className="hidden md:grid grid-cols-5 gap-3 animate-fade-up [animation-delay:100ms]">
-            {tabs.map(({ id, label, count, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => selectTab(id)}
-                className={`group rounded-xl border-2 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 ${
-                  activeTab === id ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/30"
-                }`}
-              >
-                <Icon className={`h-5 w-5 mb-2 ${activeTab === id ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
-                <div className="text-2xl font-black tabular-nums text-foreground">{count}</div>
-                <div className="text-xs font-semibold text-muted-foreground">{label}</div>
-              </button>
-            ))}
-          </div>
-
-          {/* Tabs */}
+          {/* Summary tiles are the section switcher on every screen size */}
           <div
             role="tablist"
             aria-label="Activity sections"
-            className="-mx-4 px-4 sm:mx-0 sm:px-0 flex overflow-x-auto gap-1 sm:gap-4 scrollbar-none snap-x"
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 animate-fade-up [animation-delay:100ms]"
           >
-            {tabs.map(({ id, label, count, icon: Icon }) => {
+            {tabs.map(({ id, label, count, icon: Icon }, i) => {
               const isActive = activeTab === id;
               return (
                 <button
                   key={id}
                   type="button"
                   role="tab"
+                  id={`tab-${id}`}
                   aria-selected={isActive}
+                  aria-controls="activity-panel"
                   onClick={() => selectTab(id)}
-                  className={`snap-start flex items-center gap-1.5 pb-3 pt-1 px-2 font-bold text-sm sm:text-base border-b-4 transition-colors duration-200 shrink-0 whitespace-nowrap ${
-                    isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`group relative rounded-xl border-2 p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 sm:p-4 ${
+                    isActive ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/30"
+                  } ${i === tabs.length - 1 ? "col-span-2 sm:col-span-1" : ""}`}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {label}
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums ${
-                      isActive ? "bg-primary/10 text-primary" : "bg-muted"
-                    }`}
-                  >
-                    {count}
-                  </span>
+                  <Icon
+                    className={`mb-2 h-5 w-5 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`}
+                  />
+                  <div className="text-2xl font-black tabular-nums text-foreground">{count}</div>
+                  <div className={`text-xs font-semibold ${isActive ? "text-primary" : "text-muted-foreground"}`}>{label}</div>
+                  {isActive && <span className="absolute inset-x-4 -bottom-[2px] h-1 rounded-full bg-primary" aria-hidden="true" />}
                 </button>
               );
             })}
@@ -149,28 +181,63 @@ function ActivityContent() {
         </div>
       </section>
 
-      <div key={activeTab} role="tabpanel" className="page-container max-w-6xl pt-6 sm:pt-8 space-y-4 animate-fade-in">
+      <div key={activeTab} id="activity-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="page-container max-w-6xl pt-6 sm:pt-8 space-y-4 animate-fade-in">
         {/* 1. MY POSTS */}
         {activeTab === "posts" && (
           <>
-            <SectionHeader title="Your Community Posts">
-              <Button asChild size="sm" className="gap-1.5 font-bold">
-                <Link href="/posts/new">
-                  <PlusCircle className="h-4 w-4" />
-                  New Post
-                </Link>
-              </Button>
-            </SectionHeader>
+            <SectionHeader
+              title="Your Community Posts"
+              subtitle="Open posts are visible to neighbours. In-progress, completed and closed posts appear only here."
+            />
+            {myPosts.length > 0 && (
+              <div role="group" aria-label="Filter by status" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0">
+                {(
+                  [
+                    ["all", "All"],
+                    ["open", "Open"],
+                    ["in_progress", "In progress"],
+                    ["completed", "Completed"],
+                    ["closed", "Closed"],
+                  ] as const
+                ).map(([value, label]) => {
+                  const active = postFilter === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setPostFilter(value)}
+                      aria-pressed={active}
+                      className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground shadow-glow"
+                          : "border-border bg-card text-foreground hover:border-primary/40 hover:text-primary"
+                      }`}
+                    >
+                      {label}
+                      <span
+                        className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none tabular-nums ${
+                          active ? "bg-white/20" : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {postStatusCounts[value]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {myPosts.length === 0 ? (
               <Empty icon={Compass} text="You haven't created any posts yet.">
                 <Button asChild>
                   <Link href="/quick-post">Try Quick Post Wizard</Link>
                 </Button>
               </Empty>
+            ) : visibleMyPosts.length === 0 ? (
+              <Empty icon={Compass} text="No posts with this status yet." />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
-                {myPosts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                {visibleMyPosts.map((post) => (
+                  <PostCard key={post.id} post={post} showStatus />
                 ))}
               </div>
             )}
@@ -249,8 +316,19 @@ function ActivityContent() {
                   return (
                     <article
                       key={req.id}
-                      className="rounded-2xl border-2 border-primary/30 bg-card p-4 sm:p-5 shadow-xs transition-shadow duration-300 hover:shadow-soft"
+                      id={`exchange-${req.id}`}
+                      className={`scroll-mt-24 rounded-2xl border-2 bg-card p-4 sm:p-5 shadow-xs transition-all duration-500 hover:shadow-soft ${
+                        highlightId === req.id
+                          ? "border-success ring-4 ring-success/20 shadow-lift"
+                          : "border-primary/30"
+                      }`}
                     >
+                      {highlightId === req.id && (
+                        <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success animate-in fade-in">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Request accepted — say hello in chat to arrange the details
+                        </p>
+                      )}
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-1.5 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">

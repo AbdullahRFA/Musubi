@@ -77,7 +77,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["使い方", "このサイトの使い方を教えて", "どうやって使う", "仕組み", "始め方", "流れを教えて"],
     },
     answer: {
-      en: "It works in six simple steps. 1. Create a free account and set up your profile. 2. Post what you need, or browse posts from neighbours. 3. Press Respond to send a friendly request. 4. The post owner accepts, and a private chat opens. 5. Agree on a time and a public place, then meet. 6. Both press Mark Completed and leave a short review.",
+      en: "It works in six simple steps. 1. Create a free account and set up your profile. 2. Post what you need, or browse posts from neighbours. 3. Press **Respond** to send a friendly request. 4. The post owner accepts, and a private chat opens. 5. Agree on a time and a public place, then meet. 6. Both press **Mark Completed** and leave a short review.",
       ja: "6つの簡単なステップです。1. 無料アカウントを作り、プロフィールを設定します。2. 困りごとを投稿するか、ご近所さんの投稿を見ます。3.「応募する」を押して依頼を送ります。4. 投稿者が承認すると、個別チャットが使えます。5. 日時と公共の場所を決めて会います。6. お互いに「完了」を押して、レビューを残します。",
     },
     link: { href: "/register", label: { en: "Create an account", ja: "アカウントを作る" } },
@@ -121,8 +121,8 @@ export const FAQS: FaqEntry[] = [
       ja: ["誰が参加", "誰でも使える", "年齢制限", "何歳から", "高齢者だけ", "若い人も"],
     },
     answer: {
-      en: "Anyone aged 13 or older can join. Members aged 60 and over are shown as Older Generation, and members under 60 as Younger Generation. This is set automatically from your age, and it never limits what you can do.",
-      ja: "13歳以上なら誰でも参加できます。60歳以上の方は「シニア世代」、60歳未満の方は「若い世代」と表示されます。年齢から自動で決まり、できることに制限はありません。",
+      en: "Anyone aged 15 or older can join. Members aged 60 and over are shown as Older Generation, and members under 60 as Younger Generation. This is set automatically from your age, and it never limits what you can do.",
+      ja: "15歳以上なら誰でも参加できます。60歳以上の方は「シニア世代」、60歳未満の方は「若い世代」と表示されます。年齢から自動で決まり、できることに制限はありません。",
     },
     related: ["og-yg", "register"],
   },
@@ -167,7 +167,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["アカウント作成", "登録方法", "新規登録", "サインアップ", "会員登録", "どうやって登録"],
     },
     answer: {
-      en: "Press Register at the top of the page. Enter your name, email, a password and your age, or simply use Continue with Google. Then a short setup page asks for your neighbourhood and what you can share or need. It takes about two minutes.",
+      en: "Press **Register** at the top of the page. Enter your name, email, a password and your age, or simply use **Continue with Google**. Then a short setup page asks for your neighbourhood and what you can share or need. It takes about two minutes.",
       ja: "画面上の「新規登録」を押し、お名前、メール、パスワード、年齢を入力します。Googleで続けることもできます。その後、地域やできること・困りごとを聞く簡単な設定があります。2分ほどで終わります。",
     },
     link: { href: "/register", label: { en: "Register now", ja: "登録する" } },
@@ -182,7 +182,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["ログイン", "サインイン", "ログインできない", "ログイン方法"],
     },
     answer: {
-      en: "Press Log in at the top of the page and enter your email and password, or press Continue with Google if you signed up with Google. If you forgot your password, use the Forgot password link on the login page.",
+      en: "Press **Log in** at the top of the page and enter your email and password, or press **Continue with Google** if you signed up with Google. If you forgot your password, use the **Forgot password** link on the login page.",
       ja: "画面上の「ログイン」を押して、メールとパスワードを入力します。Googleで登録した方は「Googleで続ける」を押してください。パスワードを忘れた場合は、ログイン画面の「パスワードをお忘れですか？」を使ってください。",
     },
     link: { href: "/login", label: { en: "Log in", ja: "ログイン" } },
@@ -197,7 +197,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["パスワードを忘れ", "パスワードリセット", "パスワード再設定", "パスワードがわからない"],
     },
     answer: {
-      en: "On the login page, press Forgot password and enter your email. We will send you a reset link. Open it on the same device, choose a new password, and you are done. The link works for one hour.",
+      en: "On the login page, press **Forgot password** and enter your email. We will send you a reset link. Open it on the same device, choose a new password, and you are done. The link works for one hour.",
       ja: "ログイン画面で「パスワードをお忘れですか？」を押し、メールアドレスを入力してください。再設定用のリンクをお送りします。同じ端末でリンクを開き、新しいパスワードを決めれば完了です。リンクの有効期限は1時間です。",
     },
     link: { href: "/forgot-password", label: { en: "Reset password", ja: "パスワード再設定" } },
@@ -212,7 +212,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["パスワード変更", "パスワードを変えたい", "パスワードの変更"],
     },
     answer: {
-      en: "Open your profile and press Change Password. Enter your current password, then your new one twice. A new password needs at least 8 characters, with letters and numbers. If you signed up with Google, you can set a password there too.",
+      en: "Open your profile and press **Change Password**. Enter your current password, then your new one twice. A new password needs at least 8 characters, with letters and numbers. If you signed up with Google, you can set a password there too.",
       ja: "プロフィールを開き「パスワードを変更」を押します。今のパスワードと、新しいパスワードを2回入力してください。新しいパスワードは8文字以上で、英字と数字を含めてください。Googleで登録した方も、ここでパスワードを設定できます。",
     },
     link: { href: "/change-password", label: { en: "Change password", ja: "パスワード変更" } },
@@ -227,7 +227,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["ログアウト", "サインアウト"],
     },
     answer: {
-      en: "On a computer, press the exit icon next to your picture at the top right. On a phone, press the menu button with three lines at the top, then press Sign out.",
+      en: "On a computer, press the exit icon next to your picture at the top right. On a phone, press the menu button with three lines at the top, then press **Sign out**.",
       ja: "パソコンでは、右上の自分の写真の横にある退出アイコンを押します。スマホでは、上の三本線のメニューを開いて「ログアウト」を押してください。",
     },
   },
@@ -258,7 +258,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["プロフィール編集", "プロフィールを変えたい", "名前を変えたい", "自己紹介を変えたい", "地域を変えたい"],
     },
     answer: {
-      en: "Open your profile and press Edit Profile. You can change your name, age, short biography, neighbourhoods, contact method, availability, interests, skills and the help you need. Press Save Profile when you are done.",
+      en: "Open your profile and press **Edit Profile**. You can change your name, age, short biography, neighbourhoods, contact method, availability, interests, skills and the help you need. Press **Save Profile** when you are done.",
       ja: "プロフィールを開いて「プロフィール編集」を押します。名前、年齢、自己紹介、地域、連絡方法、都合の良い時間、趣味、できること、困りごとを変更できます。最後に「保存」を押してください。",
     },
     link: { href: "/profile/edit", label: { en: "Edit profile", ja: "プロフィール編集" } },
@@ -273,7 +273,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["プロフィール写真", "写真を追加", "写真を変えたい", "アイコン"],
     },
     answer: {
-      en: "Go to Edit Profile and press Upload next to your picture. Choose a photo up to 5 MB. It is resized automatically. Press Save Profile to keep it.",
+      en: "Go to **Edit Profile** and press **Upload** next to your picture. Choose a photo up to 5 MB. It is resized automatically. Press **Save Profile** to keep it.",
       ja: "「プロフィール編集」で、写真の横の「アップロード」を押し、5MBまでの写真を選んでください。自動でサイズ調整されます。最後に「保存」を押してください。",
     },
     link: { href: "/profile/edit", label: { en: "Edit profile", ja: "プロフィール編集" } },
@@ -287,7 +287,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["スキルを追加", "できることを追加", "困りごとを追加", "趣味を追加", "スキル"],
     },
     answer: {
-      en: "In Edit Profile, type a skill such as Origami or a need such as Grocery Errands, or tap one of the suggestions. You can add up to 10 skills, 10 needs and 12 interests. This helps the right neighbours find you in Search.",
+      en: "In **Edit Profile**, type a skill such as Origami or a need such as Grocery Errands, or tap one of the suggestions. You can add up to 10 skills, 10 needs and 12 interests. This helps the right neighbours find you in Search.",
       ja: "「プロフィール編集」で、「折り紙」などのできることや「買い物のお手伝い」などの困りごとを入力するか、候補をタップします。できること・困りごとは最大10個、趣味は12個まで登録できます。検索で見つけてもらいやすくなります。",
     },
     link: { href: "/profile/edit", label: { en: "Edit profile", ja: "プロフィール編集" } },
@@ -306,7 +306,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["投稿の作り方", "投稿したい", "投稿方法", "依頼を出したい", "どうやって投稿"],
     },
     answer: {
-      en: "The easiest way is the Quick Post wizard. 1. Choose a category. 2. Pick a ready-made template. 3. Check the details. 4. Press Publish. There is almost no typing. You can also use Standard Post to write everything yourself, or ask me to write a draft for you.",
+      en: "The easiest way is the **Quick Post** wizard. 1. Choose a category. 2. Pick a ready-made template. 3. Check the details. 4. Press **Publish**. There is almost no typing. You can also use **Standard Post** to write everything yourself, or ask me to write a draft for you.",
       ja: "一番簡単なのは「かんたん投稿」です。1. カテゴリーを選ぶ。2. 用意されたテンプレートを選ぶ。3. 内容を確認する。4.「公開」を押す。ほとんど文字を打つ必要はありません。「通常の投稿」で自分で書くことも、私に下書きを頼むこともできます。",
     },
     link: { href: "/quick-post", label: { en: "Open Quick Post", ja: "かんたん投稿" } },
@@ -321,7 +321,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["かんたん投稿", "クイック投稿", "テンプレート"],
     },
     answer: {
-      en: "Quick Post is a simple four-step way to post, made for older members. You pick a category and a ready-made template, and the post is written for you. You only check the details and press Publish.",
+      en: "**Quick Post** is a simple four-step way to post, made for older members. You pick a category and a ready-made template, and the post is written for you. You only check the details and press **Publish**.",
       ja: "かんたん投稿は、シニアの方向けの4ステップの簡単な投稿方法です。カテゴリーとテンプレートを選ぶと、投稿文が自動で作られます。内容を確認して「公開」を押すだけです。",
     },
     link: { href: "/quick-post", label: { en: "Open Quick Post", ja: "かんたん投稿" } },
@@ -350,7 +350,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["スキルを提供", "手伝いたい", "ボランティア", "人を助けたい", "教えたい", "役に立ちたい"],
     },
     answer: {
-      en: "Yes, and thank you! Add your skills to your profile so neighbours can find you in Search under People. You can also browse posts and press Respond on any request you can help with.",
+      en: "Yes, and thank you! Add your skills to your profile so neighbours can find you in Search under People. You can also browse posts and press **Respond** on any request you can help with.",
       ja: "はい、ありがとうございます！プロフィールにできることを登録すると、検索の「人」から見つけてもらえます。投稿を見て、お手伝いできる依頼に「応募する」を押すこともできます。",
     },
     link: { href: "/posts", label: { en: "Browse requests", ja: "依頼を見る" } },
@@ -383,7 +383,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["応募方法", "投稿に応募", "返信したい", "依頼を送る", "連絡したい"],
     },
     answer: {
-      en: "Open the post or find it in the list and press Respond. Write a short friendly note about yourself and when you are free, then press Send. The post owner will be notified and can accept or decline.",
+      en: "Open the post or find it in the list and press **Respond**. Write a short friendly note about yourself and when you are free, then press Send. The post owner will be notified and can accept or decline.",
       ja: "投稿を開くか一覧で見つけて「応募する」を押します。自己紹介や都合の良い時間を短く書いて「送信」してください。投稿者に通知が届き、承認またはお断りが決まります。",
     },
     related: ["request-status", "cancel-request"],
@@ -397,7 +397,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["依頼を承認", "依頼を断る", "応募が来た", "承認方法"],
     },
     answer: {
-      en: "Open My Activity and choose My Requests, then Manage in Requests Inbox. Under Incoming you will see who responded and their message. Press Accept to start a private chat, or Decline if it is not a good match. You can check their profile and reviews first.",
+      en: "Open **My Activity** and choose **My Requests**, then **Manage in Requests Inbox**. Under **Incoming** you will see who responded and their message. Press **Accept** to start a private chat, or **Decline** if it is not a good match. You can check their profile and reviews first.",
       ja: "「マイ活動」の「自分の依頼」から依頼一覧を開きます。「受け取った依頼」に応募者とメッセージが表示されます。「承認」を押すと個別チャットが始まり、合わない場合は「お断り」を押します。先にプロフィールやレビューを確認できます。",
     },
     link: { href: "/requests", label: { en: "Open Requests", ja: "依頼を開く" } },
@@ -426,7 +426,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["依頼を取り消し", "応募を取り消し", "キャンセルしたい"],
     },
     answer: {
-      en: "Open the Requests page from My Activity and choose Sent by Me. While a request is still pending, press Cancel Request.",
+      en: "Open the Requests page from **My Activity** and choose **Sent by Me**. While a request is still pending, press **Cancel Request**.",
       ja: "「マイ活動」から依頼一覧を開き、「送った依頼」を選びます。保留中の依頼なら「依頼を取り消す」を押してください。",
     },
     link: { href: "/requests", label: { en: "Open Requests", ja: "依頼を開く" } },
@@ -440,7 +440,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["自分の投稿に応募", "応募ボタンがない"],
     },
     answer: {
-      en: "You cannot respond to your own post. Instead, neighbours respond to you, and you can accept or decline their requests from My Activity.",
+      en: "You cannot respond to your own post. Instead, neighbours respond to you, and you can accept or decline their requests from **My Activity**.",
       ja: "自分の投稿には応募できません。ご近所さんからの応募を「マイ活動」から承認またはお断りしてください。",
     },
   },
@@ -457,7 +457,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["チャット", "メッセージを送りたい", "いつ話せる", "メッセージ方法"],
     },
     answer: {
-      en: "To protect everyone's privacy, chat opens only after a request is accepted. Then open Messages from the top bar or the bottom menu. You can type, use one-tap quick replies, and press Listen to hear messages read aloud.",
+      en: "To protect everyone's privacy, chat opens only after a request is accepted. Then open **Messages** from the top bar or the bottom menu. You can type, use one-tap quick replies, and press **Listen** to hear messages read aloud.",
       ja: "皆さんのプライバシーを守るため、チャットは依頼が承認された後に使えます。上のバーか下のメニューから「メッセージ」を開いてください。入力のほか、ワンタップの簡単返信や、「聞く」でメッセージの読み上げも使えます。",
     },
     link: { href: "/chat", label: { en: "Open Messages", ja: "メッセージを開く" } },
@@ -472,7 +472,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["通知", "ベル", "通知音", "音を消したい", "赤い数字"],
     },
     answer: {
-      en: "The bell shows new requests, accepted requests and reviews. The message icon shows new chat messages. A red number tells you how many are new, and you hear a short sound. You can turn the sound on or off on the Notifications page.",
+      en: "The bell shows new requests, accepted requests and reviews. The message icon shows new chat messages. A red number tells you how many are new, and you hear a short sound. You can turn the sound on or off on the **Notifications** page.",
       ja: "ベルは新しい依頼、承認、レビューなどを、メッセージアイコンは新しいチャットをお知らせします。赤い数字が新着の数で、短い音も鳴ります。音のオン・オフは「通知」ページで切り替えられます。",
     },
     link: { href: "/notifications", label: { en: "Notifications", ja: "通知を見る" } },
@@ -504,7 +504,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["完了にする", "完了方法", "終わった", "やり取りを終える"],
     },
     answer: {
-      en: "After you meet, press Mark Completed in the chat or on My Activity. When both of you have pressed it, the exchange is finished and you can each leave a review.",
+      en: "After you meet, press **Mark Completed** in the chat or on **My Activity**. When both of you have pressed it, the exchange is finished and you can each leave a review.",
       ja: "会った後、チャットか「マイ活動」で「完了にする」を押してください。お二人とも押すと完了となり、それぞれレビューを書けます。",
     },
     link: { href: "/my-activity?tab=inprogress", label: { en: "In progress", ja: "進行中" } },
@@ -519,7 +519,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["レビュー", "評価", "星をつけたい", "感想を書く"],
     },
     answer: {
-      en: "After an exchange is completed, open My Activity, choose Completed, and press Rate and Review. Choose one to five stars and add a short thank-you note if you like. You can review each exchange once.",
+      en: "After an exchange is completed, open **My Activity**, choose Completed, and press **Rate and Review**. Choose one to five stars and add a short thank-you note if you like. You can review each exchange once.",
       ja: "完了したやり取りは「マイ活動」の「完了」から「評価・レビュー」を押します。星を1つから5つ選び、よければ短いお礼の言葉を添えてください。レビューは1回のやり取りにつき1回です。",
     },
     link: { href: "/my-activity?tab=completed", label: { en: "Completed activities", ja: "完了した活動" } },
@@ -584,7 +584,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["通報", "不適切", "詐欺", "怪しい", "報告したい"],
     },
     answer: {
-      en: "Press Report on the post, or on the person's profile. Choose a reason and press Submit Report. Reports are private, so the person will not know who reported them. Our team reviews every report.",
+      en: "Press **Report** on the post, or on the person's profile. Choose a reason and press **Submit Report**. Reports are private, so the person will not know who reported them. Our team reviews every report.",
       ja: "投稿か相手のプロフィールで「通報」を押し、理由を選んで「送信」してください。通報は非公開で、誰が通報したかは相手に伝わりません。すべての通報を確認します。",
     },
     related: ["block", "safety-meeting"],
@@ -598,7 +598,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["ブロック", "連絡を止めたい", "ブロック方法"],
     },
     answer: {
-      en: "Open the person's profile and press Block. After that, you will no longer see their posts or messages.",
+      en: "Open the person's profile and press **Block**. After that, you will no longer see their posts or messages.",
       ja: "相手のプロフィールを開いて「ブロック」を押してください。その後は相手の投稿やメッセージが表示されなくなります。",
     },
     related: ["report"],
@@ -629,7 +629,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["文字を大きく", "文字サイズ", "見えにくい", "大きい文字", "字が小さい"],
     },
     answer: {
-      en: "Press the A+ button at the top of the page to make the text larger. Press A to go back to normal size. On a phone, the A+ button is inside the menu with three lines.",
+      en: "Press the **A+** button at the top of the page to make the text larger. Press A to go back to normal size. On a phone, the **A+** button is inside the menu with three lines.",
       ja: "画面上の「A+」ボタンを押すと文字が大きくなります。「A」で元の大きさに戻ります。スマホでは三本線のメニューの中にあります。",
     },
   },
@@ -655,7 +655,7 @@ export const FAQS: FaqEntry[] = [
       ja: ["話しかけ", "音声", "声で", "マイク", "読み上げ", "しゃべりたい"],
     },
     answer: {
-      en: "Yes! Press the microphone button and simply speak. When you stop talking, I will answer and read my reply out loud. You can also press Listen under any answer, or turn on the speaker button at the top to hear every reply.",
+      en: "Yes! Press the microphone button and simply speak. When you stop talking, I will answer and read my reply out loud. You can also press **Listen** under any answer, or turn on the speaker button at the top to hear every reply.",
       ja: "はい！マイクボタンを押して話しかけてください。話し終えると、私が答えて読み上げます。答えの下の「聞く」を押したり、上のスピーカーボタンをオンにすると、毎回読み上げます。",
     },
   },

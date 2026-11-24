@@ -9,10 +9,10 @@ import {
   POPULAR_NEIGHBORHOODS,
   SUGGESTED_SKILLS,
   SUGGESTED_SERVICES,
-  detectGeneration,
-} from "@/lib/constants";
+  detectGeneration, MIN_AGE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
+import { MIN_BIO_LENGTH } from "@/lib/profileCompletion";
 import { AuthGuard } from "@/components/common/AuthGuard";
 import { TagPicker, AgeGroupBadge } from "@/components/profile/TagPicker";
 
@@ -24,6 +24,7 @@ export default function OnboardingPage() {
 
   // 1. Age state
   const [age, setAge] = useState<number | "">(session?.age ?? 65);
+  const [bio, setBio] = useState(session?.bio ?? "");
 
   // 2. Neighborhoods state (up to 5, tag pills)
   const [neighborhoods, setNeighborhoods] = useState<string[]>(
@@ -68,6 +69,7 @@ export default function OnboardingPage() {
       if (session.servicesNeeded && session.servicesNeeded.length > 0) {
         setServicesNeeded(session.servicesNeeded);
       }
+      if (session.bio) setBio(session.bio);
       if (session.contactMethod) {
         setContactMethod(session.contactMethod);
       }
@@ -77,7 +79,7 @@ export default function OnboardingPage() {
   // Automatic generation detection based on age rule (60+ older, <60 younger)
   const detectedGroup = useMemo(() => {
     const num = Number(age);
-    if (!num || num < 13 || num > 120) return null;
+    if (!num || num < MIN_AGE || num > 120) return null;
     return detectGeneration(num);
   }, [age]);
 
@@ -95,6 +97,7 @@ export default function OnboardingPage() {
       const numericAge = typeof age === "number" ? age : Number(age) || null;
       await updateProfile({
         age: numericAge,
+        bio: bio.trim(),
         neighborhoods,
         location: neighborhoods[0] || "",
         contactMethod,
@@ -112,9 +115,9 @@ export default function OnboardingPage() {
 
   // Simple completion meter to encourage filling every section
   const completion = useMemo(() => {
-    const parts = [Boolean(detectedGroup), neighborhoods.length > 0, Boolean(contactMethod), skills.length > 0, servicesNeeded.length > 0];
+    const parts = [Boolean(detectedGroup), bio.trim().length >= MIN_BIO_LENGTH, neighborhoods.length > 0, Boolean(contactMethod), skills.length > 0, servicesNeeded.length > 0];
     return Math.round((parts.filter(Boolean).length / parts.length) * 100);
-  }, [detectedGroup, neighborhoods, contactMethod, skills, servicesNeeded]);
+  }, [detectedGroup, bio, neighborhoods, contactMethod, skills, servicesNeeded]);
 
   const contactOptions = [
     {
@@ -195,7 +198,7 @@ export default function OnboardingPage() {
                     id="onboarding-age"
                     type="number"
                     inputMode="numeric"
-                    min={13}
+                    min={MIN_AGE}
                     max={120}
                     value={age}
                     onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
@@ -204,6 +207,33 @@ export default function OnboardingPage() {
                   />
                   <AgeGroupBadge group={detectedGroup} />
                 </div>
+              </section>
+
+              {/* 1b. Short bio (required to create posts) */}
+              <section className="px-5 py-6 sm:px-10 sm:py-8 space-y-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <label htmlFor="onboarding-bio" className="text-sm sm:text-base font-bold text-foreground">
+                    A little about you
+                  </label>
+                  <span
+                    className={`text-xs tabular-nums ${
+                      bio.trim().length >= MIN_BIO_LENGTH ? "text-success font-semibold" : "text-muted-foreground"
+                    }`}
+                  >
+                    {bio.trim().length}/{MIN_BIO_LENGTH}+ characters
+                  </span>
+                </div>
+                <Textarea
+                  id="onboarding-bio"
+                  rows={3}
+                  maxLength={400}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="e.g. Retired teacher who loves gardening and would like help with my smartphone."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Neighbours read this before responding. You need at least {MIN_BIO_LENGTH} characters to create posts.
+                </p>
               </section>
 
               {/* 2. Neighbourhoods */}

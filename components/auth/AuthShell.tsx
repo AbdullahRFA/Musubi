@@ -1,21 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { forwardRef, useState } from "react";
 import { Input, type InputProps } from "@/components/ui/input";
-import { AlertCircle, Eye, EyeOff, BookOpen, HandHelping, HeartHandshake, ShieldCheck, type LucideIcon } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "@/components/common/GoogleIcon";
 
-const HIGHLIGHTS: { icon: LucideIcon; title: string; body: string }[] = [
-  { icon: BookOpen, title: "Share & learn", body: "Trade lifetime wisdom for modern skills." },
-  { icon: HandHelping, title: "Everyday help", body: "Neighbours lending a patient hand." },
-  { icon: ShieldCheck, title: "Safe by design", body: "Chat unlocks only after a request is accepted." },
-];
-
 /**
- * Two-column authentication layout: a decorative brand panel on large
- * screens and a centred form card on every screen size.
+ * Minimal authentication layout: one centred, frosted-glass card over a
+ * slowly drifting brand-colour background. Used by login, register,
+ * forgot-password and reset-password so they all look the same.
  */
 export function AuthShell({
   icon: Icon,
@@ -31,54 +25,40 @@ export function AuthShell({
   footer?: React.ReactNode;
 }) {
   return (
-    <div className="page-container py-8 sm:py-12 lg:py-16">
-      <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border-2 border-border bg-card shadow-lift lg:grid-cols-[1fr_1.1fr]">
-        {/* Brand panel */}
-        <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#234336] via-[#2F5344] to-[#1c332a] p-10 text-white">
-          <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-amber-400/20 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-emerald-300/20 blur-3xl" aria-hidden="true" />
+    <div className="relative isolate flex min-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-4rem)] items-center justify-center overflow-hidden px-4 py-10 sm:py-14">
+      <AuthBackground />
 
-          <Link href="/" className="relative inline-flex items-center gap-1.5">
-            <span className="font-black text-2xl text-amber-300">Tsunagu</span>
-            <span className="font-bold text-xl">Generations</span>
-          </Link>
-
-          <div className="relative space-y-6">
-            <HeartHandshake className="h-12 w-12 text-amber-300 animate-float" />
-            <h2 className="text-3xl font-black leading-tight text-balance">
-              Everyone has something to share. Everyone has something to gain.
-            </h2>
-            <ul className="space-y-4">
-              {HIGHLIGHTS.map(({ icon: HIcon, title: hTitle, body }) => (
-                <li key={hTitle} className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20">
-                    <HIcon className="h-4 w-4 text-amber-300" />
-                  </span>
-                  <div>
-                    <p className="font-bold text-sm">{hTitle}</p>
-                    <p className="text-sm text-white/75">{body}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <p className="relative text-xs text-white/60 italic">“Connecting the Past to the Present”</p>
-        </aside>
-
-        {/* Form panel */}
-        <div className="flex flex-col justify-center p-5 min-[400px]:p-7 sm:p-10 animate-fade-up">
-          <div className="space-y-2 text-center mb-6">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <div className="w-full max-w-md animate-fade-up">
+        <div className="rounded-3xl border border-white/60 bg-card/75 p-6 shadow-lift backdrop-blur-xl supports-[backdrop-filter]:bg-card/65 min-[400px]:p-8">
+          <div className="mb-6 space-y-2 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
               <Icon className="h-6 w-6" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">{title}</h1>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">{description}</p>
+            <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">{title}</h1>
+            <p className="mx-auto max-w-sm text-sm text-muted-foreground">{description}</p>
           </div>
           {children}
           {footer && <div className="mt-6 text-center text-sm text-muted-foreground">{footer}</div>}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Decorative animated background: three large blurred colour fields that
+ * drift slowly, over a soft gradient and a faint dot grid. Pure CSS (GPU
+ * transforms only), hidden from assistive tech, and frozen automatically for
+ * users who prefer reduced motion (see globals.css).
+ */
+function AuthBackground() {
+  return (
+    <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#f6f1e8] via-[#efe6d9] to-[#e7eee4]" />
+      <div className="absolute -left-24 -top-24 h-[28rem] w-[28rem] rounded-full bg-primary/25 blur-3xl animate-blob" />
+      <div className="absolute -right-20 top-1/4 h-[26rem] w-[26rem] rounded-full bg-[#315B4B]/25 blur-3xl animate-blob [animation-delay:-6s]" />
+      <div className="absolute -bottom-32 left-1/4 h-[24rem] w-[24rem] rounded-full bg-amber-300/30 blur-3xl animate-blob [animation-delay:-12s]" />
+      <div className="absolute inset-0 bg-[radial-gradient(rgba(36,28,22,0.07)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]" />
     </div>
   );
 }
@@ -127,13 +107,10 @@ export function GoogleAuthButton({
         <span>{loading ? "Connecting to Google..." : label}</span>
       </Button>
 
-      <div className="relative my-1" role="separator">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground font-semibold tracking-wide">{dividerLabel}</span>
-        </div>
+      <div className="my-1 flex items-center gap-3" role="separator">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{dividerLabel}</span>
+        <span className="h-px flex-1 bg-border" />
       </div>
     </>
   );
@@ -183,9 +160,29 @@ export const PasswordInput = forwardRef<HTMLInputElement, Omit<InputProps, "type
   ref
 ) {
   const [visible, setVisible] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
+  const checkCaps = (e: React.KeyboardEvent<HTMLInputElement>) => setCapsLock(e.getModifierState?.("CapsLock") ?? false);
   return (
+    <div className="space-y-1.5">
     <div className="relative">
-      <Input ref={ref} type={visible ? "text" : "password"} className={`pr-12 ${className ?? ""}`} {...props} />
+      <Input
+        ref={ref}
+        type={visible ? "text" : "password"}
+        className={`pr-12 ${className ?? ""}`}
+        {...props}
+        onKeyUp={(e) => {
+          checkCaps(e);
+          props.onKeyUp?.(e);
+        }}
+        onKeyDown={(e) => {
+          checkCaps(e);
+          props.onKeyDown?.(e);
+        }}
+        onBlur={(e) => {
+          setCapsLock(false);
+          props.onBlur?.(e);
+        }}
+      />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
@@ -195,6 +192,12 @@ export const PasswordInput = forwardRef<HTMLInputElement, Omit<InputProps, "type
       >
         {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>
+    </div>
+    {capsLock && (
+      <p role="status" className="text-xs font-semibold text-amber-700">
+        Caps Lock is on
+      </p>
+    )}
     </div>
   );
 });

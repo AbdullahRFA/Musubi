@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Inbox, Send, CheckCircle2, XCircle, MessageSquare, Clock, AlertCircle } from "lucide-react";
 import {
@@ -11,7 +11,7 @@ import {
   cancelRequest,
   confirmCompletion,
 } from "@/lib/services/requestService";
-import { usePosts } from "@/lib/services/postService";
+import { reconcileMyPostStatuses } from "@/lib/services/postService";
 import { useUsers } from "@/lib/services/demoService";
 import { RequestStatusBadge } from "@/components/common/StatusBadge";
 import { groupShort } from "@/lib/constants";
@@ -19,17 +19,24 @@ import { formatWhen, initials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { AuthGuard } from "@/components/common/AuthGuard";
-import { SafetyBanner } from "@/components/common/SafetyBanner";
 
 export default function RequestsPage() {
   const router = useRouter();
   const conversations = useAppStore((state) => state.conversations);
   const { incoming, outgoing } = useMyRequests();
-  const allPosts = usePosts();
+  // All posts in any status: an accepted/completed request's post is no longer
+  // "open", so usePosts() would miss it and the card would say "Direct request"
+  const allPosts = useAppStore((state) => state.posts);
   const allUsers = useUsers();
 
   const [activeTab, setActiveTab] = useState<"incoming" | "outgoing">("incoming");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  // Repair posts left "in progress" after the helper confirmed completion last
+  const requestsSignature = [...incoming, ...outgoing].map((r) => `${r.id}:${r.status}`).join(",");
+  useEffect(() => {
+    reconcileMyPostStatuses();
+  }, [requestsSignature]);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const getPost = (postId: string | null) => {
@@ -46,9 +53,10 @@ export default function RequestsPage() {
     setLoadingId(requestId);
     try {
       await acceptRequest(requestId);
+      // Chat is now unlocked: take the member to the exchange so they can start talking
+      router.push(`/my-activity?tab=inprogress&highlight=${encodeURIComponent(requestId)}`);
     } catch (err: any) {
       setActionError(err?.message || "Failed to accept request.");
-    } finally {
       setLoadingId(null);
     }
   };
@@ -148,8 +156,6 @@ export default function RequestsPage() {
         </section>
 
         <div className="page-container max-w-5xl pt-6 sm:pt-8 space-y-5">
-          <SafetyBanner />
-
           {actionError && (
             <div role="alert" className="flex items-start gap-2 rounded-lg bg-destructive/10 p-4 text-sm text-destructive font-medium border border-destructive/20 animate-in fade-in">
               <AlertCircle className="h-5 w-5 shrink-0" />

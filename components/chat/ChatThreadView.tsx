@@ -2,38 +2,37 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
+  ArrowDown,
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Coins,
+  Lock,
+  MessageCircle,
+  Phone,
   Send,
   ShieldCheck,
-  Phone,
-  CheckCircle2,
-  Clock,
-  ArrowLeft,
+  Sparkles,
+  Star,
+  UserRound,
   Volume2,
   VolumeX,
-  Sparkles,
-  Coins,
-  MessageCircle,
+  X,
 } from "lucide-react";
-import {
-  useThread,
-  sendMessage,
-  QUICK_REPLIES,
-  type QuickReplyOption,
-} from "@/lib/services/chatService";
+import { useThread, sendMessage, QUICK_REPLIES, type QuickReplyOption } from "@/lib/services/chatService";
 import { usePublicProfile } from "@/lib/services/profileService";
 import { confirmCompletion } from "@/lib/services/requestService";
-import {
-  markConversationRead,
-  setActiveConversation,
-  getActiveConversation,
-} from "@/lib/services/notificationService";
+import { markConversationRead, setActiveConversation, getActiveConversation } from "@/lib/services/notificationService";
 import { useSession } from "@/lib/services/authService";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { useLanguage } from "@/lib/i18n";
-import { formatWhen, initials, money } from "@/lib/utils";
+import { initials, money } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 
 interface ChatThreadViewProps {
   conversationId: string;
@@ -41,34 +40,116 @@ interface ChatThreadViewProps {
   showBackButton?: boolean;
 }
 
-export function ChatThreadView({
-  conversationId,
-  onBack,
-  showBackButton = false,
-}: ChatThreadViewProps) {
+const SAFETY_DISMISSED_KEY = "tsunagu_chat_safety_dismissed";
+const MAX_MESSAGE = 500;
+/** Messages from the same sender within this window are grouped together. */
+const GROUP_WINDOW_MS = 5 * 60 * 1000;
+
+/* -------------------------------------------------------------------------- */
+/* Small formatting helpers                                                   */
+/* -------------------------------------------------------------------------- */
+
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dayLabel(iso: string, isJa: boolean) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (dayKey(iso) === dayKey(today.toISOString())) return isJa ? "今日" : "Today";
+  if (dayKey(iso) === dayKey(yesterday.toISOString())) return isJa ? "昨日" : "Yesterday";
+  return new Intl.DateTimeFormat(isJa ? "ja-JP" : "en-GB", { weekday: "short", day: "numeric", month: "short" }).format(d);
+}
+
+function timeLabel(iso: string, isJa: boolean) {
+  return new Intl.DateTimeFormat(isJa ? "ja-JP" : "en-GB", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export function ChatThreadView({ conversationId, onBack, showBackButton = false }: ChatThreadViewProps) {
   const router = useRouter();
   const thread = useThread(conversationId);
   const session = useSession();
   const otherPublic = usePublicProfile(thread?.other?.id ?? "");
   const activities = useAppStore((s) => s.activities);
   const reviews = useAppStore((s) => s.reviews);
+  const transactions = useAppStore((s) => s.transactions);
   const { language } = useLanguage();
   const isJa = language === "ja";
 
   const [inputBody, setInputBody] = useState("");
   const [sending, setSending] = useState(false);
-  const [completing, setCompleting] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
-  const [quickHint, setQuickHint] = useState<string | null>(null);
+  const [showQuick, setShowQuick] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
+  const [waitingNotice, setWaitingNotice] = useState(false);
+  const [safetyDismissed, setSafetyDismissed] = useState(true);
+  const [atBottom, setAtBottom] = useState(true);
+  const [unseen, setUnseen] = useState(0);
+  const [gaveUp, setGaveUp] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastCountRef = useRef(0);
 
+  const messageCount = thread?.messages.length ?? 0;
+  const lastSenderIsMe = thread?.messages[messageCount - 1]?.senderId === session?.id;
+
+  // Safety tip: show until the member dismisses it once
   useEffect(() => {
-    // Scroll the message pane only (scrollIntoView would also scroll the page on mobile)
+    try {
+      setSafetyDismissed(localStorage.getItem(SAFETY_DISMISSED_KEY) === "1");
+    } catch {
+      setSafetyDismissed(false);
+    }
+  }, []);
+
+  // Don't show "not found" while the thread is still loading
+  useEffect(() => {
+    setGaveUp(false);
+    const t = setTimeout(() => setGaveUp(true), 4000);
+    return () => clearTimeout(t);
+  }, [conversationId]);
+
+  // Auto-scroll only when the member is already at the bottom (or sent the
+  // message); otherwise show a "New messages" pill instead of jumping.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const added = messageCount - lastCountRef.current;
+    const first = lastCountRef.current === 0;
+    lastCountRef.current = messageCount;
+    if (first || atBottom || lastSenderIsMe) {
+      el.scrollTo({ top: el.scrollHeight, behavior: first ? "auto" : "smooth" });
+      setUnseen(0);
+    } else if (added > 0) {
+      setUnseen((n) => n + added);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messageCount]);
+
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    setAtBottom(near);
+    if (near) setUnseen(0);
+  };
+
+  const jumpToLatest = () => {
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [thread?.messages.length]);
+    setUnseen(0);
+  };
 
   // Messenger-style read receipts: while this thread is open, its message
   // notifications are cleared and new ones don't raise a toast
@@ -87,443 +168,547 @@ export function ChatThreadView({
 
   useEffect(() => {
     if (document.visibilityState === "visible") markConversationRead(conversationId);
-  }, [conversationId, thread?.messages.length]);
+  }, [conversationId, messageCount]);
 
-  // Clean up speech synthesis on unmount
+  // Stop read-aloud when leaving
+  useEffect(
+    () => () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    },
+    []
+  );
+
+  // Grow the composer with its content (up to ~5 lines)
   useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [inputBody]);
 
+  /* ---------- Loading / not found ---------- */
   if (!thread) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center h-full min-h-[400px] bg-card rounded-2xl border-2 border-border">
-        <MessageCircle className="h-12 w-12 text-muted-foreground mb-3" />
-        <h3 className="text-xl font-bold text-foreground mb-2">
-          {isJa ? "メッセージが見つかりません" : "Conversation not found"}
-        </h3>
-        <p className="text-base text-muted-foreground max-w-md mb-6">
-          {isJa
-            ? "この会話は存在しないか、権限がありません。"
-            : "This conversation may not be active or you may not be a participant."}
-        </p>
-        {onBack && (
-          <Button onClick={onBack} variant="outline" size="lg" className="font-bold">
-            {isJa ? "← 一覧に戻る" : "← Back to List"}
-          </Button>
+      <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-2xl border-2 border-border bg-card p-8 text-center sm:p-12">
+        {gaveUp ? (
+          <>
+            <MessageCircle className="mb-3 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-xl font-bold text-foreground">{isJa ? "メッセージが見つかりません" : "Conversation not found"}</h3>
+            <p className="mb-6 max-w-md text-base text-muted-foreground">
+              {isJa
+                ? "この会話は存在しないか、権限がありません。"
+                : "This conversation may have ended, or you may not be a participant."}
+            </p>
+            {onBack && (
+              <Button onClick={onBack} variant="outline" size="lg" className="gap-2 font-bold">
+                <ArrowLeft className="h-5 w-5" />
+                {isJa ? "一覧に戻る" : "Back to messages"}
+              </Button>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            {isJa ? "読み込み中..." : "Loading conversation..."}
+          </div>
         )}
       </div>
     );
   }
 
+  /* ---------- Derived state ---------- */
   const { messages, other, request, post } = thread;
-
-  const avatar = (size: string) => (
-    <div
-      className={`rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold shrink-0 border border-border overflow-hidden ${size}`}
-    >
-      {otherPublic?.avatarUrl ? (
-        <img src={otherPublic.avatarUrl} alt="" className="h-full w-full object-cover" />
-      ) : other ? (
-        initials(other.fullName)
-      ) : (
-        "?"
-      )}
-    </div>
-  );
   const isCompleted = request.status === "completed";
   const isRequester = request.requesterId === session?.id;
   const myDone = isRequester ? request.requesterDone : request.ownerDone;
   const otherDone = isRequester ? request.ownerDone : request.requesterDone;
+  const otherName = other?.fullName ?? (isJa ? "地域の仲間" : "Community member");
+  const otherFirst = otherName.split(" ")[0];
 
-  const matchedActivity = activities.find(
-    (a) => a.requestId === request.id || (a.postId && a.postId === post?.id)
+  const matchedActivity = activities.find((a) => a.requestId === request.id || (a.postId && a.postId === post?.id));
+  const myReview =
+    matchedActivity && session ? reviews.find((r) => r.activityId === matchedActivity.id && r.reviewerId === session.id) : null;
+
+  // Demo payment: only the payer sees "Pay", and only until a payment succeeds
+  const isPaid = post?.exchangeMethod === "paid" && Boolean(post.amount);
+  const isPayer = isPaid && (post?.postType === "offer" ? isRequester : !isRequester);
+  const paymentDone = transactions.some((t) => t.requestId === request.id && t.status === "successful");
+
+  // Progress: 0 accepted, 1 meeting, 2 confirming, 3 review
+  const stage = isCompleted ? 3 : myDone || otherDone ? 2 : 1;
+  const steps = isJa
+    ? ["承認済み", "会って手伝う", "双方で完了確認", "レビュー"]
+    : ["Accepted", "Meet & help", "Both confirm", "Review"];
+
+  const groupLabel = other?.userGroup === "og" ? (isJa ? "シニア世代" : "Older Generation") : isJa ? "若い世代" : "Younger Generation";
+  const area = otherPublic?.neighborhoods?.[0] || otherPublic?.location || other?.location;
+
+  const avatar = (size: string) => (
+    <div
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-secondary font-bold text-secondary-foreground ${size}`}
+    >
+      {otherPublic?.avatarUrl ? <img src={otherPublic.avatarUrl} alt="" className="h-full w-full object-cover" /> : initials(otherName)}
+    </div>
   );
-  const myReview = matchedActivity && session
-    ? reviews.find((r) => r.activityId === matchedActivity.id && r.reviewerId === session.id)
-    : null;
 
+  /* ---------- Actions ---------- */
   const handleSend = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+    e?.preventDefault();
     const text = inputBody.trim();
-    if (!text || sending) return;
-
+    if (!text || sending || isCompleted) return;
     setSending(true);
+    setSendError(null);
     try {
       await sendMessage(conversationId, text);
       setInputBody("");
-      setQuickHint(null);
+      setShowQuick(false);
+      inputRef.current?.focus();
     } catch (err: any) {
-      alert(err?.message || (isJa ? "送信に失敗しました。" : "Failed to send message."));
+      // Keep the text so the member can retry
+      setSendError(err?.message || (isJa ? "送信に失敗しました。もう一度お試しください。" : "Couldn't send. Please try again."));
     } finally {
       setSending(false);
     }
   };
 
   const handleQuickReply = (qr: QuickReplyOption) => {
-    const text = isJa ? qr.ja : qr.en;
-    setInputBody(text);
-    setQuickHint(
-      isJa
-        ? "✨ メッセージを入力しました。「送信」を押して届けてください。"
-        : "✨ Quick reply filled in. Tap Send to deliver."
-    );
+    setInputBody(isJa ? qr.ja : qr.en);
+    setShowQuick(false);
     inputRef.current?.focus();
   };
 
   const handleReadAloud = (messageId: string, text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      alert(
-        isJa
-          ? "お使いのブラウザは音声読み上げに対応していません。"
-          : "Speech synthesis is not supported on this device."
-      );
-      return;
-    }
-
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     if (speakingId === messageId) {
       window.speechSynthesis.cancel();
       setSpeakingId(null);
       return;
     }
-
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = isJa ? "ja-JP" : "en-US";
-    utterance.rate = 0.9; // Slightly slower, clear pace suitable for elderly ears
+    utterance.rate = 0.9; // slightly slower, clear pace
     utterance.onend = () => setSpeakingId(null);
     utterance.onerror = () => setSpeakingId(null);
-
     setSpeakingId(messageId);
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleCompleteActivity = async () => {
-    const confirmPrompt = otherDone
-      ? (isJa ? "相手がすでに完了確認しています。あなたも完了確認してレビューに進みますか？" : "Partner has confirmed completion! Confirm to complete this exchange and leave feedback?")
-      : (isJa ? "この活動を完了としてマークしますか？相手の確認後にレビューが可能になります。" : "Mark this exchange as completed? Once both of you confirm, feedback will unlock.");
-    if (!confirm(confirmPrompt)) return;
-
+  const handleComplete = async () => {
     setCompleting(true);
+    setCompleteError(null);
     try {
       const res = await confirmCompletion(request.id);
-      if (res.completed && res.activityId) {
-        router.push(`/feedback/${res.activityId}`);
-      } else {
-        alert(
-          isJa
-            ? "あなたの完了を確認しました！相手の方の完了確認をお待ちください。"
-            : "You marked this completed! Waiting for the other person to confirm."
-        );
-      }
+      setConfirmOpen(false);
+      if (res.completed && res.activityId) router.push(`/feedback/${res.activityId}`);
+      else setWaitingNotice(true);
     } catch (err: any) {
-      alert(err?.message || (isJa ? "更新に失敗しました。" : "Failed to update completion."));
+      setCompleteError(err?.message || (isJa ? "更新に失敗しました。" : "Couldn't update. Please try again."));
     } finally {
       setCompleting(false);
     }
   };
 
+  const dismissSafety = () => {
+    setSafetyDismissed(true);
+    try {
+      localStorage.setItem(SAFETY_DISMISSED_KEY, "1");
+    } catch {
+      // ignore
+    }
+  };
+
+  /* ---------- Primary next action for the progress bar ---------- */
+  const primaryAction = isCompleted ? (
+    matchedActivity && !myReview ? (
+      <Button asChild size="sm" className="gap-1.5 bg-emerald-600 font-bold text-white hover:bg-emerald-700">
+        <Link href={`/feedback/${matchedActivity.id}`}>
+          <Star className="h-4 w-4" />
+          {isJa ? "評価・レビューを書く" : "Rate & review"}
+        </Link>
+      </Button>
+    ) : (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-800">
+        <CheckCircle2 className="h-4 w-4" />
+        {myReview ? (isJa ? "レビュー済み" : "Feedback given") : isJa ? "完了済み" : "Completed"}
+      </span>
+    )
+  ) : myDone ? (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-bold text-amber-900">
+      <Clock className="h-4 w-4 animate-pulse" />
+      {isJa ? `${otherFirst}さんの確認待ち` : `Waiting for ${otherFirst}`}
+    </span>
+  ) : otherDone ? (
+    <Button size="sm" onClick={() => setConfirmOpen(true)} className="gap-1.5 bg-emerald-600 font-bold text-white hover:bg-emerald-700">
+      <CheckCircle2 className="h-4 w-4" />
+      {isJa ? "相手確認済・完了する" : `${otherFirst} confirmed — finish`}
+    </Button>
+  ) : (
+    <Button size="sm" variant="outline" onClick={() => setConfirmOpen(true)} className="gap-1.5 font-bold hover:border-emerald-600 hover:text-emerald-700">
+      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+      {isJa ? "完了にする" : "Mark completed"}
+    </Button>
+  );
+
+  /* ---------- Render ---------- */
+  let lastDay = "";
   return (
-    <div className="flex flex-col h-full min-h-0 bg-card rounded-none sm:rounded-2xl border-y-2 sm:border-2 border-border overflow-hidden shadow-sm">
-      {/* Thread Header */}
-      <div className="px-3 py-3 sm:p-5 bg-card border-b-2 border-border flex flex-col lg:flex-row lg:items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          {showBackButton && onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="md:hidden flex h-10 w-10 -ml-1 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors shrink-0"
-              aria-label={isJa ? "一覧に戻る" : "Back to messages"}
-            >
-              <ArrowLeft className="h-6 w-6 text-foreground" />
-            </button>
-          )}
-
-          {avatar("h-11 w-11 sm:h-12 sm:w-12 text-base sm:text-lg")}
-
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link
-                href={`/profile/${other?.id}`}
-                className="font-bold text-base sm:text-xl text-foreground hover:text-primary transition-colors truncate"
-              >
-                {other?.fullName ?? (isJa ? "地域の仲間" : "Community Member")}
-              </Link>
-              {other && (
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#E7EEE4] text-[#315B4B]">
-                  {other.userGroup === "og"
-                    ? isJa
-                      ? "シニア世代 (60+)"
-                      : "Senior (60+)"
-                    : isJa
-                    ? "若者世代 (<60)"
-                    : "Youth (<60)"}
-                </span>
-              )}
-            </div>
-
-            {post && (
-              <Link
-                href={`/posts/${post.id}`}
-                className="block text-xs sm:text-sm text-muted-foreground truncate mt-0.5 hover:text-primary transition-colors"
-              >
-                <span className="font-semibold text-primary">{isJa ? "📌 依頼: " : "📌 Topic: "}</span>
-                <span>{post.title}</span>
-              </Link>
-            )}
-          </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-none border-y-2 border-border bg-card shadow-sm sm:rounded-2xl sm:border-2">
+      {/* ===== Header ===== */}
+      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-3 sm:px-5">
+        {showBackButton && onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted md:hidden"
+            aria-label={isJa ? "一覧に戻る" : "Back to messages"}
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+        )}
+        <Link href={`/profile/${other?.id}`} className="shrink-0" aria-label={isJa ? "プロフィールを見る" : `View ${otherName}'s profile`}>
+          {avatar("h-11 w-11 text-base")}
+        </Link>
+        <div className="min-w-0 flex-1">
+          <Link href={`/profile/${other?.id}`} className="block truncate text-base font-bold text-foreground transition-colors hover:text-primary sm:text-lg">
+            {otherName}
+          </Link>
+          <p className="truncate text-xs text-muted-foreground sm:text-sm">
+            {groupLabel}
+            {area ? ` · ${area}` : ""}
+          </p>
         </div>
-
-        {/* Quick Actions in Header */}
-        <div className="-mx-3 px-3 sm:mx-0 sm:px-0 flex items-center gap-2 overflow-x-auto scrollbar-none lg:flex-wrap lg:justify-end shrink-0">
-          {/* Phone contact if shared */}
+        <div className="flex shrink-0 items-center gap-1">
           {otherPublic?.phoneShared && otherPublic.phone && (
             <a
               href={`tel:${otherPublic.phone}`}
-              className="shrink-0 flex items-center gap-1.5 px-3 h-10 rounded-xl bg-emerald-50 text-emerald-950 border-2 border-emerald-300 text-xs sm:text-sm font-bold hover:bg-emerald-100 transition-colors whitespace-nowrap"
-              title={isJa ? "電話をかける" : "Call"}
+              className="flex h-10 items-center gap-1.5 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-emerald-100"
+              title={isJa ? "電話をかける" : `Call ${otherFirst}`}
+              aria-label={isJa ? "電話をかける" : `Call ${otherFirst}`}
             >
-              <Phone className="h-4 w-4 text-emerald-700" />
-              <span>{otherPublic.phone}</span>
+              <Phone className="h-4 w-4" />
+              <span className="hidden lg:inline">{otherPublic.phone}</span>
             </a>
           )}
+          <Link
+            href={`/profile/${other?.id}`}
+            className="hidden h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex"
+            title={isJa ? "プロフィール" : "View profile"}
+            aria-label={isJa ? "プロフィール" : "View profile"}
+          >
+            <UserRound className="h-5 w-5" />
+          </Link>
+        </div>
+      </header>
 
-          {/* Demo Payment link if monetary post */}
-          {post?.exchangeMethod === "paid" && post.amount && (
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="shrink-0 text-xs sm:text-sm font-bold gap-1 border-blue-300 bg-blue-50 text-blue-900 hover:bg-blue-100 hover:border-blue-400 min-h-[40px] px-3"
-            >
-              <Link href="/transactions">
-                <Coins className="h-4 w-4 text-blue-600" />
-                Pay {money(post.amount)} (Demo)
-              </Link>
-            </Button>
-          )}
-
-          {/* Mutual Completion / Review Button */}
-          {isCompleted ? (
-            matchedActivity ? (
-              myReview ? (
-                <span className="text-xs sm:text-sm font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>{isJa ? "レビュー済み" : "Feedback Given"}</span>
+      {/* ===== Exchange progress ===== */}
+      <section className="shrink-0 space-y-2.5 border-b border-border bg-muted/30 px-3 py-3 sm:px-5" aria-label={isJa ? "やり取りの進み具合" : "Exchange progress"}>
+        {post && (
+          <Link href={`/posts/${post.id}`} className="group flex min-w-0 items-center gap-1.5 text-sm">
+            <span className="shrink-0 font-semibold text-primary">{isJa ? "依頼:" : "About:"}</span>
+            <span className="truncate font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-4">{post.title}</span>
+          </Link>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <ol className="flex min-w-0 flex-1 items-center gap-1.5">
+            {steps.map((label, i) => {
+              const done = i < stage || (i === 3 && isCompleted && Boolean(myReview));
+              const current = i === stage && !done;
+              return (
+                <Fragment key={label}>
+                  <li className="flex min-w-0 items-center gap-1.5" aria-current={current ? "step" : undefined}>
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                        done ? "bg-emerald-600 text-white" : current ? "border-2 border-primary text-primary" : "border-2 border-border text-muted-foreground"
+                      }`}
+                    >
+                      {done ? <Check className="h-3 w-3" /> : i + 1}
+                    </span>
+                    <span
+                      className={`truncate text-xs font-semibold ${current ? "text-foreground" : "text-muted-foreground"} ${
+                        current ? "inline" : "hidden sm:inline"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </li>
+                  {i < steps.length - 1 && (
+                    <li aria-hidden="true" className={`h-0.5 min-w-[12px] flex-1 rounded-full ${i < stage ? "bg-emerald-600" : "bg-border"}`} />
+                  )}
+                </Fragment>
+              );
+            })}
+          </ol>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {isPayer &&
+              (paymentDone ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-bold text-blue-900">
+                  <Check className="h-4 w-4" />
+                  {isJa ? "支払い済み (デモ)" : "Paid (demo)"}
                 </span>
               ) : (
-                <Button
-                  asChild
-                  size="sm"
-                  className="shrink-0 text-xs sm:text-sm font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs min-h-[40px] px-3"
-                >
-                  <Link href={`/feedback/${matchedActivity.id}`}>
-                    <Sparkles className="h-4 w-4" />
-                    {isJa ? "評価・レビューを書く" : "Rate & Review"}
+                <Button asChild size="sm" variant="outline" className="gap-1.5 border-blue-300 bg-blue-50 font-bold text-blue-900 hover:bg-blue-100">
+                  <Link href="/transactions">
+                    <Coins className="h-4 w-4" />
+                    {isJa ? `${money(post!.amount!)} を支払う (デモ)` : `Pay ${money(post!.amount!)} (demo)`}
                   </Link>
                 </Button>
-              )
-            ) : (
-              <span className="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span>{isJa ? "完了済み" : "Completed"}</span>
+              ))}
+            {primaryAction}
+          </div>
+        </div>
+        {waitingNotice && !isCompleted && (
+          <p role="status" className="text-xs font-semibold text-amber-800 animate-in fade-in">
+            {isJa
+              ? `完了を記録しました。${otherFirst}さんも確認すると、レビューを書けます。`
+              : `You've marked it completed. Once ${otherFirst} confirms too, you can leave a review.`}
+          </p>
+        )}
+      </section>
+
+      {/* ===== Messages ===== */}
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className="h-full overflow-y-auto overscroll-contain bg-[#FAF9F5] px-3 py-4 sm:px-6"
+          aria-live="polite"
+          aria-label={isJa ? "メッセージ" : "Messages"}
+        >
+          {!safetyDismissed && !isCompleted && (
+            <div className="mx-auto mb-4 flex max-w-lg items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 px-3.5 py-2.5 text-sm text-amber-900">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              <p className="flex-1">
+                {isJa
+                  ? "初めて会う時は、公民館・図書館・カフェなど明るい公共の場所を選びましょう。"
+                  : "For your first meeting, choose a bright public place like a community centre, library or cafe."}
+              </p>
+              <button
+                type="button"
+                onClick={dismissSafety}
+                className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-amber-800 hover:bg-amber-100"
+                aria-label={isJa ? "閉じる" : "Dismiss tip"}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center space-y-2 py-12 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#E7EEE4] text-[#315B4B]">
+                <Sparkles className="h-7 w-7" />
               </span>
-            )
-          ) : myDone && !otherDone ? (
-            <span
-              className="text-xs sm:text-sm font-bold text-amber-900 bg-amber-50 border border-amber-300 px-3 py-2 rounded-xl flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-              title={isJa ? "相手の完了確認を待っています" : "Waiting for partner to mark completed"}
-            >
-              <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
-              <span>{isJa ? "相手の確認待ち" : "Waiting for Partner"}</span>
-            </span>
-          ) : !myDone && otherDone ? (
-            <Button
-              size="sm"
-              onClick={handleCompleteActivity}
-              disabled={completing}
-              className="text-xs sm:text-sm font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs min-h-[40px] px-3 shrink-0 animate-pulse"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              <span>{isJa ? "相手確認済・完了する" : "Partner Confirmed • Finish"}</span>
-            </Button>
+              <p className="text-lg font-bold text-foreground">
+                {isJa ? `${otherFirst}さんに挨拶しましょう` : `Say hello to ${otherFirst}`}
+              </p>
+              <p className="max-w-sm text-sm text-muted-foreground">
+                {isJa
+                  ? "会う日時と場所を決めましょう。下の「簡単返信」も使えます。"
+                  : "Agree on a day, time and public place to meet. Quick replies below can help."}
+              </p>
+            </div>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleCompleteActivity}
-              disabled={completing}
-              className="text-xs sm:text-sm font-bold gap-1.5 text-foreground hover:border-primary border-2 min-h-[40px] px-3 shrink-0"
-            >
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>{isJa ? "活動を完了にする" : "Mark Completed"}</span>
-            </Button>
+            <ol className="space-y-1">
+              {messages.map((m, i) => {
+                const isMe = m.senderId === session?.id;
+                const prev = messages[i - 1];
+                const next = messages[i + 1];
+                const day = dayKey(m.createdAt);
+                const showDay = day !== lastDay;
+                lastDay = day;
+                const startsGroup =
+                  showDay || !prev || prev.senderId !== m.senderId || new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() > GROUP_WINDOW_MS;
+                const endsGroup =
+                  !next ||
+                  next.senderId !== m.senderId ||
+                  dayKey(next.createdAt) !== day ||
+                  new Date(next.createdAt).getTime() - new Date(m.createdAt).getTime() > GROUP_WINDOW_MS;
+
+                return (
+                  <Fragment key={m.id}>
+                    {showDay && (
+                      <li className="flex justify-center py-3">
+                        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">{dayLabel(m.createdAt, isJa)}</span>
+                      </li>
+                    )}
+                    <li className={`flex items-end gap-2 animate-in fade-in slide-in-from-bottom-2 ${isMe ? "justify-end" : "justify-start"} ${startsGroup ? "pt-2" : ""}`}>
+                      {!isMe && <div className="w-8 shrink-0">{endsGroup && avatar("h-8 w-8 text-xs")}</div>}
+                      <div className={`flex max-w-[85%] flex-col sm:max-w-[70%] ${isMe ? "items-end" : "items-start"}`}>
+                        <div className={`flex items-end gap-1.5 ${isMe ? "flex-row-reverse" : ""}`}>
+                          <div
+                            className={`px-4 py-2.5 text-base leading-relaxed shadow-xs sm:text-[17px] ${
+                              isMe
+                                ? `bg-[#315B4B] text-white ${startsGroup ? "rounded-2xl rounded-tr-md" : "rounded-2xl rounded-r-md"}`
+                                : `border border-border bg-white text-foreground ${startsGroup ? "rounded-2xl rounded-tl-md" : "rounded-2xl rounded-l-md"}`
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                          </div>
+                          {!isMe && (
+                            <button
+                              type="button"
+                              onClick={() => handleReadAloud(m.id, m.body)}
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+                                speakingId === m.id ? "bg-red-50 text-red-600" : "text-muted-foreground/70 hover:bg-[#E7EEE4] hover:text-[#315B4B]"
+                              }`}
+                              title={speakingId === m.id ? (isJa ? "停止" : "Stop") : isJa ? "読み上げる" : "Read aloud"}
+                              aria-label={speakingId === m.id ? (isJa ? "読み上げを停止" : "Stop reading") : isJa ? "読み上げる" : "Read aloud"}
+                            >
+                              {speakingId === m.id ? <VolumeX className="h-4 w-4 animate-pulse" /> : <Volume2 className="h-4 w-4" />}
+                            </button>
+                          )}
+                        </div>
+                        {endsGroup && (
+                          <span className="mt-1 px-1 text-[11px] text-muted-foreground">
+                            {timeLabel(m.createdAt, isJa)}
+                            {m.canned && <span className="italic"> · {isJa ? "自動応答" : "auto-reply"}</span>}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  </Fragment>
+                );
+              })}
+            </ol>
           )}
         </div>
-      </div>
 
-      {/* Non-blocking Friendly Safety Advice Card */}
-      <div className="bg-[#FEF9EE] border-b-2 border-[#F6E0B5] px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#7A4B00] flex items-start sm:items-center gap-2 sm:gap-2.5 shrink-0">
-        <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-[#D97706] shrink-0" />
-        <span className="font-medium line-clamp-2 sm:line-clamp-none">
-          {isJa
-            ? "【安心の約束】初めてお会いする時は、公民館・図書館・カフェなど明るい公共の場所を選びましょう。"
-            : "Safety Tip: For first meetings, please choose a bright public place like a community center, library, or cafe."}
-        </span>
-      </div>
-
-      {/* Message Stream */}
-      <div
-        ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6 space-y-4 bg-[#FAF9F5]"
-        aria-live="polite"
-        aria-label={isJa ? "メッセージ" : "Messages"}
-      >
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
-            <Sparkles className="h-8 w-8 text-primary/70" />
-            <p className="text-lg font-bold text-foreground">
-              {isJa
-                ? "メッセージを送ってやり取りを始めましょう"
-                : "This is the start of your message thread."}
-            </p>
-            <p className="text-base text-muted-foreground max-w-sm">
-              {isJa
-                ? "下のワンタップ返信ボタンを使うと、簡単に返信できます。"
-                : "Say hello and coordinate when and where to meet. You can use quick replies below!"}
-            </p>
-          </div>
-        ) : (
-          messages.map((m) => {
-            const isMe = m.senderId === session?.id;
-            return (
-              <div
-                key={m.id}
-                className={`flex flex-col animate-in fade-in slide-in-from-bottom-2 ${isMe ? "items-end" : "items-start"}`}
-              >
-                <div className="flex items-end gap-2 max-w-[92%] sm:max-w-[75%]">
-                  {!isMe && (
-                    <div className="mb-1">{avatar("h-8 w-8 text-xs")}</div>
-                  )}
-
-                  <div
-                    className={`px-4 py-3 sm:p-4 rounded-2xl text-base sm:text-lg leading-relaxed shadow-xs ${
-                      isMe
-                        ? "bg-[#315B4B] text-white rounded-br-sm"
-                        : "bg-white text-foreground border-2 border-[#D1D5DB] rounded-bl-sm"
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap break-words">{m.body}</p>
-
-                    {/* Audio Read-Aloud Button for Incoming Messages */}
-                    {!isMe && (
-                      <div className="mt-2 pt-2 border-t border-border/40 flex items-center">
-                        <button
-                          type="button"
-                          onClick={() => handleReadAloud(m.id, m.body)}
-                          className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#315B4B] bg-[#E7EEE4] hover:bg-[#d8e3d4] px-3 py-1 rounded-full transition-colors min-h-[36px]"
-                          title={isJa ? "音声で読み上げます" : "Listen to this message"}
-                        >
-                          {speakingId === m.id ? (
-                            <>
-                              <VolumeX className="h-4 w-4 text-red-600 animate-pulse" />
-                              <span className="text-red-700">{isJa ? "停止" : "Stop"}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Volume2 className="h-4 w-4 text-[#315B4B]" />
-                              <span>{isJa ? "音声で聞く" : "Listen"}</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground px-2">
-                  <Clock className="h-3 w-3" />
-                  <span>{formatWhen(m.createdAt)}</span>
-                  {m.canned && (
-                    <span className="italic">
-                      ({isJa ? "自動応答" : "auto-reply"})
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })
+        {unseen > 0 && (
+          <button
+            type="button"
+            onClick={jumpToLatest}
+            className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#315B4B] px-4 py-2 text-sm font-bold text-white shadow-lift animate-in fade-in slide-in-from-bottom-2"
+          >
+            <ArrowDown className="h-4 w-4" />
+            {isJa ? `新しいメッセージ ${unseen}件` : `${unseen} new ${unseen === 1 ? "message" : "messages"}`}
+          </button>
         )}
       </div>
 
-      {/* Elder-Friendly 1-Tap Quick Replies Bar */}
-      <div className="bg-[#F3F7F2] border-t-2 border-border px-3 py-2.5 sm:p-3 space-y-2 shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs sm:text-sm font-bold text-[#315B4B] flex items-center gap-1.5">
-            <Sparkles className="h-4 w-4 text-[#315B4B]" />
-            <span>{isJa ? "ワンタップ簡単返信（文字入力不要）:" : "1-Tap Quick Replies:"}</span>
-          </span>
-          {quickHint && (
-            <span className="text-xs text-emerald-800 font-semibold animate-pulse truncate">
-              {quickHint}
-            </span>
+      {/* ===== Composer / read-only footer ===== */}
+      {isCompleted ? (
+        <div className="flex shrink-0 flex-col items-center gap-2 border-t border-border bg-muted/40 px-4 py-4 text-center sm:flex-row sm:justify-between sm:text-left">
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Lock className="h-4 w-4 shrink-0" />
+            {isJa ? "このやり取りは完了しました。メッセージは閲覧のみです。" : "This exchange is completed. The chat is now read-only."}
+          </p>
+          {matchedActivity && !myReview && (
+            <Button asChild size="sm" className="gap-1.5 font-bold">
+              <Link href={`/feedback/${matchedActivity.id}`}>
+                <Star className="h-4 w-4" />
+                {isJa ? "レビューを書く" : "Leave a review"}
+              </Link>
+            </Button>
           )}
         </div>
-
-        <div className="-mx-3 px-3 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
-          {QUICK_REPLIES.map((qr) => (
+      ) : (
+        <div className="shrink-0 border-t border-border bg-card">
+          {showQuick && (
+            <div className="flex gap-2 overflow-x-auto border-b border-border bg-[#F3F7F2] px-3 py-2.5 scrollbar-none snap-x animate-in fade-in slide-in-from-bottom-2">
+              {QUICK_REPLIES.map((qr) => (
+                <button
+                  key={qr.id}
+                  type="button"
+                  onClick={() => handleQuickReply(qr)}
+                  className="flex min-h-[44px] shrink-0 snap-start items-center gap-1.5 rounded-full border border-[#315B4B]/25 bg-white px-3.5 text-sm font-semibold text-foreground shadow-xs transition-all hover:-translate-y-0.5 hover:border-[#315B4B]"
+                >
+                  <span aria-hidden="true">{qr.icon}</span>
+                  {isJa ? qr.ja : qr.en}
+                </button>
+              ))}
+            </div>
+          )}
+          {sendError && (
+            <p role="alert" className="border-b border-destructive/20 bg-destructive/5 px-4 py-2 text-sm text-destructive">
+              {sendError}
+            </p>
+          )}
+          <form onSubmit={handleSend} className="flex items-end gap-2 p-2.5 sm:p-3">
             <button
-              key={qr.id}
               type="button"
-              onClick={() => handleQuickReply(qr)}
-              className="snap-start shrink-0 px-3.5 py-2 rounded-xl border-2 border-[#CBD5E1] bg-white hover:border-[#315B4B] hover:bg-[#FAF9F5] hover:-translate-y-0.5 active:scale-[0.98] text-xs sm:text-sm font-bold text-foreground transition-all duration-200 shadow-xs flex items-center gap-1.5 min-h-[44px]"
+              onClick={() => setShowQuick((v) => !v)}
+              aria-expanded={showQuick}
+              className={`flex h-12 shrink-0 items-center gap-1 rounded-full px-3 text-sm font-bold transition-colors ${
+                showQuick ? "bg-[#315B4B] text-white" : "bg-[#E7EEE4] text-[#315B4B] hover:bg-[#d8e3d4]"
+              }`}
+              title={isJa ? "簡単返信" : "Quick replies"}
             >
-              <span>{qr.icon}</span>
-              <span>{isJa ? qr.ja : qr.en}</span>
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">{isJa ? "簡単返信" : "Quick replies"}</span>
+              <ChevronDown className={`hidden h-4 w-4 transition-transform sm:block ${showQuick ? "rotate-180" : ""}`} />
             </button>
-          ))}
+            <div className="relative min-w-0 flex-1">
+              <textarea
+                ref={inputRef}
+                rows={1}
+                value={inputBody}
+                onChange={(e) => {
+                  setInputBody(e.target.value);
+                  if (sendError) setSendError(null);
+                }}
+                onKeyDown={(e) => {
+                  // Enter sends; Shift+Enter adds a new line (IME-safe)
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                maxLength={MAX_MESSAGE}
+                placeholder={isJa ? `${otherFirst}さんへのメッセージ...` : `Message ${otherFirst}...`}
+                aria-label={isJa ? "メッセージ" : "Message"}
+                enterKeyHint="send"
+                className="block max-h-40 min-h-[48px] w-full resize-none rounded-2xl border-2 border-border bg-white px-4 py-3 text-base text-foreground placeholder:text-muted-foreground transition-colors hover:border-primary/40 focus:border-[#315B4B] focus:outline-none"
+              />
+              {inputBody.length > MAX_MESSAGE - 100 && (
+                <span className="pointer-events-none absolute bottom-1.5 right-3 text-[11px] font-semibold tabular-nums text-amber-700">
+                  {inputBody.length}/{MAX_MESSAGE}
+                </span>
+              )}
+            </div>
+            <Button
+              type="submit"
+              disabled={sending || !inputBody.trim()}
+              aria-label={isJa ? "送信" : "Send"}
+              className="h-12 w-12 shrink-0 rounded-full bg-[#315B4B] p-0 text-white shadow-xs hover:bg-[#254639] sm:w-auto sm:px-5"
+            >
+              {sending ? (
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+              <span className="hidden font-bold sm:inline">{isJa ? "送信" : "Send"}</span>
+            </Button>
+          </form>
         </div>
-      </div>
+      )}
 
-      {/* Message Input & Big Send Button */}
-      <form
-        onSubmit={handleSend}
-        className="p-2.5 sm:p-4 bg-card border-t-2 border-border flex items-center gap-2 sm:gap-2.5 shrink-0"
+      {/* ===== Completion confirmation ===== */}
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(open) => !completing && setConfirmOpen(open)}
+        title={otherDone ? (isJa ? "やり取りを完了しますか？" : "Finish this exchange?") : isJa ? "完了にしますか？" : "Mark as completed?"}
+        description={
+          otherDone
+            ? isJa
+              ? `${otherFirst}さんはすでに完了を確認しています。確認するとレビューに進みます。`
+              : `${otherFirst} has already confirmed. Confirm to finish and leave a review.`
+            : isJa
+            ? `${otherFirst}さんも確認すると完了になり、お互いにレビューを書けます。`
+            : `Once ${otherFirst} confirms too, the exchange is completed and you can both leave a review.`
+        }
       >
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder={
-            isJa ? "メッセージを入力するか、上のボタンを選んでください..." : "Type a message or select a quick reply..."
-          }
-          value={inputBody}
-          onChange={(e) => {
-            setInputBody(e.target.value);
-            if (quickHint) setQuickHint(null);
-          }}
-          disabled={sending}
-          maxLength={500}
-          aria-label={isJa ? "メッセージ" : "Message"}
-          enterKeyHint="send"
-          className="flex-1 min-w-0 h-12 sm:h-14 px-4 text-base sm:text-lg rounded-xl border-2 border-border bg-white text-foreground placeholder:text-muted-foreground hover:border-primary/40 focus:outline-none focus:border-primary transition-colors disabled:opacity-60 shadow-xs"
-        />
-        <Button
-          type="submit"
-          disabled={sending || !inputBody.trim()}
-          aria-label={isJa ? "送信" : "Send"}
-          className="h-12 sm:h-14 px-4 sm:px-6 text-base sm:text-lg font-bold gap-2 bg-[#315B4B] hover:bg-[#254639] hover:shadow-md text-white rounded-xl shadow-xs shrink-0"
-        >
-          {sending ? (
-            <span className="h-5 w-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-          ) : (
-            <Send className="h-5 w-5" />
-          )}
-          <span className="hidden min-[400px]:inline">{isJa ? "送信" : "Send"}</span>
-        </Button>
-      </form>
+        {completeError && <p role="alert" className="mb-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{completeError}</p>}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" disabled={completing} onClick={() => setConfirmOpen(false)}>
+            {isJa ? "まだ" : "Not yet"}
+          </Button>
+          <Button type="button" onClick={handleComplete} disabled={completing} className="gap-1.5 bg-emerald-600 font-bold text-white hover:bg-emerald-700">
+            {completing ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <CheckCircle2 className="h-4 w-4" />}
+            {isJa ? "完了にする" : "Yes, mark completed"}
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import type { Post, PostStatus } from "@/lib/types";
 import { hiddenFrom, requireUser, ServiceError, userById } from "@/lib/services/shared";
 import { pushNotification } from "@/lib/services/notificationService";
 import { createClient } from "@/lib/supabase/client";
+import { getProfileCompletion } from "@/lib/profileCompletion";
 
 export type PostInput = Omit<Post, "id" | "authorId" | "lat" | "lng" | "status" | "createdAt" | "updatedAt">;
 
@@ -85,24 +86,67 @@ export async function getPostById(id: string): Promise<Post | null> {
 /**
  * Fetch all posts from Supabase ordered by creation date
  */
-export async function fetchPosts(): Promise<Post[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("posts")
-    .select("*")
-    .order("created_at", { ascending: false });
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const OPTIMISTIC_WINDOW_MS = 2 * 60 * 1000;
 
-  if (error || !data) return [];
-  const posts = data.map(rowToPost);
+let inFlight: Promise<Post[]> | null = null;
+let postsLoaded = false;
+const loadedListeners = new Set<() => void>();
 
-  useAppStore.setState((state) => {
-    const remoteIds = new Set(posts.map((p) => p.id));
-    // Keep local posts that aren't on server yet
-    const kept = state.posts.filter((p) => !remoteIds.has(p.id));
-    return { posts: [...posts, ...kept] };
-  });
+/**
+ * Fetches all posts from Supabase. The server is the source of truth: only a
+ * post the user created moments ago (real UUID, not yet returned by the
+ * server) is kept locally. Mock seed posts ("p1".."p20") persisted in the
+ * browser are dropped so they never appear as fake, un-respondable posts.
+ * Concurrent callers share one request.
+ */
+export function fetchPosts(): Promise<Post[]> {
+  if (inFlight) return inFlight;
+  inFlight = (async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
+      if (error || !data) return [];
+      const posts = data.map(rowToPost);
 
-  return posts;
+      useAppStore.setState((state) => {
+        const remoteIds = new Set(posts.map((p) => p.id));
+        const now = Date.now();
+        const optimistic = state.posts.filter(
+          (p) =>
+            !remoteIds.has(p.id) &&
+            UUID_RE.test(p.id) &&
+            now - new Date(p.createdAt).getTime() < OPTIMISTIC_WINDOW_MS
+        );
+        return { posts: [...posts, ...optimistic] };
+      });
+      return posts;
+    } finally {
+      inFlight = null;
+      if (!postsLoaded) {
+        postsLoaded = true;
+        loadedListeners.forEach((fn) => fn());
+      }
+    }
+  })();
+  return inFlight;
+}
+
+/** False until the first posts fetch has finished (for loading skeletons). */
+export function usePostsLoaded(): boolean {
+  const [loaded, setLoaded] = useState(postsLoaded);
+  useEffect(() => {
+    if (postsLoaded) {
+      setLoaded(true);
+      return;
+    }
+    const onLoad = () => setLoaded(true);
+    loadedListeners.add(onLoad);
+    return () => {
+      loadedListeners.delete(onLoad);
+    };
+  }, []);
+  return loaded;
 }
 
 /**
@@ -125,6 +169,57 @@ export function usePosts(): Post[] {
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [blocks, posts, viewerId],
   );
+}
+
+/**
+ * Every post the signed-in member authored, in any status (open, in
+ * progress, completed, closed), newest first. Used by My Activity.
+ */
+export function useMyPosts(): Post[] {
+  const posts = useAppStore((state) => state.posts);
+  const viewerId = useAppStore((state) => state.sessionUserId);
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  return useMemo(
+    () =>
+      viewerId
+        ? posts.filter((post) => post.authorId === viewerId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        : [],
+    [posts, viewerId],
+  );
+}
+
+/**
+ * Self-healing post status. When the helper (not the author) is the last to
+ * confirm completion, RLS only lets authors update posts, so the post row
+ * stays "in_progress" in the database. The author's client fixes that here:
+ * any of my in-progress posts whose request is completed becomes completed.
+ */
+export async function reconcileMyPostStatuses(): Promise<void> {
+  const state = useAppStore.getState();
+  const me = state.sessionUserId;
+  if (!me) return;
+  const completedPostIds = new Set(
+    state.requests.filter((r) => r.ownerId === me && r.status === "completed" && r.postId).map((r) => r.postId as string)
+  );
+  const stale = state.posts.filter((p) => p.authorId === me && p.status === "in_progress" && completedPostIds.has(p.id));
+  if (!stale.length) return;
+
+  const ids = stale.map((p) => p.id);
+  const now = new Date().toISOString();
+  useAppStore.setState((current) => ({
+    posts: current.posts.map((p) => (ids.includes(p.id) ? { ...p, status: "completed" as PostStatus, updatedAt: now } : p)),
+  }));
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("posts")
+    .update({ status: "completed", updated_at: now })
+    .in("id", ids)
+    .eq("author_id", me);
+  if (error) console.warn("reconcileMyPostStatuses:", error.message);
 }
 
 /**
@@ -155,30 +250,16 @@ export function usePost(id: string): Post | null {
 }
 
 /**
- * Hook to retrieve the authenticated user's own posts
- */
-export function useMyPosts(): Post[] {
-  const posts = useAppStore((state) => state.posts);
-  const viewerId = useAppStore((state) => state.sessionUserId);
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  return useMemo(
-    () =>
-      posts
-        .filter((post) => post.authorId === viewerId && post.status === "open")
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [posts, viewerId],
-  );
-}
-
-/**
  * Create a new offer or request post in Supabase PostgreSQL
  */
 export async function createPost(input: PostInput): Promise<Post> {
   const me = requireUser();
+  const completion = getProfileCompletion(me);
+  if (!completion.complete) {
+    throw new ServiceError(
+      `Please complete your profile before posting: ${completion.missing.map((m) => m.label.toLowerCase()).join(", ")}.`
+    );
+  }
   const place = placeByName(input.location);
   const supabase = createClient();
 

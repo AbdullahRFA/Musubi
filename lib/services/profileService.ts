@@ -97,6 +97,8 @@ export function listNeedRows(userId: string): Need[] {
 /**
  * Fetch all public profiles from Supabase PostgreSQL
  */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function fetchProfiles(): Promise<Profile[]> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -109,7 +111,10 @@ export async function fetchProfiles(): Promise<Profile[]> {
 
   useAppStore.setState((state) => {
     const remoteIds = new Set(profiles.map((p) => p.id));
-    const kept = state.users.filter((u) => !remoteIds.has(u.id));
+    // Keep only real accounts the server didn't return (e.g. the signed-in
+    // member right after sign-up). Mock seed users ("u1".."u8") persisted in
+    // the browser are dropped so they never appear as contactable people.
+    const kept = state.users.filter((u) => !remoteIds.has(u.id) && UUID_RE.test(u.id));
     return { users: [...profiles, ...kept] };
   });
 

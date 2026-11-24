@@ -17,6 +17,7 @@ import {
   Volume2,
   VolumeX,
   X,
+  Square,
   Zap,
   HelpCircle,
   ChevronRight,
@@ -33,6 +34,7 @@ import {
 import { ExchangeBadge } from "@/components/posts/PostBadges";
 import { FAQS, FAQ_BY_ID, FAQ_TOPICS, type FaqTopic } from "@/lib/assistant/faq";
 import { answerLanguage, matchFaq } from "@/lib/assistant/faqMatcher";
+import { FormattedReply, toSpeechText } from "@/components/assistant/FormattedReply";
 
 const STORAGE_KEY = "tsunagu_assistant_conversation";
 const AUTO_SPEAK_KEY = "tsunagu_assistant_autospeak";
@@ -59,6 +61,9 @@ const COPY = {
     error: "Sorry, something went wrong. Please try again.",
     noVoice: "Voice input isn't supported in this browser. Please type instead.",
     instant: "Instant answer",
+    stopAnswer: "Stop",
+    stopped: "Stopped. You can ask something else.",
+    slow: "This is taking longer than usual. You can press Stop and try another question.",
     commonQuestions: "Common questions",
     hideQuestions: "Hide common questions",
   },
@@ -83,6 +88,9 @@ const COPY = {
     error: "申し訳ありません、エラーが発生しました。もう一度お試しください。",
     noVoice: "このブラウザは音声入力に対応していません。文字で入力してください。",
     instant: "すぐにお答え",
+    stopAnswer: "停止",
+    stopped: "停止しました。別の質問をどうぞ。",
+    slow: "いつもより時間がかかっています。「停止」を押して、別の質問を試すこともできます。",
     commonQuestions: "よくある質問",
     hideQuestions: "よくある質問を閉じる",
   },
@@ -115,6 +123,10 @@ export function AssistantWidget() {
   const [notice, setNotice] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [showFaq, setShowFaq] = useState(false);
+  const [slow, setSlow] = useState(false);
+  // In-flight AI request: lets the user stop it, and lets us ignore late answers
+  const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
   const [openTopic, setOpenTopic] = useState<FaqTopic | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -171,7 +183,13 @@ export function AssistantWidget() {
   const send = useCallback(
     async (text: string, opts: { fromVoice?: boolean } = {}) => {
       const content = text.trim();
-      if (!content || loading) return;
+      if (!content) return;
+      // A new question replaces one that is still loading
+      if (abortRef.current) {
+        abortRef.current.abort();
+        abortRef.current = null;
+        setLoading(false);
+      }
       setNotice(null);
       setInput("");
 
@@ -195,18 +213,23 @@ export function AssistantWidget() {
             .slice(0, 3),
         };
         setMessages((prev) => [...prev, userMsg, botMsg]);
-        if (opts.fromVoice || autoSpeak) speech.speak(botMsg.id, botMsg.content);
+        if (opts.fromVoice || autoSpeak) speech.speak(botMsg.id, toSpeechText(botMsg.content));
         return;
       }
 
       // 2) Everything else goes to the AI
-      const history = [...messages.filter((m) => !m.error), userMsg];
+      const history = [...messages.filter((m) => !m.error && !m.stopped), userMsg];
       setMessages((prev) => [...prev, userMsg]);
       setLoading(true);
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const requestId = ++requestIdRef.current;
 
       try {
         const res = await fetch("/api/assistant", {
           method: "POST",
+          signal: controller.signal,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             language: lang,
@@ -215,6 +238,7 @@ export function AssistantWidget() {
           }),
         });
         const data = await res.json();
+        if (requestId !== requestIdRef.current) return; // stopped or replaced meanwhile
         if (!res.ok) throw new Error(data?.error || t.error);
 
         const reply = data as AssistantResponse;
@@ -222,18 +246,47 @@ export function AssistantWidget() {
         setMessages((prev) => [...prev, botMsg]);
 
         // Speak the answer when the user talked to us, or when auto-read is on
-        if (opts.fromVoice || autoSpeak) speech.speak(botMsg.id, reply.reply);
+        if (opts.fromVoice || autoSpeak) speech.speak(botMsg.id, toSpeechText(reply.reply));
       } catch (err: any) {
+        // Stopped by the user, or replaced by a newer question: nothing to show
+        if (err?.name === "AbortError" || requestId !== requestIdRef.current) return;
         setMessages((prev) => [
           ...prev,
           { id: newId(), role: "assistant", content: err?.message || t.error, error: true },
         ]);
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          abortRef.current = null;
+          setLoading(false);
+        }
       }
     },
-    [loading, messages, lang, pathname, t.error, autoSpeak, speech]
+    [messages, lang, pathname, t.error, autoSpeak, speech]
   );
+
+  /** Stop a slow AI answer so the user can ask something else. */
+  const stopAnswer = useCallback(() => {
+    if (!abortRef.current) return;
+    abortRef.current.abort();
+    abortRef.current = null;
+    requestIdRef.current++; // ignore anything that still arrives
+    setLoading(false);
+    setMessages((prev) => [...prev, { id: newId(), role: "assistant", content: t.stopped, stopped: true }]);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [t.stopped]);
+
+  // After 8s of waiting, suggest stopping
+  useEffect(() => {
+    if (!loading) {
+      setSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlow(true), 8000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  // Cancel any request when the panel closes or the widget unmounts
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const startVoice = () => {
     if (!speech.voiceInputSupported) {
@@ -262,6 +315,10 @@ export function AssistantWidget() {
   };
 
   const reset = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    requestIdRef.current++;
+    setLoading(false);
     speech.stopSpeaking();
     setMessages([]);
     setNotice(null);
@@ -286,14 +343,16 @@ export function AssistantWidget() {
           }}
           className={`${hideOnPhone ? "hidden md:inline-flex" : "inline-flex"} fixed right-4 ${
             raiseOnPhone ? "bottom-[calc(9rem+env(safe-area-inset-bottom))]" : "bottom-[calc(5rem+env(safe-area-inset-bottom))]"
-          } md:bottom-6 md:right-6 z-[45] items-center gap-2 rounded-full bg-gradient-to-br from-[#315B4B] to-[#234336] pl-3 pr-4 py-3 text-white shadow-lift ring-4 ring-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:scale-95 animate-fade-up`}
+          } md:bottom-6 md:right-6 z-[45] group items-center rounded-full bg-gradient-to-br from-[#315B4B] to-[#234336] p-2.5 hover:pr-4 focus-visible:pr-4 text-white shadow-lift ring-4 ring-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:scale-95 animate-fade-up`}
           aria-label={t.open}
         >
           <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
             <Bot className="h-5 w-5" />
             <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-400 ring-2 ring-[#315B4B] animate-pulse" />
           </span>
-          <span className="hidden min-[400px]:inline text-sm font-bold">{t.open}</span>
+          <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-bold opacity-0 transition-all duration-300 group-hover:ml-1 group-hover:max-w-[12rem] group-hover:opacity-100 group-focus-visible:ml-1 group-focus-visible:max-w-[12rem] group-focus-visible:opacity-100">
+            {t.open}
+          </span>
         </button>
       )}
 
@@ -359,7 +418,7 @@ export function AssistantWidget() {
             <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4" aria-live="polite">
               {/* Welcome */}
               <Bubble role="assistant">
-                <p>{t.welcome}</p>
+                <FormattedReply text={t.welcome} />
               </Bubble>
               {messages.length === 0 && (
                 <div className="flex flex-wrap gap-2 pl-10">
@@ -427,6 +486,12 @@ export function AssistantWidget() {
 
               {messages.map((m) => (
                 <div key={m.id} className="space-y-2.5 animate-in fade-in slide-in-from-bottom-2">
+                  {m.stopped ? (
+                    <p className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                      <Square className="h-3 w-3 fill-current" />
+                      {m.content}
+                    </p>
+                  ) : (
                   <Bubble role={m.role} error={m.error}>
                     {m.source === "faq" && (
                       <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">
@@ -434,11 +499,15 @@ export function AssistantWidget() {
                         {t.instant}
                       </span>
                     )}
-                    <p className="whitespace-pre-wrap">{m.content}</p>
+                    {m.role === "assistant" && !m.error ? (
+                      <FormattedReply text={m.content} />
+                    ) : (
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    )}
                     {m.role === "assistant" && !m.error && speech.voiceOutputSupported && (
                       <button
                         type="button"
-                        onClick={() => speech.speak(m.id, m.content)}
+                        onClick={() => speech.speak(m.id, toSpeechText(m.content))}
                         className="mt-2 inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-[#E7EEE4] px-3 text-sm font-bold text-[#315B4B] hover:bg-[#d8e3d4] transition-colors"
                       >
                         {speech.speakingId === m.id ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -446,6 +515,7 @@ export function AssistantWidget() {
                       </button>
                     )}
                   </Bubble>
+                  )}
 
                   {/* Matching posts */}
                   {m.posts && m.posts.length > 0 && (
@@ -518,14 +588,27 @@ export function AssistantWidget() {
 
               {loading && (
                 <Bubble role="assistant">
-                  <span className="inline-flex items-center gap-2 text-muted-foreground">
-                    <span className="flex gap-1" aria-hidden="true">
-                      <span className="h-2 w-2 rounded-full bg-[#315B4B] animate-bounce [animation-delay:-0.3s]" />
-                      <span className="h-2 w-2 rounded-full bg-[#315B4B] animate-bounce [animation-delay:-0.15s]" />
-                      <span className="h-2 w-2 rounded-full bg-[#315B4B] animate-bounce" />
-                    </span>
-                    {t.thinking}
-                  </span>
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-2 text-muted-foreground">
+                        <span className="flex gap-1" aria-hidden="true">
+                          <span className="h-2 w-2 rounded-full bg-[#315B4B] animate-bounce [animation-delay:-0.3s]" />
+                          <span className="h-2 w-2 rounded-full bg-[#315B4B] animate-bounce [animation-delay:-0.15s]" />
+                          <span className="h-2 w-2 rounded-full bg-[#315B4B] animate-bounce" />
+                        </span>
+                        {t.thinking}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={stopAnswer}
+                        className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border-2 border-border px-3 text-sm font-bold text-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+                      >
+                        <Square className="h-3.5 w-3.5 fill-current" />
+                        {t.stopAnswer}
+                      </button>
+                    </div>
+                    {slow && <p className="text-sm text-muted-foreground animate-in fade-in">{t.slow}</p>}
+                  </div>
                 </Bubble>
               )}
 
@@ -593,14 +676,28 @@ export function AssistantWidget() {
                   aria-label={t.placeholder}
                   className="min-h-[48px] max-h-32 flex-1 resize-none rounded-2xl border-2 border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground transition-colors hover:border-[#315B4B]/40 focus:outline-none focus:border-[#315B4B]"
                 />
-                <button
-                  type="submit"
-                  disabled={!input.trim() || loading}
-                  aria-label={t.send}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#315B4B] text-white shadow-sm transition-all hover:bg-[#234336] hover:shadow-md active:scale-95 disabled:opacity-40"
-                >
-                  <Send className="h-5 w-5" />
-                </button>
+                {loading && !input.trim() ? (
+                  // While the AI is thinking, the send button becomes a Stop button
+                  <button
+                    type="button"
+                    onClick={stopAnswer}
+                    aria-label={t.stopAnswer}
+                    title={t.stopAnswer}
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-foreground text-background shadow-sm transition-all hover:bg-destructive active:scale-95 animate-in zoom-in-95"
+                  >
+                    <Square className="h-4 w-4 fill-current" />
+                  </button>
+                ) : (
+                  // Typing a new question while loading replaces the slow one
+                  <button
+                    type="submit"
+                    disabled={!input.trim()}
+                    aria-label={t.send}
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#315B4B] text-white shadow-sm transition-all hover:bg-[#234336] hover:shadow-md active:scale-95 disabled:opacity-40"
+                  >
+                    <Send className="h-5 w-5" />
+                  </button>
+                )}
               </form>
               <p className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
                 <Sparkles className="h-3 w-3" />

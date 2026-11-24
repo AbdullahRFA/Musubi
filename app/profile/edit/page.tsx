@@ -34,15 +34,21 @@ import {
   SUGGESTED_SERVICES,
   SUGGESTED_INTERESTS,
   AVAILABILITY,
-  detectGeneration,
-} from "@/lib/constants";
+  detectGeneration, MIN_AGE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { AuthGuard } from "@/components/common/AuthGuard";
+import { useProfileCompletion } from "@/lib/profileCompletion";
 import { TagPicker, AgeGroupBadge } from "@/components/profile/TagPicker";
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const completion = useProfileCompletion();
+  const [returningToPost, setReturningToPost] = useState(false);
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("next") ?? "";
+    setReturningToPost(next.startsWith("/quick-post") || next.startsWith("/posts/new"));
+  }, []);
   const session = useSession();
 
   // Age state & detection
@@ -110,7 +116,7 @@ export default function EditProfilePage() {
   // Automatic Generation Detection
   const detectedGroup = useMemo(() => {
     const num = Number(age);
-    if (!num || num < 13 || num > 120) return null;
+    if (!num || num < MIN_AGE || num > 120) return null;
     return detectGeneration(num);
   }, [age]);
 
@@ -185,7 +191,10 @@ export default function EditProfilePage() {
         interests,
         avatarUrl: avatarPreview,
       });
-      router.push(`/profile/${session?.id}`);
+      // Return to where the member came from (e.g. the post form), internal paths only
+      const next = new URLSearchParams(window.location.search).get("next");
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+      router.push(safeNext ?? `/profile/${session?.id}`);
     } catch (err: any) {
       setError(err?.message || "Failed to update profile.");
     } finally {
@@ -213,6 +222,19 @@ export default function EditProfilePage() {
           <p className="mt-1 text-sm sm:text-base text-muted-foreground">
             Update your biography, age, neighborhoods, and skills
           </p>
+
+          {/* Came here from the "complete your profile" prompt */}
+          {returningToPost && !completion.complete && (
+            <div role="status" className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+              <p className="font-bold">Finish these to create your post:</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {completion.missing.map((m) => (
+                  <li key={m.id}>{m.label}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-amber-900/80">After you press Save Profile, we&apos;ll take you straight back.</p>
+            </div>
+          )}
         </div>
 
         <form
@@ -329,7 +351,7 @@ export default function EditProfilePage() {
                     id="pe-age"
                     type="number"
                     inputMode="numeric"
-                    min={13}
+                    min={MIN_AGE}
                     max={120}
                     value={age}
                     onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}

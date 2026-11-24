@@ -12,6 +12,7 @@ import { CATEGORIES, AVAILABILITY, PLACES } from "@/lib/constants";
 import { ASSISTANT_DRAFT_KEY, type AssistantDraftPost } from "@/lib/assistant/types";
 import type { Category } from "@/lib/types";
 import { AuthGuard } from "@/components/common/AuthGuard";
+import { ProfileGate } from "@/components/posts/ProfileGate";
 import { PostForm } from "@/components/posts/PostForm";
 
 export default function CreatePostPage() {
@@ -66,7 +67,7 @@ export default function CreatePostPage() {
     setLoading(true);
     try {
       const created = await createPost({ ...values, postType: "request", templateId: null });
-      router.push(`/posts/${created.id}`);
+      router.push(`/posts/${created.id}?created=1`);
     } catch (err: any) {
       setError(err?.message || "Failed to create post. Please check your details.");
     } finally {
@@ -76,6 +77,7 @@ export default function CreatePostPage() {
 
   return (
     <AuthGuard>
+      <ProfileGate>
       <PostForm
         form={form}
         onSubmit={onSubmit}
@@ -93,6 +95,7 @@ export default function CreatePostPage() {
         submitLabel="Publish Post"
         loadingLabel="Publishing post..."
       />
+      </ProfileGate>
     </AuthGuard>
   );
 }

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { Profile, UserGroup } from "@/lib/types";
 import { ServiceError, requireUser } from "@/lib/services/shared";
-import { detectGeneration, placeByName } from "@/lib/constants";
+import { detectGeneration, placeByName, MIN_AGE } from "@/lib/constants";
 
 /**
  * Maps Supabase snake_case profiles table row to the domain Profile type
@@ -114,6 +114,33 @@ export function useSession(): Profile | null {
   };
 }
 
+/** Turns Supabase auth errors into plain-language messages for members. */
+function friendlySignInError(message?: string): string {
+  const m = (message ?? "").toLowerCase();
+  if (m.includes("invalid login credentials") || m.includes("invalid credentials"))
+    return "Email or password is incorrect. Please try again, or use Forgot password.";
+  if (m.includes("email not confirmed"))
+    return "Please confirm your email first — check your inbox for the link we sent when you registered.";
+  if (m.includes("rate limit") || m.includes("too many"))
+    return "Too many attempts. Please wait a minute and try again.";
+  if (m.includes("fetch") || m.includes("network"))
+    return "We couldn't reach the server. Please check your internet connection.";
+  return message || "We couldn't log you in. Please try again.";
+}
+
+function friendlySignUpError(message?: string): string {
+  const m = (message ?? "").toLowerCase();
+  if (m.includes("already registered") || m.includes("already exists") || m.includes("user_already_exists"))
+    return "An account with this email already exists. Please log in instead, or use Forgot password.";
+  if (m.includes("password")) return message || "Please choose a stronger password.";
+  if (m.includes("rate limit") || m.includes("too many"))
+    return "Too many attempts. Please wait a minute and try again.";
+  if (m.includes("invalid") && m.includes("email")) return "Please enter a valid email address.";
+  if (m.includes("fetch") || m.includes("network"))
+    return "We couldn't reach the server. Please check your internet connection.";
+  return message || "We couldn't create your account. Please try again.";
+}
+
 /**
  * Sign in using Supabase Auth
  */
@@ -127,7 +154,7 @@ export async function signIn(email: string, password: string): Promise<Profile> 
   });
 
   if (error) {
-    throw new ServiceError(error.message || "Invalid email or password.");
+    throw new ServiceError(friendlySignInError(error.message));
   }
 
   if (!data.user) {
@@ -187,11 +214,17 @@ export async function signUp(input: {
   neighborhood?: string;
   neighborhoods?: string[];
   userGroup?: UserGroup;
-}): Promise<Profile> {
+}): Promise<{ profile: Profile; needsEmailConfirmation: boolean }> {
   const normalized = input.email.trim().toLowerCase();
 
-  if (input.password.trim().length < 6) {
-    throw new ServiceError("Password must be at least 6 characters.");
+  // Minimum age to join (mirrors the register form)
+  if (typeof input.age !== "number" || !Number.isInteger(input.age) || input.age < MIN_AGE) {
+    throw new ServiceError(`You must be at least ${MIN_AGE} years old to join Tsunagu Generations.`);
+  }
+
+  // Same rule as the register / reset / change password forms
+  if (input.password.length < 8 || !/[A-Za-z]/.test(input.password) || !/\d/.test(input.password)) {
+    throw new ServiceError("Use at least 8 characters, including a letter and a number.");
   }
 
   const age = input.age ?? null;
@@ -227,12 +260,20 @@ export async function signUp(input: {
   });
 
   if (error) {
-    throw new ServiceError(error.message || "Failed to create account.");
+    throw new ServiceError(friendlySignUpError(error.message));
   }
 
   if (!data.user) {
     throw new ServiceError("Registration failed. Please try again.");
   }
+
+  // Supabase returns a user with no identities when the email is already taken
+  // (to avoid leaking account existence), and no session when email
+  // confirmation is required.
+  if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    throw new ServiceError(friendlySignUpError("already registered"));
+  }
+  const needsEmailConfirmation = !data.session;
 
   // 2. Build initial Profile
   const profile: Profile = {
@@ -267,8 +308,9 @@ export async function signUp(input: {
     console.warn("Could not insert profile immediately:", upsertError.message);
   }
 
-  syncSessionUser(profile);
-  return profile;
+  // Only treat the user as signed in when Supabase actually created a session
+  if (!needsEmailConfirmation) syncSessionUser(profile);
+  return { profile, needsEmailConfirmation };
 }
 
 /**

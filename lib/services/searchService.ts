@@ -38,7 +38,8 @@ function personScore(person: Profile, query: string) {
   if (person.skills.some((skill) => has(skill, query))) score += 6;
   if (person.servicesOffered.some((skill) => has(skill, query))) score += 5;
   if (has(person.fullName, query)) score += 4;
-  if (person.servicesNeeded.some((skill) => has(skill, query))) score += 2;
+  // Note: servicesNeeded is intentionally NOT scored — someone who *needs*
+  // smartphone help is not a match for "who can help me with my smartphone".
   if (has(person.location, query)) score += 2;
   if (person.interests.some((skill) => has(skill, query))) score += 1;
   if (has(person.bio, query)) score += 1;
@@ -65,8 +66,10 @@ export function searchContent(
   const q = query.trim().toLowerCase();
   const authors = new Map(users.map((user) => [user.id, user]));
 
+  // Only open posts can be responded to; in-progress / completed / closed
+  // posts are hidden from search (they live in the author's My Activity).
   const matchedPosts = posts
-    .filter((post) => post.status !== "closed")
+    .filter((post) => post.status === "open")
     .map((post) => ({ post, author: authors.get(post.authorId) ?? null }))
     .filter((item): item is { post: Post; author: Profile } => {
       if (!item.author) return false;
@@ -91,19 +94,25 @@ export function searchContent(
           .filter((person) => person.id !== viewerId)
           .filter((person) => !hiddenFrom(blocks, viewerId, person.id))
           .filter((person) => {
-            if (filters.location && person.location !== filters.location) return false;
+            if (filters.location) {
+              const areas = person.neighborhoods?.length ? person.neighborhoods : [person.location];
+              if (!areas.includes(filters.location)) return false;
+            }
             if (filters.availability && person.availability !== filters.availability) return false;
             if (filters.userGroup && person.userGroup !== filters.userGroup) return false;
             if (filters.skill) {
               const blob = [...person.skills, ...person.servicesOffered].join(" ").toLowerCase();
               if (!blob.includes(filters.skill.toLowerCase())) return false;
             }
-            if (!q) return Boolean(filters.skill || filters.location || filters.userGroup || filters.availability);
+            // No keyword: browse everyone who matches the filters
+            if (!q) return true;
             return personScore(person, q) > 0;
           })
           .sort((a, b) => personScore(b, q) - personScore(a, q) || a.fullName.localeCompare(b.fullName));
 
-  const preferPeople = matchedPosts.length === 0 && people.length > 0;
+  // Suggest people only when the member actually searched or filtered
+  const searched = Boolean(q || Object.values(filters).some(Boolean));
+  const preferPeople = searched && matchedPosts.length === 0 && people.length > 0;
   return { posts: matchedPosts, people, preferPeople };
 }
 
