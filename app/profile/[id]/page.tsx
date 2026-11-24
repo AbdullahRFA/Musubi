@@ -25,6 +25,7 @@ import { useReviewsForUser } from "@/lib/services/reviewService";
 import { useSession } from "@/lib/services/authService";
 import { blockMember } from "@/lib/services/connectionService";
 import { ConnectionButton } from "@/components/connections/ConnectionButton";
+import { ProfileConnectionsCard } from "@/components/connections/ProfileConnectionsCard";
 import { groupShort, GROUP_LABEL } from "@/lib/constants";
 import { initials, formatDay } from "@/lib/utils";
 import { RatingStars } from "@/components/common/RatingStars";
@@ -198,8 +199,9 @@ export default function PublicProfilePage() {
             <StatTile label="Completed Exchanges">
               <span className="text-2xl font-extrabold text-foreground tabular-nums">{profile.completedCount}</span>
             </StatTile>
+            <ProfileConnectionsCard userId={profile.id} isMe={isMe} firstName={profile.fullName.split(" ")[0]} />
             {profile.phoneShared && profile.phone && (
-              <StatTile label="Consented Phone" tone="success" className="min-[420px]:col-span-2 lg:col-span-1">
+              <StatTile label="Consented Phone" tone="success" className="min-[420px]:col-span-2 lg:col-span-3">
                 <a
                   href={`tel:${profile.phone}`}
                   className="text-base font-bold text-emerald-950 flex items-center gap-1.5 hover:underline"

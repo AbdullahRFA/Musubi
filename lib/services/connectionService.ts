@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { useConnectionStore } from "@/lib/store/useConnectionStore";
@@ -240,4 +240,80 @@ export async function blockMember(otherId: string): Promise<void> {
 
 export async function unblockMember(otherId: string): Promise<void> {
   await unblockUser(otherId);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Profile counts (LinkedIn-style)                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Number of accepted connections a member has. Uses the `connection_count`
+ * database function so it works on anyone's profile; on my own profile it
+ * falls back to my local list if that function isn't installed yet.
+ * Returns undefined while loading and null when the count isn't available.
+ */
+export function useConnectionCount(userId: string | null | undefined): number | null | undefined {
+  const myId = useAppStore((s) => s.sessionUserId);
+  const connections = useConnectionStore((s) => s.connections);
+  const [count, setCount] = useState<number | null | undefined>(undefined);
+
+  // Re-count when my own connections change (e.g. I connect with this member)
+  const myAcceptedKey = connections
+    .filter((c) => c.status === "accepted")
+    .map((c) => c.id)
+    .sort()
+    .join(",");
+
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    createClient()
+      .rpc("connection_count", { uid: userId })
+      .then(({ data, error }) => {
+        if (!alive) return;
+        if (!error && typeof data === "number") return setCount(data);
+        if (userId === myId) {
+          const mine = useConnectionStore
+            .getState()
+            .connections.filter((c) => c.status === "accepted" && (c.requesterId === userId || c.addresseeId === userId));
+          setCount(mine.length);
+        } else setCount(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [userId, myId, myAcceptedKey]);
+
+  useEffect(() => {
+    if (myId) fetchConnections();
+  }, [myId]);
+
+  return count;
+}
+
+/** Ids of members connected to both me and `otherId`. */
+export function useMutualConnections(otherId: string | null | undefined): string[] {
+  const myId = useAppStore((s) => s.sessionUserId);
+  const connections = useConnectionStore((s) => s.connections);
+  const [ids, setIds] = useState<string[]>([]);
+  const key = connections.filter((c) => c.status === "accepted").length;
+
+  useEffect(() => {
+    if (!otherId || !myId || otherId === myId) {
+      setIds([]);
+      return;
+    }
+    let alive = true;
+    createClient()
+      .rpc("mutual_connections", { other: otherId })
+      .then(({ data, error }) => {
+        if (!alive) return;
+        setIds(error || !Array.isArray(data) ? [] : data.map((row: any) => row.user_id ?? row));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [otherId, myId, key]);
+
+  return ids;
 }
