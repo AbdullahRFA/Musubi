@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 
-/** Posts revealed per "See more" click — three full rows on desktop. */
-const PAGE_SIZE = 9;
+/** Posts revealed per "See more" click (two full rows on desktop and tablet). */
+const PAGE_SIZE = 6;
 const VIEW_STATE_KEY = "tsunagu_posts_view";
 
 interface ViewState {
