@@ -21,47 +21,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/services/authService";
 import { HeroBackgroundVideo } from "@/components/home/HeroBackgroundVideo";
+import { PhilosophySlider } from "@/components/home/PhilosophySlider";
 import { useLanguage } from "@/lib/i18n";
 
 /* -------------------------------------------------------------------------- */
 /* Static content definitions (text is resolved through i18n at render time)  */
 /* -------------------------------------------------------------------------- */
-
-interface PhilosophyCard {
-  icon: LucideIcon;
-  iconClass: string;
-  tagClass: string;
-  title: string;
-  desc: string;
-  tag: string;
-}
-
-const PHILOSOPHY: PhilosophyCard[] = [
-  {
-    icon: BookOpen,
-    iconClass: "bg-[#E7EEE4] text-primary",
-    tagClass: "text-primary",
-    title: "Knowledge Sharing",
-    desc: "Pass down traditional recipes, cultural crafts, calligraphy, gardening wisdom, and life stories, while younger members exchange modern skills, digital tools, and fresh viewpoints.",
-    tag: "Reciprocal learning",
-  },
-  {
-    icon: HandHelping,
-    iconClass: "bg-amber-100 text-amber-800",
-    tagClass: "text-amber-800",
-    title: "Mutual Support",
-    desc: "Help with everyday tasks such as smartphone settings, video calling, grocery errands, minor household chores, or seasonal preparation—provided with patience and neighborhood goodwill.",
-    tag: "Practical assistance",
-  },
-  {
-    icon: HeartHandshake,
-    iconClass: "bg-rose-100 text-rose-700",
-    tagClass: "text-rose-700",
-    title: "Companionship",
-    desc: "Build genuine intergenerational friendships through casual conversation over tea, peaceful neighborhood walks, listening, and sharing hobbies that alleviate social isolation.",
-    tag: "Social connection",
-  },
-];
 
 const STEPS: { icon: LucideIcon; title: string; desc: string; badge: string }[] = [
   {
@@ -251,44 +216,19 @@ export default function HomePage() {
       </HeroBackgroundVideo>
 
       {/* ================================================================== */}
-      {/* PHILOSOPHY                                                         */}
+      {/* SECTION 2: SHOWCASE SLIDER                                         */}
       {/* ================================================================== */}
       <section id="explore" className="page-container py-14 sm:py-20 space-y-10 scroll-mt-20">
         <SectionHeading
-          badge={t("about.badge", "Our Core Philosophy")}
-          title={t("about.title", "Everyone Can Teach, Everyone Can Learn")}
+          badge={t("about.badge", "Community Connections")}
+          title={t("about.title", "Everyone Has Something to Share")}
           subtitle={t(
             "about.subtitle",
-            "Tsunagu Generations is founded on reciprocal community exchange. No user is locked into a permanent provider or receiver role—each generation brings valuable experience, curiosity, and care."
+            "Every generation has knowledge, experiences and ideas worth sharing. Discover the connections that bring our community together."
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-          {PHILOSOPHY.map((card, i) => {
-            const Icon = card.icon;
-            return (
-              <article
-                key={card.title}
-                className="card-hover group rounded-2xl border-2 border-border bg-card p-6 sm:p-8 shadow-xs flex flex-col justify-between gap-5 animate-fade-up"
-                style={{ animationDelay: `${i * 100}ms` }}
-              >
-                <div className="space-y-4">
-                  <div
-                    className={`h-12 w-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 ${card.iconClass}`}
-                  >
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-xl font-black text-foreground">{t(`about.cards.${i}.title`, card.title)}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`about.cards.${i}.desc`, card.desc)}</p>
-                </div>
-                <div className={`pt-3 border-t border-border/60 text-xs font-bold flex items-center gap-1 ${card.tagClass}`}>
-                  <span>{t(`about.cards.${i}.tag`, card.tag)}</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <PhilosophySlider />
       </section>
 
       {/* ================================================================== */}
