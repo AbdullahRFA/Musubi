@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
+import type { PostStatus } from "@/lib/types";
 import {
   Compass,
   Inbox,
@@ -19,7 +20,7 @@ import {
   ArrowDownLeft,
   type LucideIcon,
 } from "lucide-react";
-import { usePosts } from "@/lib/services/postService";
+import { useMyPosts, reconcileMyPostStatuses } from "@/lib/services/postService";
 import { useMyRequests, confirmCompletion } from "@/lib/services/requestService";
 import { useMyActivities } from "@/lib/services/reviewService";
 import { useTransactions } from "@/lib/services/transactionService";
@@ -42,7 +43,9 @@ function ActivityContent() {
   const [activeTab, setActiveTab] = useState<TabId>(tabParam && TAB_IDS.includes(tabParam) ? tabParam : "posts");
 
   const session = useSession();
-  const allPosts = usePosts();
+  // All posts in any status (usePosts() returns only open posts, but an
+  // in-progress exchange's post is never "open")
+  const allPosts = useAppStore((state) => state.posts);
   const { incoming, outgoing, inProgress } = useMyRequests();
   const myActivities = useMyActivities();
   const transactions = useTransactions();
@@ -50,7 +53,38 @@ function ActivityContent() {
   const conversations = useAppStore((state) => state.conversations);
 
   // "my post - only currently requested posts"
-  const myPosts = allPosts.filter((p) => p.authorId === session?.id && p.status === "open");
+  const myPosts = useMyPosts();
+  const [postFilter, setPostFilter] = useState<"all" | PostStatus>("all");
+  const visibleMyPosts = postFilter === "all" ? myPosts : myPosts.filter((p) => p.status === postFilter);
+  const postStatusCounts = {
+    all: myPosts.length,
+    open: myPosts.filter((p) => p.status === "open").length,
+    in_progress: myPosts.filter((p) => p.status === "in_progress").length,
+    completed: myPosts.filter((p) => p.status === "completed").length,
+    closed: myPosts.filter((p) => p.status === "closed").length,
+  };
+
+  // Fix posts left "in progress" after the helper confirmed completion last
+  const requestsSignature = [...incoming, ...outgoing, ...inProgress].map((r) => `${r.id}:${r.status}`).join(",");
+  useEffect(() => {
+    reconcileMyPostStatuses();
+  }, [requestsSignature, myPosts.length]);
+
+  // Highlight the exchange the member just accepted (from the Requests page)
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = searchParams.get("highlight");
+    if (!id) return;
+    setHighlightId(id);
+    const scroll = window.setTimeout(() => {
+      document.getElementById(`exchange-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+    const clear = window.setTimeout(() => setHighlightId(null), 4000);
+    return () => {
+      window.clearTimeout(scroll);
+      window.clearTimeout(clear);
+    };
+  }, [searchParams]);
   const allRequests = [...incoming, ...outgoing];
 
   const getUser = (id: string) => allUsers.find((u) => u.id === id);
@@ -151,17 +185,59 @@ function ActivityContent() {
         {/* 1. MY POSTS */}
         {activeTab === "posts" && (
           <>
-            <SectionHeader title="Your Community Posts" subtitle="Open posts you've shared with neighbours" />
+            <SectionHeader
+              title="Your Community Posts"
+              subtitle="Open posts are visible to neighbours. In-progress, completed and closed posts appear only here."
+            />
+            {myPosts.length > 0 && (
+              <div role="group" aria-label="Filter by status" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0">
+                {(
+                  [
+                    ["all", "All"],
+                    ["open", "Open"],
+                    ["in_progress", "In progress"],
+                    ["completed", "Completed"],
+                    ["closed", "Closed"],
+                  ] as const
+                ).map(([value, label]) => {
+                  const active = postFilter === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setPostFilter(value)}
+                      aria-pressed={active}
+                      className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground shadow-glow"
+                          : "border-border bg-card text-foreground hover:border-primary/40 hover:text-primary"
+                      }`}
+                    >
+                      {label}
+                      <span
+                        className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none tabular-nums ${
+                          active ? "bg-white/20" : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {postStatusCounts[value]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {myPosts.length === 0 ? (
               <Empty icon={Compass} text="You haven't created any posts yet.">
                 <Button asChild>
                   <Link href="/quick-post">Try Quick Post Wizard</Link>
                 </Button>
               </Empty>
+            ) : visibleMyPosts.length === 0 ? (
+              <Empty icon={Compass} text="No posts with this status yet." />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
-                {myPosts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                {visibleMyPosts.map((post) => (
+                  <PostCard key={post.id} post={post} showStatus />
                 ))}
               </div>
             )}
@@ -240,8 +316,19 @@ function ActivityContent() {
                   return (
                     <article
                       key={req.id}
-                      className="rounded-2xl border-2 border-primary/30 bg-card p-4 sm:p-5 shadow-xs transition-shadow duration-300 hover:shadow-soft"
+                      id={`exchange-${req.id}`}
+                      className={`scroll-mt-24 rounded-2xl border-2 bg-card p-4 sm:p-5 shadow-xs transition-all duration-500 hover:shadow-soft ${
+                        highlightId === req.id
+                          ? "border-success ring-4 ring-success/20 shadow-lift"
+                          : "border-primary/30"
+                      }`}
                     >
+                      {highlightId === req.id && (
+                        <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success animate-in fade-in">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Request accepted — say hello in chat to arrange the details
+                        </p>
+                      )}
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-1.5 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">

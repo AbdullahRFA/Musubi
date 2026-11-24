@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExchangeBadge, PostTypeBadge, POST_TYPE_ACCENT } from "@/components/posts/PostBadges";
 import { ReportDialog } from "@/components/common/ReportDialog";
+import { PostStatusBadge } from "@/components/common/StatusBadge";
 import { timeAgo } from "@/components/notifications/notificationStyles";
 
 /** "just now", "5m ago", "2d ago", or a date for older posts. */
@@ -23,7 +24,7 @@ function postedAgo(iso: string) {
   return /^\d+[mhd]$/.test(t) ? `${t} ago` : t;
 }
 
-export const PostCard = memo(function PostCard({ post }: { post: Post }) {
+export const PostCard = memo(function PostCard({ post, showStatus = false }: { post: Post; showStatus?: boolean }) {
   const author = usePublicProfile(post.authorId);
   const session = useSession();
 
@@ -73,7 +74,12 @@ export const PostCard = memo(function PostCard({ post }: { post: Post }) {
               {post.category}
             </Badge>
           </div>
-          {!isOwner && (
+          {showStatus && (
+            <span className="shrink-0">
+              <PostStatusBadge status={post.status} />
+            </span>
+          )}
+          {!isOwner && !showStatus && (
             <button
               type="button"
               onClick={() => (session ? setReportOpen(true) : router.push("/login"))}
